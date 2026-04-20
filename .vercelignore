@@ -1,23 +1,41 @@
-node_modules
+# Git
 .git
-.env.local
-.env.*.local
-dist
+.gitignore
+
+# Node
+node_modules
+
+# Build outputs (keep dist for deployment)
 build
 .next
 .nuxt
+
+# Environment
+.env.local
+.env.*.local
+
+# Logs
 *.log
+
+# IDE and OS
 .DS_Store
 .vscode
 .idea
 *.swp
 *.swo
 *~
+
+# Cache
 .cache
 .turbo
+
+# Non-production artifacts
 artifacts/barangay-mobile
 artifacts/barangay-portal
 artifacts/mockup-sandbox
-scripts
-lib/*/dist
-lib/*/build
+
+# Don't ignore scripts (needed for migration)
+# scripts - can be included if needed for context
+
+# Don't exclude lib builds - they're needed for api-server
+

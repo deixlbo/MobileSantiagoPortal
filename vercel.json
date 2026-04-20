@@ -1,6 +1,16 @@
 {
   "version": 2,
   "buildCommand": "pnpm run build",
-  "outputDirectory": "artifacts/api-server/dist"
+  "outputDirectory": "artifacts/api-server/dist",
+  "public": "public",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "artifacts/api-server/dist/*.mjs": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
 }
 
