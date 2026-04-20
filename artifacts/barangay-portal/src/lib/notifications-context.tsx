@@ -114,17 +114,17 @@ function seedOfficialNotifications(): Notification[] {
     notif(
       "New Resident Registration",
       "Carlos Mañago submitted a registration request awaiting your approval.",
-      "registration", 720, "/official/residents", undefined, true
+      "registration", 720, "/official/residents", true
     ),
     notif(
       "New Document Request",
       "Ana Torres has requested a Certificate of Good Moral Character.",
-      "document", 1440, "/official/documents", undefined, true
+      "document", 1440, "/official/documents", true
     ),
     notif(
       "Blotter Report Filed",
       "A new blotter report (BLT-0031) was filed by Ana Torres regarding a Theft in Purok 3.",
-      "blotter", 2880, "/official/blotter", undefined, true
+      "blotter", 2880, "/official/blotter", true
     ),
   ];
 }

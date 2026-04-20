@@ -261,7 +261,7 @@ export default function DocumentsScreen() {
                 {!isOfficial && doc.status === "awaiting-payment" && (
                   <View style={s.payBanner}>
                     <Text style={s.payBannerTitle}>💳 Payment Required</Text>
-                    <Text style={s.payBannerAmount}>₱{(doc.paymentAmount ?? 0).toFixed(2)}</Text>
+                    <Text style={s.payBannerAmount}>��{(doc.paymentAmount ?? 0).toFixed(2)}</Text>
                     <Text style={s.payBannerSub}>The barangay office has assessed a fee. Pay to proceed.</Text>
                     <TouchableOpacity style={s.payNowBtn} onPress={() => { setSelectedDoc(doc); setShowPayModal(true); }}>
                       <Text style={s.payNowBtnText}>Pay Now (GCash / Bank / Cash)</Text>
@@ -436,7 +436,7 @@ export default function DocumentsScreen() {
               </View>
 
               {[
-                { label: "Received from", value: user?.name ?? "Resident" },
+                { label: "Received from", value: user?.fullName ?? "Resident" },
                 { label: "Document Type", value: selectedDoc?.type ?? "" },
                 { label: "Purpose", value: selectedDoc?.purpose ?? "" },
                 { label: "Date Paid", value: selectedDoc?.paymentDate ? new Date(selectedDoc.paymentDate).toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" }) : "" },
