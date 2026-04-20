@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Barangay Santiago Saz Portal"
+version = "1.0.0"
+id = "artifacts/barangay-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23288
+
+[services.development]
+run = "pnpm --filter @workspace/barangay-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/barangay-portal", "run", "build" ]
+publicDir = "artifacts/barangay-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23288"
+BASE_PATH = "/"
