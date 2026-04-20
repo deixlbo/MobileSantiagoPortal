@@ -11,8 +11,10 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { userData } = useAuth();
 
+  const notificationRole = userData?.role === "admin" ? "official" : (userData?.role ?? null);
+
   return (
-    <NotificationsProvider role={userData?.role ?? null}>
+    <NotificationsProvider role={notificationRole}>
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-y-auto flex flex-col animate-in fade-in duration-300">

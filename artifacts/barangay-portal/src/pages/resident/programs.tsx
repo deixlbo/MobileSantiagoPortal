@@ -10,7 +10,24 @@ import { useToast } from "@/hooks/use-toast";
 
 type ProjectStatus = "planning" | "ongoing" | "completed";
 
-type Project = { id: string; title: string; description: string; category: string; status: ProjectStatus; startDate: string; endDate: string; location: string; budget: number; leadBy: string; beneficiaries: number; fundSource: string; objectives?: string; targetBeneficiaries?: string; expectedOutput?: string; };
+type Project = { 
+  id: string; 
+  title: string; 
+  description: string; 
+  category: string; 
+  status: ProjectStatus; 
+  startDate: string; 
+  endDate: string; 
+  location: string; 
+  budget: number; 
+  leadBy: string; 
+  beneficiaries: number; 
+  fundSource: string; 
+  milestones?: Array<{ name: string; date: string; status: "completed" | "pending" }>;
+  objectives?: string; 
+  targetBeneficiaries?: string; 
+  expectedOutput?: string; 
+};
 
 export default function ResidentProgramsPage() {
   const { toggle } = useSidebarToggle();
@@ -95,7 +112,7 @@ export default function ResidentProgramsPage() {
             {/* Milestones */}
             <h3 className="font-semibold text-foreground mb-3">Timeline & Milestones</h3>
             <div className="space-y-2 mb-5">
-              {selected.milestones.map((m, i) => (
+              {selected.milestones?.map((m: { name: string; date: string; status: "completed" | "pending" }, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40">
                   {m.status === "completed"
                     ? <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />

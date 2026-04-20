@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   FileText, Megaphone, ClipboardList, Users, Phone, MapPin, Clock,
   Shield, Heart, AlertTriangle, Menu, X, Building2, CheckCircle2,
-  ChevronRight, Sparkles, Globe, LayoutDashboard, Lock
+  ChevronRight, Sparkles, Globe, Lock
 } from "lucide-react";
+import { LayoutDashboard as DashboardIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LandingPage() {
@@ -67,7 +68,7 @@ export default function LandingPage() {
               {dashboardUrl ? (
                 <Link href={dashboardUrl}>
                   <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-                    <LayoutDashboard className="w-4 h-4" />
+                    <DashboardIcon className="w-4 h-4" />
                     Dashboard
                   </Button>
                 </Link>
@@ -115,7 +116,7 @@ export default function LandingPage() {
                 {dashboardUrl ? (
                   <Link href={dashboardUrl} onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground justify-start gap-2" size="sm">
-                      <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+                      <DashboardIcon className="w-4 h-4" /> Go to Dashboard
                     </Button>
                   </Link>
                 ) : (

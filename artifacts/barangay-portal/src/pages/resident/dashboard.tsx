@@ -131,8 +131,8 @@ export default function ResidentDashboard() {
                           <p className="text-xs text-muted-foreground">For: {doc.purpose}</p>
                         </div>
                       </div>
-                      <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${statusColor[doc.status]}`}>
-                        {statusIcon[doc.status]} {doc.status}
+                      <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${statusColor[doc.status as keyof typeof statusColor] ?? statusColor.pending}`}>
+                        {statusIcon[doc.status as keyof typeof statusIcon] ?? statusIcon.pending} {doc.status}
                       </span>
                     </div>
                   </Card>
