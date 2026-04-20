@@ -92,10 +92,10 @@ router.post("/seed", async (req, res) => {
       { id: "biz-004", businessName: "JV Construction Supply", ownerName: "Jose Villanueva", type: "Construction", address: "Purok 4, Santiago", permitNumber: "", status: "pending" },
     ]);
 
-    res.json({ success: true, message: "Database seeded successfully" });
+    return res.json({ success: true, message: "Database seeded successfully" });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: String(e) });
+    return res.status(500).json({ error: String(e) });
   }
 });
 

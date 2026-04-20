@@ -47,9 +47,9 @@ Be friendly, clear, and helpful. Answer in a conversational tone. If asked somet
 openaiRouter.get("/conversations", async (req, res) => {
   try {
     const result = await db.select().from(conversations).orderBy(conversations.createdAt);
-    res.json(result);
+    return res.json(result);
   } catch (error) {
-    res.status(500).json({ error: "Failed to list conversations" });
+    return res.status(500).json({ error: "Failed to list conversations" });
   }
 });
 
@@ -57,9 +57,9 @@ openaiRouter.post("/conversations", async (req, res) => {
   try {
     const { title } = req.body;
     const [created] = await db.insert(conversations).values({ title: title ?? "New Chat" }).returning();
-    res.status(201).json(created);
+    return res.status(201).json(created);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create conversation" });
+    return res.status(500).json({ error: "Failed to create conversation" });
   }
 });
 
@@ -69,9 +69,9 @@ openaiRouter.get("/conversations/:id", async (req, res) => {
     const [conv] = await db.select().from(conversations).where(eq(conversations.id, id));
     if (!conv) return res.status(404).json({ error: "Conversation not found" });
     const msgs = await db.select().from(messages).where(eq(messages.conversationId, id)).orderBy(messages.createdAt);
-    res.json({ ...conv, messages: msgs });
+    return res.json({ ...conv, messages: msgs });
   } catch (error) {
-    res.status(500).json({ error: "Failed to get conversation" });
+    return res.status(500).json({ error: "Failed to get conversation" });
   }
 });
 
@@ -81,9 +81,9 @@ openaiRouter.delete("/conversations/:id", async (req, res) => {
     await db.delete(messages).where(eq(messages.conversationId, id));
     const deleted = await db.delete(conversations).where(eq(conversations.id, id)).returning();
     if (!deleted.length) return res.status(404).json({ error: "Conversation not found" });
-    res.status(204).end();
+    return res.status(204).end();
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete conversation" });
+    return res.status(500).json({ error: "Failed to delete conversation" });
   }
 });
 
@@ -91,9 +91,9 @@ openaiRouter.get("/conversations/:id/messages", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const msgs = await db.select().from(messages).where(eq(messages.conversationId, id)).orderBy(messages.createdAt);
-    res.json(msgs);
+    return res.json(msgs);
   } catch (error) {
-    res.status(500).json({ error: "Failed to list messages" });
+    return res.status(500).json({ error: "Failed to list messages" });
   }
 });
 
@@ -140,11 +140,11 @@ openaiRouter.post("/conversations/:id/messages", async (req, res) => {
     await db.insert(messages).values({ conversationId: id, role: "assistant", content: fullResponse });
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
+    return res.end();
   } catch (error) {
     console.error("OpenAI chat error:", error);
     res.write(`data: ${JSON.stringify({ error: "Failed to get response" })}\n\n`);
-    res.end();
+    return res.end();
   }
 });
 
