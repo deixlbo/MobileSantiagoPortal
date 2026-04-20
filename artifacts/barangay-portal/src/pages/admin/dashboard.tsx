@@ -37,13 +37,6 @@ export default function AdminDashboard() {
     userId: null,
   });
 
-  // Protect route - only admins can access
-  useEffect(() => {
-    if (userData && userData.role !== "admin") {
-      navigate("/");
-    }
-  }, [userData, navigate]);
-
   // Load pending users
   useEffect(() => {
     loadPendingUsers();

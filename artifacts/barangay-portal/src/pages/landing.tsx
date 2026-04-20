@@ -85,10 +85,10 @@ export default function LandingPage() {
                       Official Login
                     </Button>
                   </Link>
-                  <Link href="/login/admin">
+                  <Link href="/admin/dashboard">
                     <Button size="sm" variant="outline" className="border-sidebar-foreground/30 text-sidebar-foreground hover:bg-sidebar-accent/40 gap-1.5">
                       <Lock className="w-4 h-4" />
-                      Admin
+                      Admin Dashboard
                     </Button>
                   </Link>
                 </>
@@ -130,9 +130,9 @@ export default function LandingPage() {
                         <Shield className="w-4 h-4" /> Official Login
                       </Button>
                     </Link>
-                    <Link href="/login/admin" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/admin/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full border-sidebar-foreground/30 text-sidebar-foreground justify-start gap-2" size="sm">
-                        <Lock className="w-4 h-4" /> Admin Login
+                        <Lock className="w-4 h-4" /> Admin Dashboard
                       </Button>
                     </Link>
                   </>
