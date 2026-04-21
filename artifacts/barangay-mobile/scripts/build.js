@@ -11,12 +11,15 @@ const projectRoot = path.resolve(__dirname, "..");
 function findWorkspaceRoot(startDir) {
   let dir = startDir;
   while (dir !== path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) {
-      return dir;
+    if (fs.existsSync(path.join(dir, "package.json"))) {
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf-8"));
+      if (pkgJson.workspaces) {
+        return dir;
+      }
     }
     dir = path.dirname(dir);
   }
-  throw new Error("Could not find workspace root (no pnpm-workspace.yaml found)");
+  throw new Error("Could not find workspace root (no package.json with workspaces found)");
 }
 
 const workspaceRoot = findWorkspaceRoot(projectRoot);
@@ -67,10 +70,8 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
-  console.error(
-    "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
-  );
-  process.exit(1);
+  // Default to localhost for local development
+  return "localhost:8000";
 }
 
 function prepareDirectories(timestamp) {
@@ -147,9 +148,8 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   }
 
   metroProcess = spawn(
-    "pnpm",
+    "npx",
     [
-      "exec",
       "expo",
       "start",
       "--no-dev",
