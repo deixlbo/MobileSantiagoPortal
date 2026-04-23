@@ -26,9 +26,12 @@
     "@tailwindcss/vite": "^4.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "bcryptjs": "^3.0.3",
+    "fast-glob": "^3.3.3",
+    "next": "^16.2.4",
     "openai": "^6.34.0",
     "p-limit": "^7.3.0",
     "p-retry": "^8.0.0",
+    "react": "^19.2.5",
     "vite": "^8.0.9"
   }
 }
