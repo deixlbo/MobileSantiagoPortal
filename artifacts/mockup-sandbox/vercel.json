@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd /vercel/share/v0-project/artifacts/mockup-sandbox && pnpm install && pnpm build",
+  "outputDirectory": ".next"
+}
