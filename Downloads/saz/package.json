@@ -1,0 +1,26 @@
+{
+  "name": "mobile-santiago-portal",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query-devtools": "^5.100.1",
+    "next": "^15.1.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "^3.25.76",
+    "zod-validation-error": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.7",
+    "typescript": "~5.9.2"
+  }
+}
