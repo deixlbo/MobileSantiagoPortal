@@ -1,0 +1,147 @@
+👤 RESIDENT PORTAL
+📝 1. Registration Page
+Fields:
+Full Name
+Email
+Phone (11 digits validation)
+Address
+Purok (Dropdown)
+Barangay (Auto-filled or fixed)
+Valid ID Type (Dropdown)
+Upload Valid ID (File)
+Valid ID Dropdown Options:
+National ID
+Driver’s License
+Passport
+Voter’s ID
+SSS / GSIS ID
+Process Flow:
+User submits registration
+System saves as Pending
+Send email:
+Email
+Subject
+
+Dear Juan dela Cruz,
+
+Thank you for registering.
+
+Your account is currently under review by the barangay officials. Please wait for approval before logging in.
+
+You will receive another email once your account has been approved.
+
+Thank you.
+
+User CANNOT login until approved
+📄 2. Document Request Page (Resident)
+Changes:
+
+❌ Remove "New Request" button
+✅ Show Available Documents List
+
+Flow:
+Click a document → “Request”
+Show:
+Requirements List
+Upload Required Files
+Submit request
+Status:
+Pending
+Approved
+Rejected
+Needs More Documents
+Notifications:
+Email or system notification when:
+Approved
+Rejected
+Needs additional requirement
+🚨 3. Blotter Reporting Page
+Improvements:
+📍 Location Input:
+Replace text input with interactive map
+User clicks location → auto-fill coordinates/address
+Features:
+Description of incident
+Date & Time
+Upload evidence (optional)
+Cancel Request:
+
+User can request cancellation with reasons:
+
+Dropdown Options:
+
+Issue resolved
+Filed by mistake
+Duplicate report
+Personal reason
+Other (custom input)
+👤 4. Profile Page
+
+❌ Remove Edit Profile (as requested)
+✅ View-only information
+
+🛠️ OFFICIAL (ADMIN) PORTAL
+📄 1. Document Request Management
+Features:
+📅 Calendar View:
+Click a date → see all document requests
+Per Request:
+View resident details
+View uploaded requirements
+See requested document type
+Admin Actions:
+Approve
+Reject
+Request additional requirements
+Editable:
+Available documents
+Requirements per document
+🔔 Notifications:
+
+Admin can notify resident:
+
+Needs more documents
+Approved
+Rejected
+🖨️ Printing System
+When Approved:
+Show Print Button
+Behavior:
+Load document template
+Auto-fill:
+Resident Name
+Address
+Date
+Document Type
+📢 2. Announcement Module
+Features:
+CRUD (Create, Read, Update, Delete)
+Calendar View:
+Click date → see announcements
+🚨 3. Blotter Case Management
+Features:
+Calendar View:
+Click date → see blotter cases
+View full details
+Approve / Reject / Close case
+Handle cancellation requests
+👥 4. Residents Management
+Features:
+List of residents
+Click resident:
+View profile
+View submitted documents
+View request history
+🏗️ 5. Projects Module
+Features:
+CRUD
+Calendar View:
+Click date → see projects
+🧾 6. Assets Management
+Features:
+CRUD
+Track barangay assets
+Name
+Quantity
+Status
+Location
