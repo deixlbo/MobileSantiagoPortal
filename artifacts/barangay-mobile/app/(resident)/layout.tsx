@@ -16,7 +16,7 @@ export default function ResidentLayout({
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'resident')) {
-      router.push('/login');
+      router.push('/login/resident');
     }
   }, [user, loading, router]);
 

@@ -16,7 +16,7 @@ export default function OfficialLayout({
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'official')) {
-      router.push('/login');
+      router.push('/login/official');
     }
   }, [user, loading, router]);
 
