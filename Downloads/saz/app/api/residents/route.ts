@@ -32,8 +32,24 @@ export async function GET(request: NextRequest) {
     // TODO: Add search and filter functionality
 
     const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get('id');
     const purok = searchParams.get('purok');
     const status = searchParams.get('status');
+
+    // Handle getting a single resident by ID
+    if (id) {
+      const resident = mockResidents.find(r => r.id === id);
+      if (!resident) {
+        return NextResponse.json(
+          { success: false, error: 'Resident not found' } as ApiResponse<null>,
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { success: true, data: resident } as ApiResponse<Resident>,
+        { status: 200 }
+      );
+    }
 
     let filtered = [...mockResidents];
 
@@ -91,6 +107,74 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to register resident' } as ApiResponse<null>,
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, ...updates } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Resident ID is required' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
+    const residentIndex = mockResidents.findIndex((r) => r.id === id);
+    if (residentIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Resident not found' } as ApiResponse<null>,
+        { status: 404 }
+      );
+    }
+
+    mockResidents[residentIndex] = { ...mockResidents[residentIndex], ...updates };
+
+    return NextResponse.json(
+      { success: true, data: mockResidents[residentIndex] } as ApiResponse<Resident>,
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to update resident' } as ApiResponse<null>,
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Resident ID is required' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
+    const residentIndex = mockResidents.findIndex((r) => r.id === id);
+    if (residentIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Resident not found' } as ApiResponse<null>,
+        { status: 404 }
+      );
+    }
+
+    mockResidents.splice(residentIndex, 1);
+
+    return NextResponse.json(
+      { success: true, data: null } as ApiResponse<null>,
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete resident' } as ApiResponse<null>,
       { status: 500 }
     );
   }
