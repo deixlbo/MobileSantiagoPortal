@@ -15,10 +15,10 @@ export default function LandingPage() {
             <h1 className="text-xl font-bold text-gray-900">Santiago Portal</h1>
           </div>
           <nav className="flex gap-4">
-            <Link href="/web/auth/login" className="text-gray-600 hover:text-gray-900 font-medium">
+            <Link href="/(web)/(auth)/login" className="text-gray-600 hover:text-gray-900 font-medium">
               Resident Login
             </Link>
-            <Link href="/web/auth/official-login" className="text-gray-600 hover:text-gray-900 font-medium">
+            <Link href="/(web)/(auth)/official-login" className="text-gray-600 hover:text-gray-900 font-medium">
               Official Login
             </Link>
           </nav>
@@ -44,7 +44,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">For Residents</h3>
               <p className="text-gray-600 mb-6">Access announcements, documents, blotter records, and manage your profile.</p>
-              <Link href="/web/auth/login" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+              <Link href="/(web)/(auth)/login" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
                 Resident Login
               </Link>
             </div>
@@ -58,7 +58,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">For Officials</h3>
               <p className="text-gray-600 mb-6">Manage residents, approve documents, and oversee barangay operations.</p>
-              <Link href="/web/auth/official-login" className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition">
+              <Link href="/(web)/(auth)/official-login" className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition">
                 Official Login
               </Link>
             </div>
@@ -72,7 +72,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">For Administrators</h3>
               <p className="text-gray-600 mb-6">Manage system, users, content, and view comprehensive reports.</p>
-              <Link href="/web/auth/admin-login" className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition">
+              <Link href="/(web)/(auth)/admin-login" className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition">
                 Admin Portal
               </Link>
             </div>

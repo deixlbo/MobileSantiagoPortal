@@ -198,13 +198,13 @@ export default function ResidentRegisterPage() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/web/auth/login" className="text-blue-600 font-medium hover:underline">
+          <Link href="/(web)/(auth)/login" className="text-blue-600 font-medium hover:underline">
             Sign in here
           </Link>
         </div>
 
         <div className="mt-4 text-center">
-          <Link href="/web" className="text-gray-600 hover:text-gray-900 text-sm">
+          <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm">
             Back to home
           </Link>
         </div>

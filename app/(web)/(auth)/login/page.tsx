@@ -34,7 +34,7 @@ export default function ResidentLoginPage() {
         return;
       }
 
-      // Store session token
+      // Store session (should use httpOnly cookies in production)
       localStorage.setItem('session_token', JSON.stringify(data.session));
       localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -104,7 +104,7 @@ export default function ResidentLoginPage() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Don&apos;t have an account?{' '}
-          <Link href="/web/auth/register" className="text-blue-600 font-medium hover:underline">
+          <Link href="/(web)/(auth)/register" className="text-blue-600 font-medium hover:underline">
             Register here
           </Link>
         </div>

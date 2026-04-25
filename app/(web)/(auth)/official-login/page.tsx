@@ -102,7 +102,7 @@ export default function OfficialLoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <Link href="/web" className="text-gray-600 hover:text-gray-900 text-sm">
+          <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm">
             Back to home
           </Link>
         </div>
