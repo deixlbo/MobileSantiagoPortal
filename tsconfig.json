@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
@@ -22,7 +21,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*"
+        "./*"
       ],
       "@/app/*": [
         "./app/*"
@@ -32,9 +31,6 @@
       ],
       "@/lib/*": [
         "./lib/*"
-      ],
-      "@/types/*": [
-        "./lib/types/*"
       ]
     },
     "allowJs": true,
@@ -55,20 +51,6 @@
   "exclude": [
     "node_modules",
     ".next"
-=======
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
-  "files": [],
-  "references": [
-    {
-      "path": "./lib/db"
-    },
-    {
-      "path": "./lib/api-zod"
-    },
-    {
-      "path": "./lib/integrations-openai-ai-server"
-    }
->>>>>>> 92e9157a702c406b15198a36fa7424da81b30b07
   ]
 }
+

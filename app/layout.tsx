@@ -1,14 +1,18 @@
-import type { Metadata } from 'next';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { AuthProvider } from '@/lib/context/AuthContext';
-import { ThemeProvider } from '@/lib/context/ThemeContext';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Barangay Santiago Portal',
-  description: 'Official portal for Barangay Santiago residents and officials',
-  viewport: 'width=device-width, initial-scale=1',
+  title: 'Mobile Santiago Portal',
+  description: 'Official portal for Barangay Santiago residents, officials, and administrators',
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -17,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="bg-background">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -26,15 +30,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
-        <ThemeProvider>
-          <AuthProvider>
-            <QueryClientProvider>
-              {children}
-              <ReactQueryDevtools initialIsOpen={false} />
-            </QueryClientProvider>
-          </AuthProvider>
-        </ThemeProvider>
+      <body className="font-sans text-foreground">
+        {children}
       </body>
     </html>
   );
