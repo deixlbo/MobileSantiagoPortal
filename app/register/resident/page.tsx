@@ -40,6 +40,11 @@ export default function ResidentRegisterPage() {
     setLoading(true);
 
     try {
+      if (!createResidentUser) {
+        setLocalError('Registration is not available');
+        return;
+      }
+
       const success = await createResidentUser({
         fullName: formData.fullName,
         email: formData.email,
@@ -50,7 +55,7 @@ export default function ResidentRegisterPage() {
       });
 
       if (success) {
-        router.push('/(resident)/dashboard');
+        router.push('/user/dashboard');
       }
     } finally {
       setLoading(false);
@@ -208,7 +213,7 @@ export default function ResidentRegisterPage() {
             Already have an account?{' '}
             <button
               type="button"
-              onClick={() => router.push('/login/resident')}
+              onClick={() => router.push('/login')}
               className={styles.link}
             >
               Login here

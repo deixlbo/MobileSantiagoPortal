@@ -3,7 +3,17 @@ import type { ApiResponse, User, UserRole } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Safely parse the request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
     const { email, password, role }: { email: string; password: string; role: UserRole } = body;
 
     if (!email || !password || !role) {
@@ -13,8 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement actual authentication with database
-    // For now, using mock data
+    // Mock user data for demonstration
     const mockUsers: Record<string, User> = {
       'juan@email.com': {
         uid: 'res-001',
@@ -54,8 +63,9 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: 'Internal server error' } as ApiResponse<null>,
+      { success: false, error: errorMessage } as ApiResponse<null>,
       { status: 500 }
     );
   }

@@ -42,7 +42,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
     const { title, description, category, priority, author } = body;
 
     if (!title || !category || !priority) {
@@ -51,8 +60,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // TODO: Verify user is an official
 
     const newAnnouncement: Announcement = {
       id: `ann-${Date.now()}`,
@@ -71,8 +78,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create announcement';
     return NextResponse.json(
-      { success: false, error: 'Failed to create announcement' } as ApiResponse<null>,
+      { success: false, error: errorMessage } as ApiResponse<null>,
       { status: 500 }
     );
   }

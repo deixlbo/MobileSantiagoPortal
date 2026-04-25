@@ -39,7 +39,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
     const { title, type, residentId } = body;
 
     if (!title || !type) {
@@ -49,7 +58,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement document creation in database
     const newDocument: Document = {
       id: `doc-${Date.now()}`,
       title,
@@ -66,8 +74,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create document';
     return NextResponse.json(
-      { success: false, error: 'Failed to create document' } as ApiResponse<null>,
+      { success: false, error: errorMessage } as ApiResponse<null>,
       { status: 500 }
     );
   }

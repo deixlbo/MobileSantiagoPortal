@@ -59,7 +59,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' } as ApiResponse<null>,
+        { status: 400 }
+      );
+    }
+
     const { fullName, email, address, phone, purok } = body;
 
     if (!fullName || !email) {
@@ -68,8 +77,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // TODO: Implement resident registration in database
 
     const newResident: Resident = {
       id: `res-${Date.now()}`,
@@ -89,8 +96,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to register resident';
     return NextResponse.json(
-      { success: false, error: 'Failed to register resident' } as ApiResponse<null>,
+      { success: false, error: errorMessage } as ApiResponse<null>,
       { status: 500 }
     );
   }

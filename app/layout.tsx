@@ -1,15 +1,13 @@
+'use client';
+
 import type { Metadata } from 'next';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from '@/lib/context/AuthContext';
 import { ThemeProvider } from '@/lib/context/ThemeContext';
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'Barangay Santiago Portal',
-  description: 'Official portal for Barangay Santiago residents and officials',
-  viewport: 'width=device-width, initial-scale=1',
-};
+const queryClient = new QueryClient();
 
 export default function RootLayout({
   children,
@@ -29,7 +27,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <QueryClientProvider>
+            <QueryClientProvider client={queryClient}>
               {children}
               <ReactQueryDevtools initialIsOpen={false} />
             </QueryClientProvider>
