@@ -1,115 +1,143 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
-import styles from '../login.module.css';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Users, Eye, EyeOff, AlertCircle, Shield, ArrowLeft, UserPlus, Clock } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function ResidentLoginPage() {
+  const { login, loading, authError, clearError } = useAuth();
   const router = useRouter();
-  const { login, authError, clearError } = useAuth();
-  const [email, setEmail] = useState('juan@email.com');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    setLoading(true);
-
     try {
-      const success = await login(email, password, 'resident');
+      const success = await login(email, password, "resident");
       if (success) {
-        router.push('/(resident)/dashboard');
+        router.push("/user/dashboard");
       }
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formCard}>
-        <h1 className={styles.title}>Resident Login</h1>
-        <p className={styles.subtitle}>
-          Access your barangay resident account
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/50 to-primary/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md animate-fadeUp">
+        <Link href="/" className="inline-block">
+          <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm mb-6 transition cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </div>
+        </Link>
+        <Card className="p-8 border-primary/20 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 rounded-full border-4 border-primary/20 overflow-hidden mx-auto mb-4">
+              <img src="/santiago.jpg" alt="Barangay Santiago Saz" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Barangay Santiago</h1>
+            <p className="text-muted-foreground text-sm mt-1">Resident Portal</p>
+          </div>
 
-        <form onSubmit={handleLogin} className={styles.form}>
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 rounded-lg mb-6">
+            <Users className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Resident Login</span>
+          </div>
+
           {authError && (
-            <div className={styles.errorAlert}>
-              <span>⚠️ {authError}</span>
+            <div className="flex items-start gap-2 p-3 mb-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm animate-fadeUp">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{authError}</span>
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="juan@email.com"
-              className={styles.input}
-              required
-            />
-          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="email" className="text-foreground">Email Address</Label>
+              <Input
+                id="email"
+                data-testid="input-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="mt-1 border-input focus:border-primary"
+                required
+                disabled={loading}
+              />
+            </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className={styles.input}
-              required
-            />
-          </div>
+            <div>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  data-testid="input-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="border-input focus:border-primary pr-10"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={styles.submitBtn}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div className={styles.divider}>or</div>
-
-        <div className={styles.demoSection}>
-          <p className={styles.demoTitle}>Demo Account</p>
-          <p className={styles.demoText}>Email: juan@email.com</p>
-          <p className={styles.demoText}>Any password (4+ chars)</p>
-        </div>
-
-        <div className={styles.footer}>
-          <p>
-            Don&apos;t have an account?{' '}
-            <button
-              type="button"
-              onClick={() => router.push('/register/resident')}
-              className={styles.link}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              size="lg"
+              data-testid="button-submit-login"
             >
-              Register here
-            </button>
-          </p>
-          <p>
-            <button
-              type="button"
-              onClick={() => router.push('/login/official')}
-              className={styles.link}
-            >
-              Official login
-            </button>
-          </p>
-        </div>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                "Sign in as Resident"
+              )}
+            </Button>
+          </form>
+
+
+
+          <div className="mt-4 space-y-3">
+            <Link href="/register/resident" className="w-full">
+              <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition text-sm font-medium cursor-pointer">
+                <UserPlus className="w-4 h-4" /> Create a Resident Account
+              </div>
+            </Link>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex items-start gap-2">
+              <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>New registrations require barangay official approval before you can log in.</span>
+            </div>
+
+            <div className="text-center">
+              <Link href="/login/official" className="inline-block mx-auto">
+                <div className="text-sm text-muted-foreground hover:text-foreground transition flex items-center gap-1 cursor-pointer">
+                  <Shield className="w-3.5 h-3.5" /> Login as Official instead
+                </div>
+              </Link>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

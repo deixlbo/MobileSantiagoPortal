@@ -1,79 +1,263 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
-import styles from './dashboard.module.css';
+import { db } from '@/lib/supabase';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Users, FileText, Bell, AlertTriangle, CheckCircle2, Clock, LogOut } from 'lucide-react';
 
-const mockStats = [
-  { label: 'Pending Documents', value: '3', icon: '📄', color: '#FACC15' },
-  { label: 'Active Cases', value: '4', icon: '📋', color: '#ef4444' },
-  { label: 'Total Residents', value: '4,825', icon: '👥', color: '#3b82f6' },
-  { label: 'Projects', value: '4', icon: '📁', color: '#8b5cf6' },
-];
+export default function AdminDashboard() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const [stats, setStats] = useState({
+    totalResidents: 0,
+    pendingApprovals: 0,
+    pendingDocuments: 0,
+    activeAnnouncements: 0,
+    openIncidents: 0,
+  });
+  const [recentResidents, setRecentResidents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function OfficialDashboardPage() {
-  const { user } = useAuth();
+  useEffect(() => {
+    if (!user || user.role !== 'official') {
+      router.push('/login');
+      return;
+    }
 
-  if (!user) return null;
+    const loadData = async () => {
+      try {
+        const { data: residentsData } = await db.getResidents();
+        const residents = residentsData || [];
+        
+        setStats(prev => ({
+          ...prev,
+          totalResidents: residents.length,
+          pendingApprovals: residents.filter((r: any) => r.status === 'pending').length,
+        }));
+        setRecentResidents(residents.slice(0, 5));
+
+        const { data: announcementsData } = await db.getAnnouncements();
+        setStats(prev => ({
+          ...prev,
+          activeAnnouncements: announcementsData?.length || 0,
+        }));
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-sidebar/5 to-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-sidebar/20 border-t-sidebar rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Admin Dashboard</h1>
-        <p>Welcome, {user.fullName}</p>
-      </div>
-
-      <div className={styles.stats}>
-        {mockStats.map((stat) => (
-          <div key={stat.label} className={styles.statCard}>
-            <div className={styles.statIcon}>{stat.icon}</div>
-            <h3 className={styles.statLabel}>{stat.label}</h3>
-            <p className={styles.statValue}>{stat.value}</p>
+    <div className="min-h-screen bg-gradient-to-br from-sidebar/5 to-background">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-sidebar text-sidebar-foreground flex items-center justify-center font-bold">
+              A
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Admin Panel</p>
+              <p className="text-xs text-muted-foreground">Barangay Santiago Management</p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Administrative Actions</h2>
-        <div className={styles.quickActions}>
-          <button className={styles.actionBtn}>
-            <span className={styles.actionIcon}>📄</span>
-            <span>Process Documents</span>
-          </button>
-          <button className={styles.actionBtn}>
-            <span className={styles.actionIcon}>👥</span>
-            <span>Manage Residents</span>
-          </button>
-          <button className={styles.actionBtn}>
-            <span className={styles.actionIcon}>📢</span>
-            <span>Post Announcement</span>
-          </button>
-          <button className={styles.actionBtn}>
-            <span className={styles.actionIcon}>📋</span>
-            <span>View Blotter</span>
-          </button>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
         </div>
-      </div>
+      </header>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Recent Activity</h2>
-        <div className={styles.activityList}>
-          <div className={styles.activityItem}>
-            <span className={styles.badge}>Document</span>
-            <p>Barangay Clearance request approved</p>
-            <small>2 hours ago</small>
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <Card className="p-6 border-l-4 border-l-sidebar">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Residents</p>
+                <p className="text-3xl font-bold text-foreground mt-2">{stats.totalResidents}</p>
+              </div>
+              <Users className="w-12 h-12 text-sidebar/20" />
+            </div>
+          </Card>
+
+          <Card className="p-6 border-l-4 border-l-amber-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending Approvals</p>
+                <p className="text-3xl font-bold text-amber-600 mt-2">{stats.pendingApprovals}</p>
+              </div>
+              <Clock className="w-12 h-12 text-amber-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-6 border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Announcements</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.activeAnnouncements}</p>
+              </div>
+              <Bell className="w-12 h-12 text-blue-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-6 border-l-4 border-l-red-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Open Incidents</p>
+                <p className="text-3xl font-bold text-red-600 mt-2">{stats.openIncidents}</p>
+              </div>
+              <AlertTriangle className="w-12 h-12 text-red-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-6 border-l-4 border-l-emerald-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending Documents</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.pendingDocuments}</p>
+              </div>
+              <FileText className="w-12 h-12 text-emerald-500/20" />
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <Card className="p-6">
+              <h3 className="font-semibold text-foreground mb-4">Management</h3>
+              <div className="space-y-3">
+                <Link href="/admin/residents" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <Users className="w-4 h-4" />
+                    Manage Residents
+                  </Button>
+                </Link>
+                <Link href="/admin/documents" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <FileText className="w-4 h-4" />
+                    Document Requests
+                  </Button>
+                </Link>
+                <Link href="/admin/announcements" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <Bell className="w-4 h-4" />
+                    Post Announcement
+                  </Button>
+                </Link>
+                <Link href="/admin/blotter" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <AlertTriangle className="w-4 h-4" />
+                    Incident Reports
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+
+            <Card className="p-6 mt-6">
+              <h3 className="font-semibold text-foreground mb-4">Additional Features</h3>
+              <div className="space-y-3">
+                <Link href="/admin/projects" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline" size="sm">
+                    Projects & Programs
+                  </Button>
+                </Link>
+                <Link href="/admin/businesses" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline" size="sm">
+                    Business Permits
+                  </Button>
+                </Link>
+                <Link href="/admin/assets" className="block">
+                  <Button className="w-full justify-start gap-2" variant="outline" size="sm">
+                    Assets & Inventory
+                  </Button>
+                </Link>
+              </div>
+            </Card>
           </div>
-          <div className={styles.activityItem}>
-            <span className={styles.badge}>Resident</span>
-            <p>New resident registration completed</p>
-            <small>5 hours ago</small>
-          </div>
-          <div className={styles.activityItem}>
-            <span className={styles.badge}>Announcement</span>
-            <p>Posted community clean-up announcement</p>
-            <small>1 day ago</small>
+
+          <div className="lg:col-span-2">
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-sidebar" />
+                <h3 className="font-semibold text-foreground">Recent Residents</h3>
+              </div>
+              {recentResidents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-muted-foreground">No residents registered yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentResidents.map((resident) => (
+                    <div key={resident.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-sidebar/20 text-sidebar flex items-center justify-center font-semibold flex-shrink-0">
+                          {resident.first_name?.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground truncate">{resident.first_name} {resident.last_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{resident.email}</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                        resident.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+                        resident.status === 'pending' ? 'bg-amber-50 text-amber-700' :
+                        'bg-red-50 text-red-700'
+                      }`}>
+                        {resident.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Link href="/admin/residents" className="block mt-4">
+                <Button variant="outline" className="w-full">View All Residents</Button>
+              </Link>
+            </Card>
           </div>
         </div>
-      </div>
+
+        <Card className="p-6 mt-8">
+          <h3 className="font-semibold text-foreground mb-4">System Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-muted">
+              <p className="text-sm text-muted-foreground">Barangay Name</p>
+              <p className="font-semibold text-foreground mt-1">Barangay Santiago Saz</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted">
+              <p className="text-sm text-muted-foreground">Municipality</p>
+              <p className="font-semibold text-foreground mt-1">San Antonio, Zambales</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted">
+              <p className="text-sm text-muted-foreground">Portal Version</p>
+              <p className="font-semibold text-foreground mt-1">1.0.0</p>
+            </div>
+          </div>
+        </Card>
+      </main>
     </div>
   );
 }
