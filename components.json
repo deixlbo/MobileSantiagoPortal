@@ -1,16 +1,5 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-<<<<<<< HEAD
-  "style": "default",
-  "rsc": true,
-  "tsx": true,
-  "aliasPrefix": "@",
-  "aliases": {
-    "components": "@/components",
-    "lib": "@/lib",
-    "utils": "@/lib/utils"
-  }
-=======
   "style": "new-york",
   "rsc": true,
   "tsx": true,
@@ -29,5 +18,4 @@
     "hooks": "@/hooks"
   },
   "iconLibrary": "lucide"
->>>>>>> 733e160 (Initial commit - Mobile Santiago Portal)
 }
