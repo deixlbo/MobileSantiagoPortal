@@ -3,20 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Barangay Santiago Admin Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: residents
+  - name: blotter
+  - name: projects
+  - name: announcements
+  - name: ordinances
+  - name: documents
+  - name: assets
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +30,1091 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Aggregated counts across all entities
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent activity timeline
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /residents:
+    get:
+      operationId: listResidents
+      tags: [residents]
+      summary: List residents
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: purok
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, pending, inactive] }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resident"
+    post:
+      operationId: createResident
+      tags: [residents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResidentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resident"
+
+  /residents/stats:
+    get:
+      operationId: getResidentStats
+      tags: [residents]
+      summary: Resident grouped counts (by purok, status)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResidentStats"
+
+  /residents/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getResident
+      tags: [residents]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resident"
+    patch:
+      operationId: updateResident
+      tags: [residents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResidentInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resident"
+    delete:
+      operationId: deleteResident
+      tags: [residents]
+      responses:
+        "204":
+          description: Deleted
+
+  /blotter:
+    get:
+      operationId: listBlotterReports
+      tags: [blotter]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlotterReport"
+    post:
+      operationId: createBlotterReport
+      tags: [blotter]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlotterReportInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlotterReport"
+
+  /blotter/stats:
+    get:
+      operationId: getBlotterStats
+      tags: [blotter]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlotterStats"
+
+  /blotter/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getBlotterReport
+      tags: [blotter]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlotterReport"
+    patch:
+      operationId: updateBlotterReport
+      tags: [blotter]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlotterReportInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlotterReport"
+    delete:
+      operationId: deleteBlotterReport
+      tags: [blotter]
+      responses:
+        "204":
+          description: Deleted
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/stats:
+    get:
+      operationId: getProjectStats
+      tags: [projects]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStats"
+
+  /projects/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getProject
+      tags: [projects]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      responses:
+        "204":
+          description: Deleted
+
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+
+  /announcements/stats:
+    get:
+      operationId: getAnnouncementStats
+      tags: [announcements]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementStats"
+
+  /announcements/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getAnnouncement
+      tags: [announcements]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+    patch:
+      operationId: updateAnnouncement
+      tags: [announcements]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+    delete:
+      operationId: deleteAnnouncement
+      tags: [announcements]
+      responses:
+        "204":
+          description: Deleted
+
+  /ordinances:
+    get:
+      operationId: listOrdinances
+      tags: [ordinances]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ordinance"
+    post:
+      operationId: createOrdinance
+      tags: [ordinances]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrdinanceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ordinance"
+
+  /ordinances/stats:
+    get:
+      operationId: getOrdinanceStats
+      tags: [ordinances]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdinanceStats"
+
+  /ordinances/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getOrdinance
+      tags: [ordinances]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ordinance"
+    patch:
+      operationId: updateOrdinance
+      tags: [ordinances]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrdinanceInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ordinance"
+    delete:
+      operationId: deleteOrdinance
+      tags: [ordinances]
+      responses:
+        "204":
+          description: Deleted
+
+  /documents:
+    get:
+      operationId: listDocumentRequests
+      tags: [documents]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentRequest"
+    post:
+      operationId: createDocumentRequest
+      tags: [documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentRequest"
+
+  /documents/categories:
+    get:
+      operationId: listDocumentCategories
+      tags: [documents]
+      summary: Categories with prices for the public catalog
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentCategory"
+
+  /documents/stats:
+    get:
+      operationId: getDocumentStats
+      tags: [documents]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentStats"
+
+  /documents/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getDocumentRequest
+      tags: [documents]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentRequest"
+    patch:
+      operationId: updateDocumentRequest
+      tags: [documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentRequestInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentRequest"
+    delete:
+      operationId: deleteDocumentRequest
+      tags: [documents]
+      responses:
+        "204":
+          description: Deleted
+
+  /assets:
+    get:
+      operationId: listAssets
+      tags: [assets]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+    post:
+      operationId: createAsset
+      tags: [assets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/stats:
+    get:
+      operationId: getAssetStats
+      tags: [assets]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetStats"
+
+  /assets/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getAsset
+      tags: [assets]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    patch:
+      operationId: updateAsset
+      tags: [assets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      operationId: deleteAsset
+      tags: [assets]
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    DashboardSummary:
+      type: object
+      properties:
+        totalResidents: { type: integer }
+        activeResidents: { type: integer }
+        pendingResidents: { type: integer }
+        totalBlotterReports: { type: integer }
+        pendingBlotterReports: { type: integer }
+        investigatingBlotterReports: { type: integer }
+        totalProjects: { type: integer }
+        ongoingProjects: { type: integer }
+        completedProjects: { type: integer }
+        totalAnnouncements: { type: integer }
+        publishedAnnouncements: { type: integer }
+        totalOrdinances: { type: integer }
+        enactedOrdinances: { type: integer }
+        totalDocumentRequests: { type: integer }
+        pendingDocumentRequests: { type: integer }
+        totalAssets: { type: integer }
+      required:
+        - totalResidents
+        - activeResidents
+        - pendingResidents
+        - totalBlotterReports
+        - pendingBlotterReports
+        - investigatingBlotterReports
+        - totalProjects
+        - ongoingProjects
+        - completedProjects
+        - totalAnnouncements
+        - publishedAnnouncements
+        - totalOrdinances
+        - enactedOrdinances
+        - totalDocumentRequests
+        - pendingDocumentRequests
+        - totalAssets
+
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        description: { type: string }
+        timestamp: { type: string, format: date-time }
+      required: [id, kind, title, description, timestamp]
+
+    Resident:
+      type: object
+      properties:
+        id: { type: integer }
+        fullName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        purok: { type: string }
+        gender: { type: string }
+        civilStatus: { type: string }
+        birthDate: { type: string }
+        address: { type: string }
+        documentType: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - fullName
+        - email
+        - phone
+        - purok
+        - gender
+        - civilStatus
+        - birthDate
+        - address
+        - status
+        - createdAt
+
+    ResidentInput:
+      type: object
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        purok: { type: string }
+        gender: { type: string }
+        civilStatus: { type: string }
+        birthDate: { type: string }
+        address: { type: string }
+        documentType: { type: string }
+        status: { type: string }
+      required:
+        - fullName
+        - email
+        - phone
+        - purok
+        - gender
+        - civilStatus
+        - birthDate
+        - address
+
+    ResidentStats:
+      type: object
+      properties:
+        total: { type: integer }
+        active: { type: integer }
+        pending: { type: integer }
+        thisMonth: { type: integer }
+        byPurok:
+          type: array
+          items:
+            type: object
+            properties:
+              purok: { type: string }
+              count: { type: integer }
+            required: [purok, count]
+      required: [total, active, pending, thisMonth, byPurok]
+
+    BlotterReport:
+      type: object
+      properties:
+        id: { type: integer }
+        referenceNo: { type: string }
+        reporter: { type: string }
+        category: { type: string }
+        location: { type: string }
+        dateReported: { type: string }
+        status: { type: string }
+        description: { type: string }
+        resolutionNotes: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - referenceNo
+        - reporter
+        - category
+        - location
+        - dateReported
+        - status
+        - description
+        - createdAt
+
+    BlotterReportInput:
+      type: object
+      properties:
+        reporter: { type: string }
+        category: { type: string }
+        location: { type: string }
+        dateReported: { type: string }
+        status: { type: string }
+        description: { type: string }
+        resolutionNotes: { type: string }
+      required:
+        - reporter
+        - category
+        - location
+        - dateReported
+        - description
+
+    BlotterStats:
+      type: object
+      properties:
+        total: { type: integer }
+        pending: { type: integer }
+        investigating: { type: integer }
+        resolved: { type: integer }
+      required: [total, pending, investigating, resolved]
+
+    Project:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        category: { type: string }
+        description: { type: string }
+        budget: { type: number }
+        startDate: { type: string }
+        targetDate: { type: string }
+        projectLeader: { type: string }
+        status: { type: string }
+        progress: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - title
+        - category
+        - description
+        - budget
+        - startDate
+        - targetDate
+        - projectLeader
+        - status
+        - progress
+        - createdAt
+
+    ProjectInput:
+      type: object
+      properties:
+        title: { type: string }
+        category: { type: string }
+        description: { type: string }
+        budget: { type: number }
+        startDate: { type: string }
+        targetDate: { type: string }
+        projectLeader: { type: string }
+        status: { type: string }
+        progress: { type: integer }
+      required:
+        - title
+        - category
+        - description
+        - budget
+        - startDate
+        - targetDate
+        - projectLeader
+
+    ProjectStats:
+      type: object
+      properties:
+        total: { type: integer }
+        ongoing: { type: integer }
+        planning: { type: integer }
+        completed: { type: integer }
+        totalBudget: { type: number }
+      required: [total, ongoing, planning, completed, totalBudget]
+
+    Announcement:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        title: { type: string }
+        content: { type: string }
+        eventDate: { type: string }
+        eventTime: { type: string }
+        location: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - type
+        - title
+        - content
+        - status
+        - createdAt
+
+    AnnouncementInput:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        content: { type: string }
+        eventDate: { type: string }
+        eventTime: { type: string }
+        location: { type: string }
+        status: { type: string }
+      required: [type, title, content]
+
+    AnnouncementStats:
+      type: object
+      properties:
+        total: { type: integer }
+        published: { type: integer }
+        draft: { type: integer }
+        events: { type: integer }
+      required: [total, published, draft, events]
+
+    Ordinance:
+      type: object
+      properties:
+        id: { type: integer }
+        ordinanceNumber: { type: string }
+        title: { type: string }
+        description: { type: string }
+        ordinanceType: { type: string }
+        author: { type: string }
+        status: { type: string }
+        enactedDate: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - ordinanceNumber
+        - title
+        - description
+        - ordinanceType
+        - author
+        - status
+        - createdAt
+
+    OrdinanceInput:
+      type: object
+      properties:
+        ordinanceNumber: { type: string }
+        title: { type: string }
+        description: { type: string }
+        ordinanceType: { type: string }
+        author: { type: string }
+        status: { type: string }
+        enactedDate: { type: string }
+      required: [ordinanceNumber, title, description, ordinanceType, author]
+
+    OrdinanceStats:
+      type: object
+      properties:
+        total: { type: integer }
+        enacted: { type: integer }
+        draft: { type: integer }
+        repealed: { type: integer }
+      required: [total, enacted, draft, repealed]
+
+    DocumentRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        referenceNo: { type: string }
+        residentName: { type: string }
+        documentType: { type: string }
+        purpose: { type: string }
+        price: { type: number }
+        status: { type: string }
+        paymentMethod: { type: string }
+        requestedDate: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - referenceNo
+        - residentName
+        - documentType
+        - purpose
+        - price
+        - status
+        - requestedDate
+        - createdAt
+
+    DocumentRequestInput:
+      type: object
+      properties:
+        residentName: { type: string }
+        documentType: { type: string }
+        purpose: { type: string }
+        price: { type: number }
+        status: { type: string }
+        paymentMethod: { type: string }
+        requestedDate: { type: string }
+      required: [residentName, documentType, purpose, price]
+
+    DocumentCategory:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        description: { type: string }
+        price: { type: number }
+        available: { type: boolean }
+      required: [id, name, category, description, price, available]
+
+    DocumentStats:
+      type: object
+      properties:
+        total: { type: integer }
+        pending: { type: integer }
+        processing: { type: integer }
+        ready: { type: integer }
+        claimed: { type: integer }
+      required: [total, pending, processing, ready, claimed]
+
+    Asset:
+      type: object
+      properties:
+        id: { type: integer }
+        fileName: { type: string }
+        type: { type: string }
+        sizeKb: { type: integer }
+        category: { type: string }
+        description: { type: string }
+        uploadedBy: { type: string }
+        uploadedDate: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - fileName
+        - type
+        - sizeKb
+        - category
+        - uploadedBy
+        - uploadedDate
+        - createdAt
+
+    AssetInput:
+      type: object
+      properties:
+        fileName: { type: string }
+        type: { type: string }
+        sizeKb: { type: integer }
+        category: { type: string }
+        description: { type: string }
+        uploadedBy: { type: string }
+        uploadedDate: { type: string }
+      required: [fileName, type, sizeKb, category, uploadedBy]
+
+    AssetStats:
+      type: object
+      properties:
+        total: { type: integer }
+        documents: { type: integer }
+        images: { type: integer }
+        videos: { type: integer }
+      required: [total, documents, images, videos]

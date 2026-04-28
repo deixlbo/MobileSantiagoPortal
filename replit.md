@@ -1,27 +1,38 @@
-# Workspace
+# Barangay Santiago Admin Portal
 
-## Overview
+Civic web portal for a Philippine barangay (village). Two surfaces:
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+1. **Public landing** (`/`, `/login`, `/register`, `/documents`) — residents browse announcements, ordinances, and request documents.
+2. **Admin portal** (`/admin/*`) — barangay staff manage residents, blotter (incident) reports, projects, announcements, ordinances, document requests, and uploaded assets.
 
-## Stack
+## Architecture
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Monorepo**: pnpm workspace.
+- **Artifacts**:
+  - `artifacts/barangay-portal` — React + Vite + Wouter + TanStack Query + Tailwind + shadcn/ui (port 23288).
+  - `artifacts/api-server` — Express 5 API at `/api` (port 8080).
+  - `artifacts/mockup-sandbox` — Component preview sandbox.
+- **Database**: PostgreSQL via Drizzle ORM. Schemas in `lib/db/src/schema/`.
+- **API contract**: OpenAPI 3.1 at `lib/api-spec/openapi.yaml`. Codegen produces:
+  - React Query hooks → `lib/api-client-react/src/generated/api.ts`
+  - Zod validators → `lib/api-zod/src/generated/api.ts`
 
-## Key Commands
+After editing the OpenAPI spec, run `pnpm --filter @workspace/api-spec run codegen`. After editing schemas in `lib/db/src/schema`, run `pnpm --filter @workspace/db run push`.
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+## Theming
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+GREEN civic palette: deep emerald/forest primary on cream/off-white surfaces. Defined in `artifacts/barangay-portal/src/index.css`.
+
+## Domain Entities
+
+- `residents` — resident directory with status (active/pending/inactive)
+- `blotter_reports` — incident reports with status (pending/investigating/resolved/dismissed)
+- `projects` — barangay projects with budget (PHP) and progress %
+- `announcements` — published events / health / meetings / general
+- `ordinances` — local ordinances with status (draft/enacted/repealed)
+- `document_requests` + `document_categories` — document services (Barangay Clearance, Certificate of Residency, etc.)
+- `assets` — uploaded files (image/document/video)
+
+## Auth
+
+Stub admin login: clicking "Continue as Admin" sets `localStorage["isAdmin"] = "true"` and routes to `/admin`. No real authentication.

@@ -1,0 +1,50 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "rBV962iHjrhcd24u-m_cl"
+uri = "file://artifacts/barangay-portal/public/hero.png"
+type = "image"
+title = "Barangay Hall Hero Image"
+
+[[generated]]
+id = "eRGdqcJ9TKbb9UwU2VT9x"
+uri = "file://artifacts/barangay-portal/public/official-1.png"
+type = "image"
+title = "Official Portrait 1"
+
+[[generated]]
+id = "nwGh4z5GJcNfj81bDNMJg"
+uri = "file://artifacts/barangay-portal/public/official-2.png"
+type = "image"
+title = "Official Portrait 2"
+
+[[generated]]
+id = "cfQG8EcVrVW87W1Ud-Fd9"
+uri = "file://artifacts/barangay-portal/public/project-1.png"
+type = "image"
+title = "Project Road Construction"
+
+[[generated]]
+id = "4OuaAzhQO0n1gjUTaMwmO"
+uri = "file://artifacts/barangay-portal/public/official-3.png"
+type = "image"
+title = "Official Portrait 3"
+
+[[generated]]
+id = "AthNQcOM2QnOVrojbdJXs"
+uri = "file://artifacts/barangay-portal/public/official-4.png"
+type = "image"
+title = "Official Portrait 4"
+
+[[generated]]
+id = "4q-DB2yBSlFVt1U8dnmJu"
+uri = "file://artifacts/barangay-portal/public/project-2.png"
+type = "image"
+title = "Project Health Center"
+
+[[generated]]
+id = "mFWBWCvLcUnFyZFc4b1HZ"
+uri = "file://artifacts/barangay-portal/public/project-3.png"
+type = "image"
+title = "Project Street Lights"
