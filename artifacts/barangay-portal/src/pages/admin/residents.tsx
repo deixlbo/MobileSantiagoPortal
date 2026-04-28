@@ -144,9 +144,14 @@ export default function Residents() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Residents Directory</h2>
-            <p className="text-muted-foreground">Manage barangay residents and verifications.</p>
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border-2 border-primary/20">
+              <img src="/images/santiago.jpg" alt="Barangay Santiago" className="h-full w-full object-cover" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Residents Directory</h2>
+              <p className="text-muted-foreground">Manage barangay residents and verifications.</p>
+            </div>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>

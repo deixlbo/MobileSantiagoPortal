@@ -42,10 +42,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground">
-      <div className="h-16 flex items-center px-6 border-b border-sidebar-border bg-sidebar-primary/5">
-        <Link href="/admin" className="flex items-center gap-2 font-bold text-lg text-sidebar-primary-foreground hover:opacity-90 transition-opacity">
-          <Leaf className="h-6 w-6 text-primary" />
-          <span>Brgy. Santiago Admin</span>
+      <div className="h-20 flex items-center px-4 border-b border-sidebar-border bg-sidebar-primary/5 gap-3">
+        <Link href="/admin" className="flex items-center gap-3 font-bold text-sm text-sidebar-primary-foreground hover:opacity-90 transition-opacity">
+          <div className="h-14 w-14 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0">
+            <img src="/images/santiago.jpg" alt="Barangay Santiago" className="h-full w-full object-cover" />
+          </div>
+          <div className="hidden sm:block">
+            <div className="text-xs font-semibold text-sidebar-foreground/70">BARANGAY SANTIAGO</div>
+            <div className="text-lg font-bold text-sidebar-primary-foreground">Admin Portal</div>
+          </div>
         </Link>
       </div>
       
@@ -112,7 +117,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 lg:pl-64 flex flex-col min-h-[100dvh]">
         {/* Topbar */}
         <header className="h-16 flex items-center justify-between px-4 lg:px-8 border-b bg-background sticky top-0 z-40">
-          <div className="flex items-center gap-4 lg:hidden">
+          <div className="flex items-center gap-3 lg:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden">
@@ -124,7 +129,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 <SidebarContent />
               </SheetContent>
             </Sheet>
-            <span className="font-semibold text-foreground">Barangay Santiago</span>
+            <div className="h-10 w-10 rounded-full overflow-hidden bg-white flex items-center justify-center flex-shrink-0 border border-border">
+              <img src="/images/santiago.jpg" alt="Barangay Santiago" className="h-full w-full object-cover" />
+            </div>
+            <span className="font-semibold text-foreground text-sm">Brgy. Santiago</span>
           </div>
 
           <div className="hidden lg:flex items-center">

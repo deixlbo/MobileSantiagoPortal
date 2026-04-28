@@ -52,17 +52,41 @@ export default function Projects() {
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Parse budget breakdown from JSON
+    let budgetBreakdown = [];
+    try {
+      const bdStr = formData.get("budgetBreakdown") as string;
+      if (bdStr) {
+        budgetBreakdown = JSON.parse(bdStr);
+      }
+    } catch (e) {
+      budgetBreakdown = [
+        { category: "Materials", amount: Number(formData.get("budget")) * 0.625 },
+        { category: "Labor", amount: Number(formData.get("budget")) * 0.292 },
+        { category: "Others", amount: Number(formData.get("budget")) * 0.083 }
+      ];
+    }
+
     createProject.mutate({
       data: {
         title: formData.get("title") as string,
+        code: formData.get("code") as string,
         category: formData.get("category") as string,
         description: formData.get("description") as string,
+        objectives: [formData.get("objectives") as string],
         budget: Number(formData.get("budget")),
+        budgetBreakdown: budgetBreakdown,
         startDate: formData.get("startDate") as string,
         targetDate: formData.get("targetDate") as string,
+        location: formData.get("location") as string,
         projectLeader: formData.get("projectLeader") as string,
         status: formData.get("status") as string,
         progress: Number(formData.get("progress") || 0),
+        sourceOfFunds: formData.get("sourceOfFunds") as string,
+        engineer: formData.get("engineer") as string,
+        chairman: formData.get("chairman") as string,
+        captain: formData.get("captain") as string,
       }
     });
   };
@@ -113,18 +137,22 @@ export default function Projects() {
             <DialogTrigger asChild>
               <Button><Plus className="w-4 h-4 mr-2" /> New Project</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="title">Project Title</Label>
+                    <Label htmlFor="title">Project Title *</Label>
                     <Input id="title" name="title" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="code">Project Code</Label>
+                    <Input id="code" name="code" placeholder="e.g., BS-2024-INF-001" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category *</Label>
                     <Select name="category" defaultValue="Infrastructure">
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -136,23 +164,43 @@ export default function Projects() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="budget">Budget (PHP)</Label>
+                    <Label htmlFor="location">Location</Label>
+                    <Input id="location" name="location" placeholder="e.g., Purok 3, Barangay Santiago" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sourceOfFunds">Source of Funds</Label>
+                    <Input id="sourceOfFunds" name="sourceOfFunds" placeholder="e.g., Barangay Fund" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="budget">Total Budget (PHP) *</Label>
                     <Input id="budget" name="budget" type="number" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
+                    <Label htmlFor="startDate">Start Date *</Label>
                     <Input id="startDate" name="startDate" type="date" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="targetDate">Target Date</Label>
+                    <Label htmlFor="targetDate">Target Completion Date *</Label>
                     <Input id="targetDate" name="targetDate" type="date" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="projectLeader">Project Leader</Label>
+                    <Label htmlFor="projectLeader">Project Leader/Engineer *</Label>
                     <Input id="projectLeader" name="projectLeader" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
+                    <Label htmlFor="engineer">Engineer</Label>
+                    <Input id="engineer" name="engineer" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="chairman">Barangay Chairman/Captain</Label>
+                    <Input id="chairman" name="chairman" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="captain">Barangay Captain</Label>
+                    <Input id="captain" name="captain" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status *</Label>
                     <Select name="status" defaultValue="planning">
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -163,7 +211,11 @@ export default function Projects() {
                     </Select>
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="description">Project Description</Label>
+                    <Label htmlFor="objectives">Project Objectives</Label>
+                    <Textarea id="objectives" name="objectives" rows={2} placeholder="List main objectives..." />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="description">Project Description *</Label>
                     <Textarea id="description" name="description" rows={3} required />
                   </div>
                 </div>
@@ -247,29 +299,57 @@ export default function Projects() {
       </div>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Project Details</DialogTitle>
+            <DialogTitle>Project Information Sheet</DialogTitle>
           </DialogHeader>
           {selectedProject && (
             <div className="space-y-6">
-              <div className="flex justify-between">
-                <h3 className="text-xl font-bold">{selectedProject.title}</h3>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-bold">{selectedProject.title}</h3>
+                  {selectedProject.code && <p className="text-sm text-muted-foreground">Code: {selectedProject.code}</p>}
+                </div>
                 {getStatusBadge(selectedProject.status)}
               </div>
+
               <div className="grid grid-cols-2 gap-4 text-sm bg-muted/20 p-4 rounded-lg">
-                <div><span className="text-muted-foreground block">Category</span> {selectedProject.category}</div>
-                <div><span className="text-muted-foreground block">Leader</span> {selectedProject.projectLeader}</div>
-                <div><span className="text-muted-foreground block">Start Date</span> {format(new Date(selectedProject.startDate), "MMM d, yyyy")}</div>
-                <div><span className="text-muted-foreground block">Target Date</span> {format(new Date(selectedProject.targetDate), "MMM d, yyyy")}</div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground block">Budget</span> 
+                <div><span className="text-muted-foreground block text-xs font-semibold">CATEGORY</span> {selectedProject.category}</div>
+                <div><span className="text-muted-foreground block text-xs font-semibold">LOCATION</span> {selectedProject.location || "Not specified"}</div>
+                <div><span className="text-muted-foreground block text-xs font-semibold">PROJECT LEADER</span> {selectedProject.projectLeader}</div>
+                <div><span className="text-muted-foreground block text-xs font-semibold">SOURCE OF FUNDS</span> {selectedProject.sourceOfFunds || "Not specified"}</div>
+                <div><span className="text-muted-foreground block text-xs font-semibold">START DATE</span> {format(new Date(selectedProject.startDate), "MMM d, yyyy")}</div>
+                <div><span className="text-muted-foreground block text-xs font-semibold">TARGET COMPLETION</span> {format(new Date(selectedProject.targetDate), "MMM d, yyyy")}</div>
+              </div>
+
+              <div className="bg-muted/20 p-4 rounded-lg space-y-3">
+                <div>
+                  <span className="text-xs font-semibold text-muted-foreground block">TOTAL BUDGET</span> 
                   <span className="font-bold text-lg">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(selectedProject.budget)}</span>
                 </div>
+                {selectedProject.budgetBreakdown && Array.isArray(selectedProject.budgetBreakdown) && selectedProject.budgetBreakdown.length > 0 && (
+                  <div className="space-y-2 pt-3 border-t">
+                    <span className="text-xs font-semibold text-muted-foreground block">BUDGET BREAKDOWN</span>
+                    {selectedProject.budgetBreakdown.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span>{item.category}</span>
+                        <span className="font-semibold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(item.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              
+
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground block mb-2">PROJECT DESCRIPTION</span>
+                <p className="text-sm text-foreground">{selectedProject.description}</p>
+              </div>
+
               <div className="space-y-4 pt-4 border-t">
-                <Label>Update Progress: {tempProgress}%</Label>
+                <div>
+                  <Label className="text-xs font-semibold">Progress: {tempProgress}%</Label>
+                  <Progress value={tempProgress} className="h-2 mt-2" />
+                </div>
                 <div className="flex items-center gap-4">
                   <Slider 
                     value={[tempProgress]} 
@@ -284,9 +364,9 @@ export default function Projects() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t gap-2">
                 <Button variant="outline" onClick={() => setIsPrintModalOpen(true)}>
-                  <Printer className="w-4 h-4 mr-2" /> Print Report
+                  <Printer className="w-4 h-4 mr-2" /> Generate PDF
                 </Button>
               </div>
             </div>
