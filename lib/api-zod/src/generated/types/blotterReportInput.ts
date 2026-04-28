@@ -8,10 +8,14 @@
 
 export interface BlotterReportInput {
   reporter: string;
+  respondent?: string;
   category: string;
   location: string;
   dateReported: string;
   status?: string;
   description: string;
+  actionTaken?: string;
   resolutionNotes?: string;
+  dateResolved?: string;
+  preparedBy?: string;
 }

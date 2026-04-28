@@ -1,5 +1,5 @@
 import { AdminLayout } from "@/components/admin-layout";
-import { useListDocumentRequests, useGetDocumentStats, useUpdateDocumentRequest, getListDocumentRequestsQueryKey, getGetDocumentStatsQueryKey } from "@workspace/api-client-react";
+import { useListDocumentRequests, useGetDocumentStats, useUpdateDocumentRequest, useDeleteDocumentRequest, useCreateDocumentRequest, getListDocumentRequestsQueryKey, getGetDocumentStatsQueryKey, useListResidents, useListDocumentCategories } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,31 +9,99 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Search, Filter, Clock, CheckCircle2, FileClock, Printer, Eye, MoreHorizontal } from "lucide-react";
+import { FileText, Search, Filter, Clock, CheckCircle2, FileClock, Printer, Eye, MoreHorizontal, Plus, Trash, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PrintModal, DocumentTemplate } from "@/components/document-template";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { formatPHP } from "@/lib/format";
+
+const requestSchema = z.object({
+  residentName: z.string().min(1, "Required"),
+  residentId: z.coerce.number().optional(),
+  documentType: z.string().min(1, "Required"),
+  purpose: z.string().min(1, "Required"),
+  price: z.coerce.number(),
+  status: z.string().default("pending"),
+  paymentMethod: z.string().optional(),
+  businessName: z.string().optional(),
+  businessAddress: z.string().optional(),
+});
 
 export default function DocumentsAdmin() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const { data: stats } = useGetDocumentStats();
   const { data: requests = [], isLoading } = useListDocumentRequests({ search: search || undefined });
+  const { data: categories = [] } = useListDocumentCategories();
+  const { data: residents = [] } = useListResidents();
+
+  const createRequest = useCreateDocumentRequest({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListDocumentRequestsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDocumentStatsQueryKey() });
+        toast.success("Request created successfully");
+        setIsCreateOpen(false);
+        form.reset();
+      }
+    }
+  });
 
   const updateRequest = useUpdateDocumentRequest({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListDocumentRequestsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDocumentStatsQueryKey() });
-        toast.success("Request status updated successfully");
+        toast.success("Request updated successfully");
       }
+    }
+  });
+
+  const deleteRequest = useDeleteDocumentRequest({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListDocumentRequestsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDocumentStatsQueryKey() });
+        toast.success("Request deleted");
+      }
+    }
+  });
+
+  const form = useForm<z.infer<typeof requestSchema>>({
+    resolver: zodResolver(requestSchema),
+    defaultValues: {
+      status: "pending",
+      paymentMethod: "cash",
+      price: 0,
     }
   });
 
   const handleStatusUpdate = (id: number, status: string, currentData: any) => {
     updateRequest.mutate({ id, data: { ...currentData, status } });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this request?")) {
+      deleteRequest.mutate({ id });
+    }
+  };
+
+  const handleCreateSubmit = (data: z.infer<typeof requestSchema>) => {
+    createRequest.mutate({ data: { ...data, requestedDate: new Date().toISOString() } });
+  };
+
+  const handlePreview = (req: any) => {
+    setSelectedRequest(req);
+    setIsPrintModalOpen(true);
   };
 
   const statCards = [
@@ -53,12 +121,8 @@ export default function DocumentsAdmin() {
     }
   };
 
-  const steps = [
-    { id: 'pending', label: 'Requested' },
-    { id: 'processing', label: 'Processing' },
-    { id: 'ready', label: 'Ready for Pickup' },
-    { id: 'claimed', label: 'Claimed' }
-  ];
+  // Find resident data for the template if residentId exists
+  const associatedResident = selectedRequest?.residentId ? residents.find(r => r.id === selectedRequest.residentId) : null;
 
   return (
     <AdminLayout>
@@ -68,6 +132,76 @@ export default function DocumentsAdmin() {
             <h2 className="text-2xl font-bold tracking-tight">Document Requests</h2>
             <p className="text-muted-foreground">Manage resident requests for clearances and certificates.</p>
           </div>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="w-4 h-4 mr-2" /> New Request</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Create Document Request</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Resident Name</Label>
+                    <Input {...form.register("residentName")} required />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Resident ID (Optional)</Label>
+                    <Input type="number" {...form.register("residentId")} placeholder="For registered residents" />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Document Type</Label>
+                    <Select onValueChange={(val) => {
+                      form.setValue("documentType", val);
+                      const cat = categories.find(c => c.name === val);
+                      if (cat) form.setValue("price", cat.price);
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Price (PHP)</Label>
+                    <Input type="number" {...form.register("price")} required />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Purpose</Label>
+                    <Input {...form.register("purpose")} required />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Status</Label>
+                    <Select onValueChange={(val) => form.setValue("status", val)} defaultValue={form.getValues("status")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="ready">Ready</SelectItem>
+                        <SelectItem value="claimed">Claimed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Payment Method</Label>
+                    <Select onValueChange={(val) => form.setValue("paymentMethod", val)} defaultValue={form.getValues("paymentMethod")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="gcash">GCash</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-4">
+                  <Button type="submit" disabled={createRequest.isPending}>
+                    {createRequest.isPending ? "Creating..." : "Create Request"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -103,7 +237,7 @@ export default function DocumentsAdmin() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ref No.</TableHead>
+                  <TableHead>Control/Ref No.</TableHead>
                   <TableHead>Resident</TableHead>
                   <TableHead>Document Type</TableHead>
                   <TableHead>Date</TableHead>
@@ -123,7 +257,9 @@ export default function DocumentsAdmin() {
                 ) : (
                   requests.map((req) => (
                     <TableRow key={req.id}>
-                      <TableCell className="font-mono text-sm font-medium">{req.referenceNo}</TableCell>
+                      <TableCell className="font-mono text-sm font-medium">
+                        {req.controlNo || req.referenceNo}
+                      </TableCell>
                       <TableCell className="font-medium">{req.residentName}</TableCell>
                       <TableCell>
                         <div>{req.documentType}</div>
@@ -140,76 +276,23 @@ export default function DocumentsAdmin() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <Eye className="mr-2 h-4 w-4" /> View Details
-                                </DropdownMenuItem>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <div className="flex items-center justify-between pr-6">
-                                    <DialogTitle>Request {req.referenceNo}</DialogTitle>
-                                    {getStatusBadge(req.status)}
-                                  </div>
-                                </DialogHeader>
-                                <div className="mt-6">
-                                  {/* Stepper */}
-                                  <div className="relative flex justify-between mb-8">
-                                    <div className="absolute left-0 top-1/2 w-full h-0.5 bg-muted -z-10 -translate-y-1/2"></div>
-                                    {steps.map((step, idx) => {
-                                      const currentIndex = steps.findIndex(s => s.id === req.status);
-                                      const isCompleted = currentIndex >= idx || req.status === 'claimed';
-                                      const isCurrent = req.status === step.id;
-                                      
-                                      return (
-                                        <div key={step.id} className="flex flex-col items-center gap-2">
-                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 ${isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-muted text-muted-foreground'}`}>
-                                            {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : idx + 1}
-                                          </div>
-                                          <span className={`text-xs font-medium ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`}>{step.label}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-4 text-sm mt-8 border-t pt-6">
-                                    <div>
-                                      <div className="text-muted-foreground mb-1">Resident</div>
-                                      <div className="font-medium">{req.residentName}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-muted-foreground mb-1">Document Requested</div>
-                                      <div className="font-medium">{req.documentType}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-muted-foreground mb-1">Purpose</div>
-                                      <div className="font-medium">{req.purpose}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-muted-foreground mb-1">Amount</div>
-                                      <div className="font-medium">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(req.price)}</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <DropdownMenuItem>
-                              <Printer className="mr-2 h-4 w-4" /> Print Document
+                            <DropdownMenuItem onClick={() => handlePreview(req)}>
+                              <Eye className="mr-2 h-4 w-4" /> Preview / Print
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {req.status === 'pending' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'processing', req)} className="text-purple-600">Mark as Processing</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'processing', req)} className="text-purple-600">Mark Processing</DropdownMenuItem>
                             )}
                             {req.status === 'processing' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'ready', req)} className="text-emerald-600">Mark as Ready</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'ready', req)} className="text-emerald-600">Mark Ready</DropdownMenuItem>
                             )}
                             {req.status === 'ready' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'claimed', req)} className="text-emerald-600">Mark as Claimed</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'claimed', req)} className="text-emerald-600">Mark Claimed</DropdownMenuItem>
                             )}
-                            {req.status !== 'claimed' && req.status !== 'rejected' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(req.id, 'rejected', req)} className="text-destructive">Reject Request</DropdownMenuItem>
-                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(req.id)} className="text-destructive">
+                              <Trash className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -221,6 +304,14 @@ export default function DocumentsAdmin() {
           </div>
         </Card>
       </div>
+
+      <PrintModal 
+        title={`Preview: ${selectedRequest?.documentType}`}
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+      >
+        {selectedRequest && <DocumentTemplate request={selectedRequest} resident={associatedResident} />}
+      </PrintModal>
     </AdminLayout>
   );
 }

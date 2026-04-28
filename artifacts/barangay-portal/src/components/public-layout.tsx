@@ -33,6 +33,9 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
+            <Link href="/resident/login">
+              <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/10">Resident Sign In</Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/10">Sign In</Button>
             </Link>
@@ -62,8 +65,11 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   </a>
                 ))}
                 <div className="h-px bg-border my-4" />
+                <Link href="/resident/login" onClick={() => setOpen(false)}>
+                  <Button variant="outline" className="w-full justify-start text-primary border-primary hover:bg-primary/10">Resident Sign In</Button>
+                </Link>
                 <Link href="/login" onClick={() => setOpen(false)}>
-                  <Button variant="outline" className="w-full justify-start text-primary border-primary hover:bg-primary/10">Sign In (Admin)</Button>
+                  <Button variant="outline" className="w-full justify-start text-primary border-primary hover:bg-primary/10 mt-2">Sign In (Admin)</Button>
                 </Link>
                 <Link href="/register" onClick={() => setOpen(false)}>
                   <Button className="w-full justify-start mt-2">Resident Portal</Button>

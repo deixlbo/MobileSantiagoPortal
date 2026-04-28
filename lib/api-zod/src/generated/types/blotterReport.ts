@@ -10,11 +10,15 @@ export interface BlotterReport {
   id: number;
   referenceNo: string;
   reporter: string;
+  respondent?: string;
   category: string;
   location: string;
   dateReported: string;
   status: string;
   description: string;
+  actionTaken?: string;
   resolutionNotes?: string;
+  dateResolved?: string;
+  preparedBy?: string;
   createdAt: Date;
 }

@@ -7,6 +7,7 @@
  */
 
 export interface DocumentRequestInput {
+  residentId?: number;
   residentName: string;
   documentType: string;
   purpose: string;
@@ -14,4 +15,6 @@ export interface DocumentRequestInput {
   status?: string;
   paymentMethod?: string;
   requestedDate?: string;
+  businessName?: string;
+  businessAddress?: string;
 }

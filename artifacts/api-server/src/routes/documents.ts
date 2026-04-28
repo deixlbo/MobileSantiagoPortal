@@ -57,18 +57,32 @@ router.get("/documents/:id", async (req, res) => {
 
 router.post("/documents", async (req, res) => {
   const body = CreateDocumentRequestBody.parse(req.body);
-  const refNo = `BLT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900000) + 100000)}`;
-  const [row] = await db
-    .insert(documentRequestsTable)
-    .values({
-      ...body,
-      price: String(body.price),
-      referenceNo: refNo,
-      status: body.status ?? "pending",
-      requestedDate: body.requestedDate ?? new Date().toISOString().slice(0, 10),
-    })
-    .returning();
-  res.status(201).json({ ...row, price: Number(row.price), createdAt: row.createdAt.toISOString() });
+  const year = new Date().getFullYear();
+  const rand = () => String(Math.floor(Math.random() * 900000) + 100000);
+  const refNo = `DOC-${year}-${rand()}`;
+  const controlNo = `BSC-${year}-${rand().slice(0, 4)}`;
+  const orNumber = `OR-${year}-${rand().slice(0, 5)}`;
+  const insert: Record<string, unknown> = {
+    ...body,
+    price: String(body.price),
+    referenceNo: refNo,
+    controlNo,
+    orNumber,
+    status: body.status ?? "pending",
+    requestedDate: body.requestedDate ?? new Date().toISOString().slice(0, 10),
+  };
+  if (body.residentId !== undefined && body.residentId !== null) {
+    insert["residentId"] = String(body.residentId);
+  } else {
+    delete insert["residentId"];
+  }
+  const [row] = await db.insert(documentRequestsTable).values(insert).returning();
+  res.status(201).json({
+    ...row,
+    price: Number(row.price),
+    residentId: row.residentId ? Number(row.residentId) : undefined,
+    createdAt: row.createdAt.toISOString(),
+  });
 });
 
 router.patch("/documents/:id", async (req, res) => {
@@ -76,13 +90,21 @@ router.patch("/documents/:id", async (req, res) => {
   const body = UpdateDocumentRequestBody.parse(req.body);
   const update: Record<string, unknown> = { ...body };
   if (body.price !== undefined) update.price = String(body.price);
+  if (body.residentId !== undefined) {
+    update["residentId"] = body.residentId === null ? null : String(body.residentId);
+  }
   const [row] = await db
     .update(documentRequestsTable)
     .set(update)
     .where(eq(documentRequestsTable.id, id))
     .returning();
   if (!row) return res.status(404).json({ error: "Not found" });
-  res.json({ ...row, price: Number(row.price), createdAt: row.createdAt.toISOString() });
+  res.json({
+    ...row,
+    price: Number(row.price),
+    residentId: row.residentId ? Number(row.residentId) : undefined,
+    createdAt: row.createdAt.toISOString(),
+  });
 });
 
 router.delete("/documents/:id", async (req, res) => {

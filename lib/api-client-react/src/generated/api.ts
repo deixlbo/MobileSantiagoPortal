@@ -40,6 +40,8 @@ import type {
   ListOrdinancesParams,
   ListProjectsParams,
   ListResidentsParams,
+  LookupResidentByEmail404,
+  LookupResidentByEmailParams,
   Ordinance,
   OrdinanceInput,
   OrdinanceStats,
@@ -277,6 +279,107 @@ export function useGetRecentActivity<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetRecentActivityQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Find a resident by email (used for resident sign-in)
+ */
+export const getLookupResidentByEmailUrl = (
+  params: LookupResidentByEmailParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/residents/lookup?${stringifiedParams}`
+    : `/api/residents/lookup`;
+};
+
+export const lookupResidentByEmail = async (
+  params: LookupResidentByEmailParams,
+  options?: RequestInit,
+): Promise<Resident> => {
+  return customFetch<Resident>(getLookupResidentByEmailUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupResidentByEmailQueryKey = (
+  params?: LookupResidentByEmailParams,
+) => {
+  return [`/api/residents/lookup`, ...(params ? [params] : [])] as const;
+};
+
+export const getLookupResidentByEmailQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupResidentByEmail>>,
+  TError = ErrorType<LookupResidentByEmail404>,
+>(
+  params: LookupResidentByEmailParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupResidentByEmail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupResidentByEmailQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupResidentByEmail>>
+  > = ({ signal }) =>
+    lookupResidentByEmail(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupResidentByEmail>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupResidentByEmailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupResidentByEmail>>
+>;
+export type LookupResidentByEmailQueryError =
+  ErrorType<LookupResidentByEmail404>;
+
+/**
+ * @summary Find a resident by email (used for resident sign-in)
+ */
+
+export function useLookupResidentByEmail<
+  TData = Awaited<ReturnType<typeof lookupResidentByEmail>>,
+  TError = ErrorType<LookupResidentByEmail404>,
+>(
+  params: LookupResidentByEmailParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupResidentByEmail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupResidentByEmailQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

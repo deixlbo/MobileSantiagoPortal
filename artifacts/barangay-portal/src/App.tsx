@@ -17,7 +17,16 @@ import Announcements from "@/pages/admin/announcements";
 import Ordinances from "@/pages/admin/ordinances";
 import DocumentsAdmin from "@/pages/admin/documents";
 import Assets from "@/pages/admin/assets";
-import Settings from "@/pages/admin/settings";
+import AdminProfile from "@/pages/admin/profile";
+
+import ResidentLogin from "@/pages/resident/login";
+import ResidentDashboard from "@/pages/resident/dashboard";
+import ResidentAnnouncements from "@/pages/resident/announcements";
+import ResidentOrdinances from "@/pages/resident/ordinances";
+import ResidentProjects from "@/pages/resident/projects";
+import ResidentDocuments from "@/pages/resident/documents";
+import ResidentBlotter from "@/pages/resident/blotter";
+import ResidentAssets from "@/pages/resident/assets";
 
 import { useEffect, useState } from "react";
 
@@ -48,6 +57,24 @@ function AdminRoute({ component: Component, ...rest }: any) {
   return <Route {...rest} component={Component} />;
 }
 
+function ResidentRoute({ component: Component, ...rest }: any) {
+  const [location, setLocation] = useLocation();
+  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const auth = localStorage.getItem("residentId");
+    if (!auth) {
+      setLocation("/resident/login");
+    } else {
+      setIsAuth(true);
+    }
+  }, [location, setLocation]);
+
+  if (!isAuth) return null;
+
+  return <Route {...rest} component={Component} />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -56,6 +83,15 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/documents" component={DocumentsPublic} />
       
+      <Route path="/resident/login" component={ResidentLogin} />
+      <ResidentRoute path="/resident" component={ResidentDashboard} />
+      <ResidentRoute path="/resident/announcements" component={ResidentAnnouncements} />
+      <ResidentRoute path="/resident/ordinances" component={ResidentOrdinances} />
+      <ResidentRoute path="/resident/projects" component={ResidentProjects} />
+      <ResidentRoute path="/resident/documents" component={ResidentDocuments} />
+      <ResidentRoute path="/resident/blotter" component={ResidentBlotter} />
+      <ResidentRoute path="/resident/assets" component={ResidentAssets} />
+
       <AdminRoute path="/admin" component={Dashboard} />
       <AdminRoute path="/admin/residents" component={Residents} />
       <AdminRoute path="/admin/blotter" component={Blotter} />
@@ -64,7 +100,7 @@ function Router() {
       <AdminRoute path="/admin/ordinances" component={Ordinances} />
       <AdminRoute path="/admin/documents" component={DocumentsAdmin} />
       <AdminRoute path="/admin/assets" component={Assets} />
-      <AdminRoute path="/admin/settings" component={Settings} />
+      <AdminRoute path="/admin/profile" component={AdminProfile} />
 
       <Route component={NotFound} />
     </Switch>

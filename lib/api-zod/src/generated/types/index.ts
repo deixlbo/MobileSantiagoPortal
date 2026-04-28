@@ -30,6 +30,8 @@ export * from "./listOrdinancesParams";
 export * from "./listProjectsParams";
 export * from "./listResidentsParams";
 export * from "./listResidentsStatus";
+export * from "./lookupResidentByEmail404";
+export * from "./lookupResidentByEmailParams";
 export * from "./ordinance";
 export * from "./ordinanceInput";
 export * from "./ordinanceStats";

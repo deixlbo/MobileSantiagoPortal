@@ -59,6 +59,33 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /residents/lookup:
+    get:
+      operationId: lookupResidentByEmail
+      tags: [residents]
+      summary: Find a resident by email (used for resident sign-in)
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resident"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                required: [error]
+
   /residents:
     get:
       operationId: listResidents
@@ -833,12 +860,16 @@ components:
         id: { type: integer }
         referenceNo: { type: string }
         reporter: { type: string }
+        respondent: { type: string }
         category: { type: string }
         location: { type: string }
         dateReported: { type: string }
         status: { type: string }
         description: { type: string }
+        actionTaken: { type: string }
         resolutionNotes: { type: string }
+        dateResolved: { type: string }
+        preparedBy: { type: string }
         createdAt: { type: string, format: date-time }
       required:
         - id
@@ -855,12 +886,16 @@ components:
       type: object
       properties:
         reporter: { type: string }
+        respondent: { type: string }
         category: { type: string }
         location: { type: string }
         dateReported: { type: string }
         status: { type: string }
         description: { type: string }
+        actionTaken: { type: string }
         resolutionNotes: { type: string }
+        dateResolved: { type: string }
+        preparedBy: { type: string }
       required:
         - reporter
         - category
@@ -1024,6 +1059,9 @@ components:
       properties:
         id: { type: integer }
         referenceNo: { type: string }
+        controlNo: { type: string }
+        orNumber: { type: string }
+        residentId: { type: integer }
         residentName: { type: string }
         documentType: { type: string }
         purpose: { type: string }
@@ -1031,6 +1069,8 @@ components:
         status: { type: string }
         paymentMethod: { type: string }
         requestedDate: { type: string }
+        businessName: { type: string }
+        businessAddress: { type: string }
         createdAt: { type: string, format: date-time }
       required:
         - id
@@ -1046,6 +1086,7 @@ components:
     DocumentRequestInput:
       type: object
       properties:
+        residentId: { type: integer }
         residentName: { type: string }
         documentType: { type: string }
         purpose: { type: string }
@@ -1053,6 +1094,8 @@ components:
         status: { type: string }
         paymentMethod: { type: string }
         requestedDate: { type: string }
+        businessName: { type: string }
+        businessAddress: { type: string }
       required: [residentName, documentType, purpose, price]
 
     DocumentCategory:

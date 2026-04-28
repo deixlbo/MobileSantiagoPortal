@@ -10,14 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { HardHat, Plus, Activity, Calendar, LayoutTemplate, CheckCircle2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { HardHat, Plus, Activity, Calendar, LayoutTemplate, CheckCircle2, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PrintModal, ProjectReport as ProjectReportTemplate } from "@/components/document-template";
 
 export default function Projects() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [tempProgress, setTempProgress] = useState<number>(0);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const { data: stats } = useGetProjectStats();
   const { data: projects = [], isLoading } = useListProjects();
@@ -59,6 +65,24 @@ export default function Projects() {
         progress: Number(formData.get("progress") || 0),
       }
     });
+  };
+
+  const handleUpdateProgress = () => {
+    if (!selectedProject) return;
+    updateProject.mutate({
+      id: selectedProject.id,
+      data: {
+        ...selectedProject,
+        progress: tempProgress,
+        status: tempProgress === 100 ? "completed" : selectedProject.status,
+      }
+    });
+  };
+
+  const openDetails = (project: any) => {
+    setSelectedProject(project);
+    setTempProgress(project.progress);
+    setIsDetailsOpen(true);
   };
 
   const statCards = [
@@ -180,10 +204,9 @@ export default function Projects() {
             </div>
           ) : (
             projects.map((project) => (
-              <Card key={project.id} className="flex flex-col hover-elevate">
+              <Card key={project.id} className="flex flex-col hover-elevate cursor-pointer" onClick={() => openDetails(project)}>
                 <div className="h-32 bg-muted/50 rounded-t-lg relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent mix-blend-overlay" />
-                  {/* Visual placeholder for project image */}
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <HardHat className="w-8 h-8 opacity-20" />
                   </div>
@@ -215,20 +238,70 @@ export default function Projects() {
                         {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(project.budget)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Target:</span>
-                      <span>{format(new Date(project.targetDate), "MMM d, yyyy")}</span>
-                    </div>
                   </div>
                 </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="outline" className="w-full">View Details</Button>
-                </CardFooter>
               </Card>
             ))
           )}
         </div>
       </div>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Project Details</DialogTitle>
+          </DialogHeader>
+          {selectedProject && (
+            <div className="space-y-6">
+              <div className="flex justify-between">
+                <h3 className="text-xl font-bold">{selectedProject.title}</h3>
+                {getStatusBadge(selectedProject.status)}
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm bg-muted/20 p-4 rounded-lg">
+                <div><span className="text-muted-foreground block">Category</span> {selectedProject.category}</div>
+                <div><span className="text-muted-foreground block">Leader</span> {selectedProject.projectLeader}</div>
+                <div><span className="text-muted-foreground block">Start Date</span> {format(new Date(selectedProject.startDate), "MMM d, yyyy")}</div>
+                <div><span className="text-muted-foreground block">Target Date</span> {format(new Date(selectedProject.targetDate), "MMM d, yyyy")}</div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground block">Budget</span> 
+                  <span className="font-bold text-lg">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(selectedProject.budget)}</span>
+                </div>
+              </div>
+              
+              <div className="space-y-4 pt-4 border-t">
+                <Label>Update Progress: {tempProgress}%</Label>
+                <div className="flex items-center gap-4">
+                  <Slider 
+                    value={[tempProgress]} 
+                    onValueChange={(vals) => setTempProgress(vals[0])} 
+                    max={100} 
+                    step={5} 
+                    className="flex-1"
+                  />
+                  <Button onClick={handleUpdateProgress} disabled={updateProject.isPending} size="sm">
+                    Update
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsPrintModalOpen(true)}>
+                  <Printer className="w-4 h-4 mr-2" /> Print Report
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <PrintModal 
+        title="Project Report"
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+      >
+        {selectedProject && <ProjectReportTemplate project={selectedProject} />}
+      </PrintModal>
+
     </AdminLayout>
   );
 }

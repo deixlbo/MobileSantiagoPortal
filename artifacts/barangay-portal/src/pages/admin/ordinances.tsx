@@ -10,16 +10,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Scale, Plus, Search, Filter, FileText, CheckCircle2, AlertCircle, Edit, Trash, FileArchive, MoreHorizontal } from "lucide-react";
+import { Scale, Plus, Search, Filter, FileText, CheckCircle2, AlertCircle, Edit, Trash, FileArchive, MoreHorizontal, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PrintModal, OrdinancePreview as OrdPreviewComp } from "@/components/document-template";
+import { downloadAsText } from "@/lib/print";
 
 export default function Ordinances() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedOrdinance, setSelectedOrdinance] = useState<any>(null);
 
   const { data: stats } = useGetOrdinanceStats();
   const { data: ordinances = [], isLoading } = useListOrdinances({ search: search || undefined });
@@ -79,6 +83,17 @@ export default function Ordinances() {
     if (confirm("Are you sure you want to delete this ordinance?")) {
       deleteOrdinance.mutate({ id });
     }
+  };
+
+  const handlePreview = (ord: any) => {
+    setSelectedOrdinance(ord);
+    setIsPrintModalOpen(true);
+  };
+
+  const handleDownload = () => {
+    if (!selectedOrdinance) return;
+    const content = `BARANGAY ${selectedOrdinance.ordinanceType.toUpperCase()} NO. ${selectedOrdinance.ordinanceNumber}\n\nTITLE: ${selectedOrdinance.title}\n\n${selectedOrdinance.description}\n\nAUTHOR: ${selectedOrdinance.author}\nENACTED: ${selectedOrdinance.enactedDate}`;
+    downloadAsText(`Ordinance_${selectedOrdinance.ordinanceNumber}.txt`, content);
   };
 
   const statCards = [
@@ -153,15 +168,8 @@ export default function Ordinances() {
                     <Input id="enactedDate" name="enactedDate" type="date" />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label>Attachment</Label>
-                    <div className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors">
-                      <FileArchive className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                      <span className="text-sm font-medium">Click to upload PDF document</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="description">Description / Abstract</Label>
-                    <Textarea id="description" name="description" rows={4} required />
+                    <Label htmlFor="description">Description / Body (use double newlines for sections)</Label>
+                    <Textarea id="description" name="description" rows={8} required />
                   </div>
                 </div>
                 <div className="flex justify-end pt-4">
@@ -246,11 +254,8 @@ export default function Ordinances() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <FileText className="mr-2 h-4 w-4" /> View Document
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            <DropdownMenuItem onClick={() => handlePreview(ord)}>
+                              <Printer className="mr-2 h-4 w-4" /> Preview / Print
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {ord.status === 'draft' && (
@@ -278,6 +283,17 @@ export default function Ordinances() {
           </div>
         </Card>
       </div>
+
+      <PrintModal 
+        title="Ordinance Preview" 
+        open={isPrintModalOpen} 
+        onOpenChange={setIsPrintModalOpen}
+      >
+        <div className="mb-4 flex justify-end no-print">
+          <Button variant="outline" onClick={handleDownload}>Download TXT</Button>
+        </div>
+        {selectedOrdinance && <OrdPreviewComp ordinance={selectedOrdinance} />}
+      </PrintModal>
     </AdminLayout>
   );
 }

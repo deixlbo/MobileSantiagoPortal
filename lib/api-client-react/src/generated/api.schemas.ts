@@ -81,23 +81,31 @@ export interface BlotterReport {
   id: number;
   referenceNo: string;
   reporter: string;
+  respondent?: string;
   category: string;
   location: string;
   dateReported: string;
   status: string;
   description: string;
+  actionTaken?: string;
   resolutionNotes?: string;
+  dateResolved?: string;
+  preparedBy?: string;
   createdAt: string;
 }
 
 export interface BlotterReportInput {
   reporter: string;
+  respondent?: string;
   category: string;
   location: string;
   dateReported: string;
   status?: string;
   description: string;
+  actionTaken?: string;
   resolutionNotes?: string;
+  dateResolved?: string;
+  preparedBy?: string;
 }
 
 export interface BlotterStats {
@@ -202,6 +210,9 @@ export interface OrdinanceStats {
 export interface DocumentRequest {
   id: number;
   referenceNo: string;
+  controlNo?: string;
+  orNumber?: string;
+  residentId?: number;
   residentName: string;
   documentType: string;
   purpose: string;
@@ -209,10 +220,13 @@ export interface DocumentRequest {
   status: string;
   paymentMethod?: string;
   requestedDate: string;
+  businessName?: string;
+  businessAddress?: string;
   createdAt: string;
 }
 
 export interface DocumentRequestInput {
+  residentId?: number;
   residentName: string;
   documentType: string;
   purpose: string;
@@ -220,6 +234,8 @@ export interface DocumentRequestInput {
   status?: string;
   paymentMethod?: string;
   requestedDate?: string;
+  businessName?: string;
+  businessAddress?: string;
 }
 
 export interface DocumentCategory {
@@ -267,6 +283,14 @@ export interface AssetStats {
   images: number;
   videos: number;
 }
+
+export type LookupResidentByEmailParams = {
+  email: string;
+};
+
+export type LookupResidentByEmail404 = {
+  error: string;
+};
 
 export type ListResidentsParams = {
   search?: string;

@@ -9,17 +9,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Megaphone, Plus, Search, Filter, CalendarDays, Edit, Trash, FileText, Send } from "lucide-react";
+import { Megaphone, Plus, Search, Filter, CalendarDays, Edit, Trash, FileText, Send, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const announcementSchema = z.object({
+  title: z.string().min(1, "Required"),
+  type: z.string().min(1, "Required"),
+  status: z.string(),
+  content: z.string().min(1, "Required"),
+  eventDate: z.string().optional(),
+  eventTime: z.string().optional(),
+  location: z.string().optional(),
+});
 
 export default function Announcements() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const { data: stats } = useGetAnnouncementStats();
   const { data: announcements = [], isLoading } = useListAnnouncements({ search: search || undefined });
@@ -41,6 +55,7 @@ export default function Announcements() {
         queryClient.invalidateQueries({ queryKey: getListAnnouncementsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetAnnouncementStatsQueryKey() });
         toast.success("Announcement updated successfully");
+        setIsEditOpen(false);
       }
     }
   });
@@ -55,20 +70,23 @@ export default function Announcements() {
     }
   });
 
-  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    createAnnouncement.mutate({
-      data: {
-        title: formData.get("title") as string,
-        type: formData.get("type") as string,
-        content: formData.get("content") as string,
-        eventDate: formData.get("eventDate") as string || undefined,
-        eventTime: formData.get("eventTime") as string || undefined,
-        location: formData.get("location") as string || undefined,
-        status: formData.get("status") as string,
-      }
-    });
+  const form = useForm<z.infer<typeof announcementSchema>>({
+    resolver: zodResolver(announcementSchema),
+    defaultValues: { type: "Announcement", status: "draft" }
+  });
+
+  const editForm = useForm<z.infer<typeof announcementSchema>>({
+    resolver: zodResolver(announcementSchema)
+  });
+
+  const handleCreateSubmit = (data: z.infer<typeof announcementSchema>) => {
+    createAnnouncement.mutate({ data });
+  };
+
+  const handleEditSubmit = (data: z.infer<typeof announcementSchema>) => {
+    if (selectedItem) {
+      updateAnnouncement.mutate({ id: selectedItem.id, data });
+    }
   };
 
   const handleStatusUpdate = (id: number, status: string, title: string, type: string, content: string) => {
@@ -79,6 +97,20 @@ export default function Announcements() {
     if (confirm("Are you sure you want to delete this announcement?")) {
       deleteAnnouncement.mutate({ id });
     }
+  };
+
+  const openEdit = (item: any) => {
+    setSelectedItem(item);
+    editForm.reset({
+      title: item.title,
+      type: item.type,
+      status: item.status,
+      content: item.content,
+      eventDate: item.eventDate ? new Date(item.eventDate).toISOString().split('T')[0] : "",
+      eventTime: item.eventTime || "",
+      location: item.location || "",
+    });
+    setIsEditOpen(true);
   };
 
   const statCards = [
@@ -104,15 +136,15 @@ export default function Announcements() {
               <DialogHeader>
                 <DialogTitle>Create New Announcement</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" name="title" required />
+                    <Label>Title</Label>
+                    <Input {...form.register("title")} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
-                    <Select name="type" defaultValue="Announcement">
+                    <Label>Type</Label>
+                    <Select onValueChange={(val) => form.setValue("type", val)} defaultValue={form.getValues("type")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Announcement">General Announcement</SelectItem>
@@ -123,8 +155,8 @@ export default function Announcements() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue="draft">
+                    <Label>Status</Label>
+                    <Select onValueChange={(val) => form.setValue("status", val)} defaultValue={form.getValues("status")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="draft">Draft</SelectItem>
@@ -132,24 +164,21 @@ export default function Announcements() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  {/* Event Specific Fields */}
                   <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="eventDate">Event Date (Optional)</Label>
-                    <Input id="eventDate" name="eventDate" type="date" />
+                    <Label>Event Date (Optional)</Label>
+                    <Input type="date" {...form.register("eventDate")} />
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="eventTime">Event Time (Optional)</Label>
-                    <Input id="eventTime" name="eventTime" type="time" />
+                    <Label>Event Time (Optional)</Label>
+                    <Input type="time" {...form.register("eventTime")} />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="location">Location (Optional)</Label>
-                    <Input id="location" name="location" placeholder="e.g. Barangay Hall Plaza" />
+                    <Label>Location (Optional)</Label>
+                    <Input {...form.register("location")} placeholder="e.g. Barangay Hall Plaza" />
                   </div>
-
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="content">Content</Label>
-                    <Textarea id="content" name="content" rows={5} required />
+                    <Label>Content</Label>
+                    <Textarea {...form.register("content")} rows={5} required />
                   </div>
                 </div>
                 <div className="flex justify-end pt-4">
@@ -161,6 +190,65 @@ export default function Announcements() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Announcement</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <Label>Title</Label>
+                  <Input {...editForm.register("title")} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select onValueChange={(val) => editForm.setValue("type", val)} defaultValue={editForm.getValues("type")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Announcement">General Announcement</SelectItem>
+                      <SelectItem value="Event">Event</SelectItem>
+                      <SelectItem value="Health">Health Advisory</SelectItem>
+                      <SelectItem value="Meeting">Meeting</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select onValueChange={(val) => editForm.setValue("status", val)} defaultValue={editForm.getValues("status")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label>Event Date (Optional)</Label>
+                  <Input type="date" {...editForm.register("eventDate")} />
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label>Event Time (Optional)</Label>
+                  <Input type="time" {...editForm.register("eventTime")} />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Location (Optional)</Label>
+                  <Input {...editForm.register("location")} placeholder="e.g. Barangay Hall Plaza" />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Content</Label>
+                  <Textarea {...editForm.register("content")} rows={5} required />
+                </div>
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={updateAnnouncement.isPending}>
+                  {updateAnnouncement.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, i) => (
@@ -176,19 +264,6 @@ export default function Announcements() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search announcements..."
-              className="pl-8"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" className="w-full sm:w-auto"><Filter className="w-4 h-4 mr-2" /> Filter</Button>
         </div>
 
         <div className="space-y-4">
@@ -248,7 +323,7 @@ export default function Announcements() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(announcement)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         {announcement.status === 'draft' ? (

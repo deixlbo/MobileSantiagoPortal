@@ -1,24 +1,37 @@
 import { AdminLayout } from "@/components/admin-layout";
-import { useListAssets, useGetAssetStats, useCreateAsset, useDeleteAsset, getListAssetsQueryKey, getGetAssetStatsQueryKey } from "@workspace/api-client-react";
+import { useListAssets, useGetAssetStats, useCreateAsset, useUpdateAsset, useDeleteAsset, getListAssetsQueryKey, getGetAssetStatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Plus, FileImage, FileText, Film, FolderOpen, Download, Trash, MoreHorizontal, File } from "lucide-react";
+import { Search, Filter, Plus, FileImage, FileText, Film, FolderOpen, Download, Trash, MoreHorizontal, File, Edit, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const assetSchema = z.object({
+  fileName: z.string().min(1),
+  type: z.string().min(1),
+  category: z.string().min(1),
+  description: z.string().optional(),
+});
 
 export default function Assets() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const { data: stats } = useGetAssetStats();
   const { data: assets = [], isLoading } = useListAssets({ search: search || undefined });
@@ -30,6 +43,18 @@ export default function Assets() {
         queryClient.invalidateQueries({ queryKey: getGetAssetStatsQueryKey() });
         toast.success("Asset uploaded successfully");
         setIsCreateOpen(false);
+        form.reset();
+      }
+    }
+  });
+
+  const updateAsset = useUpdateAsset({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListAssetsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetAssetStatsQueryKey() });
+        toast.success("Asset updated successfully");
+        setIsEditOpen(false);
       }
     }
   });
@@ -44,25 +69,57 @@ export default function Assets() {
     }
   });
 
-  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+  const form = useForm<z.infer<typeof assetSchema>>({
+    resolver: zodResolver(assetSchema),
+    defaultValues: { type: "document", category: "General" }
+  });
+
+  const editForm = useForm<z.infer<typeof assetSchema>>({
+    resolver: zodResolver(assetSchema)
+  });
+
+  const handleCreateSubmit = (data: z.infer<typeof assetSchema>) => {
     createAsset.mutate({
       data: {
-        fileName: formData.get("fileName") as string,
-        type: formData.get("type") as string,
-        category: formData.get("category") as string,
-        description: formData.get("description") as string || undefined,
+        ...data,
         sizeKb: Math.floor(Math.random() * 5000) + 100, // mock size
         uploadedBy: "Admin User",
       }
     });
   };
 
+  const handleEditSubmit = (data: z.infer<typeof assetSchema>) => {
+    if (selectedAsset) {
+      updateAsset.mutate({
+        id: selectedAsset.id,
+        data: {
+          ...selectedAsset,
+          ...data
+        }
+      });
+    }
+  };
+
+  const openEdit = (asset: any) => {
+    setSelectedAsset(asset);
+    editForm.reset({
+      fileName: asset.fileName,
+      type: asset.type,
+      category: asset.category,
+      description: asset.description || "",
+    });
+    setIsEditOpen(true);
+  };
+
   const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this asset?")) {
       deleteAsset.mutate({ id });
     }
+  };
+
+  const openPreview = (asset: any) => {
+    setSelectedAsset(asset);
+    setIsPreviewOpen(true);
   };
 
   const statCards = [
@@ -102,7 +159,7 @@ export default function Assets() {
               <DialogHeader>
                 <DialogTitle>Upload New Asset</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label>File Upload</Label>
                   <div className="border-2 border-dashed rounded-md p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors">
@@ -112,13 +169,13 @@ export default function Assets() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fileName">Display Name</Label>
-                  <Input id="fileName" name="fileName" required />
+                  <Label>Display Name</Label>
+                  <Input {...form.register("fileName")} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="type">File Type</Label>
-                    <Select name="type" defaultValue="document">
+                    <Label>File Type</Label>
+                    <Select onValueChange={(val) => form.setValue("type", val)} defaultValue={form.getValues("type")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="document">Document (PDF/Doc)</SelectItem>
@@ -128,8 +185,8 @@ export default function Assets() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select name="category" defaultValue="General">
+                    <Label>Category</Label>
+                    <Select onValueChange={(val) => form.setValue("category", val)} defaultValue={form.getValues("category")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="General">General</SelectItem>
@@ -141,8 +198,8 @@ export default function Assets() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <Input id="description" name="description" />
+                  <Label>Description (Optional)</Label>
+                  <Input {...form.register("description")} />
                 </div>
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={createAsset.isPending}>
@@ -153,6 +210,87 @@ export default function Assets() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Asset Details</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input {...editForm.register("fileName")} required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>File Type</Label>
+                  <Select onValueChange={(val) => editForm.setValue("type", val)} defaultValue={editForm.getValues("type")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="document">Document (PDF/Doc)</SelectItem>
+                      <SelectItem value="image">Image (PNG/JPG)</SelectItem>
+                      <SelectItem value="video">Video (MP4)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select onValueChange={(val) => editForm.setValue("category", val)} defaultValue={editForm.getValues("category")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="General">General</SelectItem>
+                      <SelectItem value="Project">Project File</SelectItem>
+                      <SelectItem value="Ordinance">Ordinance Doc</SelectItem>
+                      <SelectItem value="Profile">Profile Picture</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Description (Optional)</Label>
+                <Input {...editForm.register("description")} />
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={updateAsset.isPending}>
+                  {updateAsset.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Preview: {selectedAsset?.fileName}</DialogTitle>
+              <DialogDescription>{selectedAsset?.category} • {selectedAsset && formatSize(selectedAsset.sizeKb)}</DialogDescription>
+            </DialogHeader>
+            <div className="my-6 aspect-video bg-muted/30 rounded-lg border-2 border-dashed border-border/50 flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
+              {selectedAsset?.type === 'image' ? (
+                <>
+                  <FileImage className="w-12 h-12 mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Image Preview Unavailable</p>
+                </>
+              ) : selectedAsset?.type === 'video' ? (
+                <>
+                  <Film className="w-12 h-12 mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Video Player Unavailable</p>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-12 h-12 mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Document Preview Unavailable</p>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close</Button>
+              <Button onClick={() => { setIsPreviewOpen(false); toast.success("Download started"); }}>
+                <Download className="w-4 h-4 mr-2" /> Download
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, i) => (
@@ -181,7 +319,6 @@ export default function Assets() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="w-full sm:w-auto"><Filter className="w-4 h-4 mr-2" /> Filter Types</Button>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -230,8 +367,11 @@ export default function Assets() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Download className="mr-2 h-4 w-4" /> Download
+                            <DropdownMenuItem onClick={() => openPreview(asset)}>
+                              <Eye className="mr-2 h-4 w-4" /> Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(asset)}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleDelete(asset.id)} className="text-destructive">

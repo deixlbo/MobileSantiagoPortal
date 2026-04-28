@@ -1,0 +1,243 @@
+Enhance and complete my Barangay Santiago Admin Portal system with full functionality, UI improvements, and missing features.
+
+SYSTEM NAME:
+Barangay Santiago Digital Service Portal
+
+CURRENT MODULES:
+- Digital Assets
+- Document Requests
+- Ordinances
+- Announcements
+- Projects
+- Blotter Reports
+- Residents Directory
+
+REQUIRED FIXES & FEATURES:
+
+====================================
+1. DOCUMENT REQUEST SYSTEM (CRITICAL FIX)
+====================================
+
+Add:
+- Document Preview (modal or page view)
+- Print Document (generate PDF or Word format)
+- Download Document
+- Auto-generate document with official template
+
+Add Status Flow:
+- Pending
+- Processing
+- Ready for Pickup
+- Claimed
+
+Add Action Buttons:
+- View
+- Preview
+- Print
+- Mark as Processing
+- Mark as Ready
+- Mark as Claimed
+
+Each document should:
+- Auto-fill resident data
+- Have control number
+- Have QR or reference number
+- Include Barangay Header design
+
+====================================
+2. DOCUMENT TEMPLATES (VERY IMPORTANT)
+====================================
+
+Create templates for:
+
+A. Barangay Clearance
+- Name
+- Address
+- Purpose
+- Certification text
+- Signature (Punong Barangay)
+- Date Issued
+- Control No.
+
+B. Certificate of Residency
+- Full Name
+- Address
+- Duration of stay
+- Certification statement
+
+C. Certificate of Indigency
+- Statement of financial status
+- Purpose
+
+D. Business Permit Clearance
+- Business Name
+- Owner
+- Location
+- Approval statement
+
+E. BLOTTER REPORT DOCUMENT
+- Case Reference Number
+- Reporter Name
+- Respondent Name
+- Incident Details
+- Location
+- Date
+- Action Taken
+- Status
+
+====================================
+3. BLOTTER REPORT SYSTEM FIX
+====================================
+
+Add missing features:
+- Update Status:
+  - Pending
+  - Investigating
+  - For Mediation
+  - Resolved
+  - Archived
+
+- Add Resolution Section:
+  - Settlement details
+  - Remarks
+  - Date resolved
+
+- Add:
+  - Print Report
+  - Export PDF
+  - Full case details page
+
+====================================
+4. ORDINANCE MODULE FIX
+====================================
+
+Add:
+- Preview Ordinance (full page modal)
+- View Full Details
+- Print Ordinance
+- Download PDF
+
+Fields:
+- Title
+- Description
+- Type
+- Author
+- Date Enacted
+- Status
+
+====================================
+5. ANNOUNCEMENTS MODULE FIX
+====================================
+
+Add:
+- Full Announcement Preview
+- Edit / Update / Delete (CRUD)
+- Event Poster Upload
+- Publish toggle
+- Event countdown
+
+====================================
+6. PROJECTS MODULE FIX
+====================================
+
+Add:
+- Update Project Progress (slider or input)
+- Add Timeline Updates
+- Add Photos / Assets
+- Mark status:
+  - Planning
+  - Ongoing
+  - Completed
+
+- Add:
+  - Project Details Page
+  - Budget tracking
+  - Accomplishment report
+  - Print Project Report
+
+====================================
+7. DIGITAL ASSETS MODULE (UPGRADE)
+====================================
+
+Add FULL CRUD:
+- Upload
+- View
+- Edit
+- Delete
+
+Add:
+- File preview (image, PDF, doc)
+- Download
+- Tagging system (Project, Event, Document)
+
+====================================
+8. RESIDENT DIRECTORY (UPGRADE)
+====================================
+
+Add:
+- View Profile Page
+- Edit Resident Info
+- Verify / Reject Resident
+- Status:
+  - Active
+  - Pending
+  - Rejected
+
+====================================
+9. UI / UX IMPROVEMENTS
+====================================
+
+Add:
+- Modal previews
+- Smooth transitions
+- Loading states
+- Status color coding:
+  - Green = Completed
+  - Yellow = Pending
+  - Blue = Processing
+  - Red = Issues
+
+Add animations:
+- Fade-in cards
+- Hover effects
+- Slide sidebar
+
+====================================
+10. PRINTING SYSTEM (GLOBAL FIX)
+====================================
+
+Implement:
+- Print button for:
+  - Documents
+  - Blotter Reports
+  - Ordinances
+  - Project Reports
+
+Use:
+- Clean printable layout
+- A4 format
+- With Barangay Header:
+  REPUBLIC OF THE PHILIPPINES
+  PROVINCE
+  MUNICIPALITY
+  BARANGAY SANTIAGO
+
+====================================
+11. ADD FULL CRUD TO ALL MODULES
+====================================
+
+Each module must have:
+- Create
+- Read
+- Update
+- Delete
+
+====================================
+
+GOAL:
+Make the system fully functional, printable, professional, and ready for real barangay use.
+
+Design:
+Modern green-themed UI (government style)
+Clean dashboard layout
+Card-based system

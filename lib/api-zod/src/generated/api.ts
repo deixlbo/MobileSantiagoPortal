@@ -51,6 +51,28 @@ export const GetRecentActivityResponse = zod.array(
 );
 
 /**
+ * @summary Find a resident by email (used for resident sign-in)
+ */
+export const LookupResidentByEmailQueryParams = zod.object({
+  email: zod.coerce.string(),
+});
+
+export const LookupResidentByEmailResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string(),
+  purok: zod.string(),
+  gender: zod.string(),
+  civilStatus: zod.string(),
+  birthDate: zod.string(),
+  address: zod.string(),
+  documentType: zod.string().optional(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary List residents
  */
 export const ListResidentsQueryParams = zod.object({
@@ -169,12 +191,16 @@ export const ListBlotterReportsResponseItem = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
   reporter: zod.string(),
+  respondent: zod.string().optional(),
   category: zod.string(),
   location: zod.string(),
   dateReported: zod.string(),
   status: zod.string(),
   description: zod.string(),
+  actionTaken: zod.string().optional(),
   resolutionNotes: zod.string().optional(),
+  dateResolved: zod.string().optional(),
+  preparedBy: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 export const ListBlotterReportsResponse = zod.array(
@@ -183,12 +209,16 @@ export const ListBlotterReportsResponse = zod.array(
 
 export const CreateBlotterReportBody = zod.object({
   reporter: zod.string(),
+  respondent: zod.string().optional(),
   category: zod.string(),
   location: zod.string(),
   dateReported: zod.string(),
   status: zod.string().optional(),
   description: zod.string(),
+  actionTaken: zod.string().optional(),
   resolutionNotes: zod.string().optional(),
+  dateResolved: zod.string().optional(),
+  preparedBy: zod.string().optional(),
 });
 
 export const GetBlotterStatsResponse = zod.object({
@@ -206,12 +236,16 @@ export const GetBlotterReportResponse = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
   reporter: zod.string(),
+  respondent: zod.string().optional(),
   category: zod.string(),
   location: zod.string(),
   dateReported: zod.string(),
   status: zod.string(),
   description: zod.string(),
+  actionTaken: zod.string().optional(),
   resolutionNotes: zod.string().optional(),
+  dateResolved: zod.string().optional(),
+  preparedBy: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 
@@ -221,24 +255,32 @@ export const UpdateBlotterReportParams = zod.object({
 
 export const UpdateBlotterReportBody = zod.object({
   reporter: zod.string(),
+  respondent: zod.string().optional(),
   category: zod.string(),
   location: zod.string(),
   dateReported: zod.string(),
   status: zod.string().optional(),
   description: zod.string(),
+  actionTaken: zod.string().optional(),
   resolutionNotes: zod.string().optional(),
+  dateResolved: zod.string().optional(),
+  preparedBy: zod.string().optional(),
 });
 
 export const UpdateBlotterReportResponse = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
   reporter: zod.string(),
+  respondent: zod.string().optional(),
   category: zod.string(),
   location: zod.string(),
   dateReported: zod.string(),
   status: zod.string(),
   description: zod.string(),
+  actionTaken: zod.string().optional(),
   resolutionNotes: zod.string().optional(),
+  dateResolved: zod.string().optional(),
+  preparedBy: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 
@@ -512,6 +554,9 @@ export const ListDocumentRequestsQueryParams = zod.object({
 export const ListDocumentRequestsResponseItem = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
+  controlNo: zod.string().optional(),
+  orNumber: zod.string().optional(),
+  residentId: zod.number().optional(),
   residentName: zod.string(),
   documentType: zod.string(),
   purpose: zod.string(),
@@ -519,6 +564,8 @@ export const ListDocumentRequestsResponseItem = zod.object({
   status: zod.string(),
   paymentMethod: zod.string().optional(),
   requestedDate: zod.string(),
+  businessName: zod.string().optional(),
+  businessAddress: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 export const ListDocumentRequestsResponse = zod.array(
@@ -526,6 +573,7 @@ export const ListDocumentRequestsResponse = zod.array(
 );
 
 export const CreateDocumentRequestBody = zod.object({
+  residentId: zod.number().optional(),
   residentName: zod.string(),
   documentType: zod.string(),
   purpose: zod.string(),
@@ -533,6 +581,8 @@ export const CreateDocumentRequestBody = zod.object({
   status: zod.string().optional(),
   paymentMethod: zod.string().optional(),
   requestedDate: zod.string().optional(),
+  businessName: zod.string().optional(),
+  businessAddress: zod.string().optional(),
 });
 
 /**
@@ -565,6 +615,9 @@ export const GetDocumentRequestParams = zod.object({
 export const GetDocumentRequestResponse = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
+  controlNo: zod.string().optional(),
+  orNumber: zod.string().optional(),
+  residentId: zod.number().optional(),
   residentName: zod.string(),
   documentType: zod.string(),
   purpose: zod.string(),
@@ -572,6 +625,8 @@ export const GetDocumentRequestResponse = zod.object({
   status: zod.string(),
   paymentMethod: zod.string().optional(),
   requestedDate: zod.string(),
+  businessName: zod.string().optional(),
+  businessAddress: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 
@@ -580,6 +635,7 @@ export const UpdateDocumentRequestParams = zod.object({
 });
 
 export const UpdateDocumentRequestBody = zod.object({
+  residentId: zod.number().optional(),
   residentName: zod.string(),
   documentType: zod.string(),
   purpose: zod.string(),
@@ -587,11 +643,16 @@ export const UpdateDocumentRequestBody = zod.object({
   status: zod.string().optional(),
   paymentMethod: zod.string().optional(),
   requestedDate: zod.string().optional(),
+  businessName: zod.string().optional(),
+  businessAddress: zod.string().optional(),
 });
 
 export const UpdateDocumentRequestResponse = zod.object({
   id: zod.number(),
   referenceNo: zod.string(),
+  controlNo: zod.string().optional(),
+  orNumber: zod.string().optional(),
+  residentId: zod.number().optional(),
   residentName: zod.string(),
   documentType: zod.string(),
   purpose: zod.string(),
@@ -599,6 +660,8 @@ export const UpdateDocumentRequestResponse = zod.object({
   status: zod.string(),
   paymentMethod: zod.string().optional(),
   requestedDate: zod.string(),
+  businessName: zod.string().optional(),
+  businessAddress: zod.string().optional(),
   createdAt: zod.coerce.date(),
 });
 

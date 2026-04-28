@@ -1,25 +1,43 @@
 import { AdminLayout } from "@/components/admin-layout";
-import { useListResidents, useGetResidentStats, useUpdateResident, useCreateResident, getListResidentsQueryKey, getGetResidentStatsQueryKey } from "@workspace/api-client-react";
+import { useListResidents, useGetResidentStats, useUpdateResident, useCreateResident, useDeleteResident, getListResidentsQueryKey, getGetResidentStatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, UserCheck, Clock, CalendarDays, Search, Filter, Plus, MoreHorizontal } from "lucide-react";
+import { Users, UserCheck, Clock, CalendarDays, Search, Filter, Plus, MoreHorizontal, Edit, Trash, CheckCircle2, XCircle, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const residentSchema = z.object({
+  fullName: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().min(1),
+  purok: z.string().min(1),
+  gender: z.string().min(1),
+  civilStatus: z.string().min(1),
+  birthDate: z.string().min(1),
+  address: z.string().min(1),
+  status: z.string(),
+});
 
 export default function Residents() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedResident, setSelectedResident] = useState<any>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   const { data: stats } = useGetResidentStats();
   const { data: residents = [], isLoading } = useListResidents({ 
@@ -33,6 +51,7 @@ export default function Residents() {
         queryClient.invalidateQueries({ queryKey: getListResidentsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetResidentStatsQueryKey() });
         toast.success("Resident updated successfully");
+        setIsEditOpen(false);
       }
     }
   });
@@ -44,30 +63,74 @@ export default function Residents() {
         queryClient.invalidateQueries({ queryKey: getGetResidentStatsQueryKey() });
         toast.success("Resident created successfully");
         setIsCreateOpen(false);
+        form.reset();
       }
     }
   });
 
-  const handleStatusUpdate = (id: number, status: string) => {
-    updateResident.mutate({ id, data: { status } });
+  const deleteResident = useDeleteResident({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListResidentsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetResidentStatsQueryKey() });
+        toast.success("Resident deleted successfully");
+      }
+    }
+  });
+
+  const form = useForm<z.infer<typeof residentSchema>>({
+    resolver: zodResolver(residentSchema),
+    defaultValues: {
+      purok: "Purok 1",
+      gender: "Male",
+      civilStatus: "Single",
+      status: "active"
+    }
+  });
+
+  const editForm = useForm<z.infer<typeof residentSchema>>({
+    resolver: zodResolver(residentSchema)
+  });
+
+  const handleCreateSubmit = (data: z.infer<typeof residentSchema>) => {
+    createResident.mutate({ data });
   };
 
-  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    createResident.mutate({
-      data: {
-        fullName: formData.get("fullName") as string,
-        email: formData.get("email") as string,
-        phone: formData.get("phone") as string,
-        purok: formData.get("purok") as string,
-        gender: formData.get("gender") as string,
-        civilStatus: formData.get("civilStatus") as string,
-        birthDate: formData.get("birthDate") as string,
-        address: formData.get("address") as string,
-        status: formData.get("status") as string,
-      }
+  const handleEditSubmit = (data: z.infer<typeof residentSchema>) => {
+    if (selectedResident) {
+      updateResident.mutate({ id: selectedResident.id, data });
+    }
+  };
+
+  const handleStatusUpdate = (id: number, status: string, currentData: any) => {
+    updateResident.mutate({ id, data: { ...currentData, status } });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this resident record?")) {
+      deleteResident.mutate({ id });
+    }
+  };
+
+  const openEdit = (res: any) => {
+    setSelectedResident(res);
+    editForm.reset({
+      fullName: res.fullName,
+      email: res.email,
+      phone: res.phone,
+      purok: res.purok,
+      gender: res.gender,
+      civilStatus: res.civilStatus,
+      birthDate: res.birthDate ? new Date(res.birthDate).toISOString().split('T')[0] : "",
+      address: res.address,
+      status: res.status,
     });
+    setIsEditOpen(true);
+  };
+
+  const openView = (res: any) => {
+    setSelectedResident(res);
+    setIsViewOpen(true);
   };
 
   const statCards = [
@@ -93,23 +156,23 @@ export default function Residents() {
               <DialogHeader>
                 <DialogTitle>Add New Resident</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input id="fullName" name="fullName" required />
+                    <Label>Full Name</Label>
+                    <Input {...form.register("fullName")} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" required />
+                    <Label>Email</Label>
+                    <Input type="email" {...form.register("email")} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" name="phone" required />
+                    <Label>Phone</Label>
+                    <Input {...form.register("phone")} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="purok">Purok</Label>
-                    <Select name="purok" defaultValue="Purok 1">
+                    <Label>Purok</Label>
+                    <Select onValueChange={(val) => form.setValue("purok", val)} defaultValue={form.getValues("purok")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 7 }).map((_, i) => (
@@ -119,8 +182,8 @@ export default function Residents() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select name="gender" defaultValue="Male">
+                    <Label>Gender</Label>
+                    <Select onValueChange={(val) => form.setValue("gender", val)} defaultValue={form.getValues("gender")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Male">Male</SelectItem>
@@ -129,8 +192,8 @@ export default function Residents() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="civilStatus">Civil Status</Label>
-                    <Select name="civilStatus" defaultValue="Single">
+                    <Label>Civil Status</Label>
+                    <Select onValueChange={(val) => form.setValue("civilStatus", val)} defaultValue={form.getValues("civilStatus")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Single">Single</SelectItem>
@@ -140,12 +203,12 @@ export default function Residents() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="birthDate">Birth Date</Label>
-                    <Input id="birthDate" name="birthDate" type="date" required />
+                    <Label>Birth Date</Label>
+                    <Input type="date" {...form.register("birthDate")} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue="active">
+                    <Label>Status</Label>
+                    <Select onValueChange={(val) => form.setValue("status", val)} defaultValue={form.getValues("status")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
@@ -155,8 +218,8 @@ export default function Residents() {
                     </Select>
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input id="address" name="address" required />
+                    <Label>Address</Label>
+                    <Input {...form.register("address")} required />
                   </div>
                 </div>
                 <div className="flex justify-end pt-4">
@@ -168,6 +231,121 @@ export default function Residents() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Resident</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input {...editForm.register("fullName")} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" {...editForm.register("email")} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input {...editForm.register("phone")} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Purok</Label>
+                  <Select onValueChange={(val) => editForm.setValue("purok", val)} defaultValue={editForm.getValues("purok")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 7 }).map((_, i) => (
+                        <SelectItem key={i} value={`Purok ${i+1}`}>Purok {i+1}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <Select onValueChange={(val) => editForm.setValue("gender", val)} defaultValue={editForm.getValues("gender")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Civil Status</Label>
+                  <Select onValueChange={(val) => editForm.setValue("civilStatus", val)} defaultValue={editForm.getValues("civilStatus")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Single">Single</SelectItem>
+                      <SelectItem value="Married">Married</SelectItem>
+                      <SelectItem value="Widowed">Widowed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Birth Date</Label>
+                  <Input type="date" {...editForm.register("birthDate")} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select onValueChange={(val) => editForm.setValue("status", val)} defaultValue={editForm.getValues("status")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Address</Label>
+                  <Input {...editForm.register("address")} required />
+                </div>
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={updateResident.isPending}>
+                  {updateResident.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Resident Profile</DialogTitle>
+            </DialogHeader>
+            {selectedResident && (
+              <div className="space-y-4 text-sm mt-4">
+                <div className="flex items-center gap-4 border-b pb-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+                    {selectedResident.fullName.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">{selectedResident.fullName}</h3>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant={selectedResident.status === 'active' ? 'default' : selectedResident.status === 'pending' ? 'secondary' : 'destructive'}
+                        className={selectedResident.status === 'active' ? 'bg-emerald-500 text-white' : selectedResident.status === 'pending' ? 'bg-amber-500 text-white' : ''}>
+                        {selectedResident.status.toUpperCase()}
+                      </Badge>
+                      <Badge variant="outline">{selectedResident.purok}</Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                  <div><span className="text-muted-foreground block mb-1">Email</span>{selectedResident.email}</div>
+                  <div><span className="text-muted-foreground block mb-1">Phone</span>{selectedResident.phone}</div>
+                  <div><span className="text-muted-foreground block mb-1">Gender</span>{selectedResident.gender}</div>
+                  <div><span className="text-muted-foreground block mb-1">Civil Status</span>{selectedResident.civilStatus}</div>
+                  <div><span className="text-muted-foreground block mb-1">Birth Date</span>{selectedResident.birthDate ? format(new Date(selectedResident.birthDate), "MMMM d, yyyy") : '-'}</div>
+                  <div className="col-span-2"><span className="text-muted-foreground block mb-1">Full Address</span>{selectedResident.address}</div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, i) => (
@@ -259,17 +437,27 @@ export default function Residents() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openView(resident)}>
+                              <Eye className="mr-2 w-4 h-4" /> View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(resident)}>
+                              <Edit className="mr-2 w-4 h-4" /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {resident.status === 'pending' && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleStatusUpdate(resident.id, 'active')} className="text-emerald-600">Activate</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusUpdate(resident.id, 'inactive')} className="text-destructive">Reject</DropdownMenuItem>
-                              </>
+                            {resident.status !== 'active' && (
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(resident.id, 'active', resident)} className="text-emerald-600">
+                                <CheckCircle2 className="mr-2 w-4 h-4" /> Verify
+                              </DropdownMenuItem>
                             )}
-                            {resident.status === 'active' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(resident.id, 'inactive')} className="text-destructive">Deactivate</DropdownMenuItem>
+                            {resident.status !== 'inactive' && (
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(resident.id, 'inactive', resident)} className="text-destructive">
+                                <XCircle className="mr-2 w-4 h-4" /> Reject
+                              </DropdownMenuItem>
                             )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(resident.id)} className="text-destructive">
+                              <Trash className="mr-2 w-4 h-4" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

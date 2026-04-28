@@ -29,6 +29,15 @@ router.get("/residents", async (req, res) => {
   );
 });
 
+router.get("/residents/lookup", async (req, res) => {
+  const email = String(req.query["email"] ?? "").trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: "email required" });
+  const rows = await db.select().from(residentsTable);
+  const found = rows.find((r) => r.email.toLowerCase() === email);
+  if (!found) return res.status(404).json({ error: "Resident not found" });
+  res.json({ ...found, createdAt: found.createdAt.toISOString() });
+});
+
 router.get("/residents/stats", async (_req, res) => {
   const [totals] = await db
     .select({

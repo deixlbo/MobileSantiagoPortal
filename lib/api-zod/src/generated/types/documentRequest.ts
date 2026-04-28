@@ -9,6 +9,9 @@
 export interface DocumentRequest {
   id: number;
   referenceNo: string;
+  controlNo?: string;
+  orNumber?: string;
+  residentId?: number;
   residentName: string;
   documentType: string;
   purpose: string;
@@ -16,5 +19,7 @@ export interface DocumentRequest {
   status: string;
   paymentMethod?: string;
   requestedDate: string;
+  businessName?: string;
+  businessAddress?: string;
   createdAt: Date;
 }

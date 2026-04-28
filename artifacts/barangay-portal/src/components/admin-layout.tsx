@@ -76,17 +76,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       <div className="p-4 border-t border-sidebar-border">
         <div className="space-y-1">
-          <Link href="/admin/settings">
+          <Link href="/admin/profile">
             <div className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-sm font-medium cursor-pointer",
-              location.startsWith("/admin/settings")
+              location.startsWith("/admin/profile")
                 ? "bg-sidebar-accent text-sidebar-accent-foreground" 
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
             )}
             onClick={() => setMobileOpen(false)}
             >
               <Settings className="h-5 w-5 text-sidebar-foreground/50" />
-              Settings
+              Profile
             </div>
           </Link>
           <div 
@@ -162,9 +162,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/settings" className="cursor-pointer flex w-full items-center">
+                  <Link href="/admin/profile" className="cursor-pointer flex w-full items-center">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

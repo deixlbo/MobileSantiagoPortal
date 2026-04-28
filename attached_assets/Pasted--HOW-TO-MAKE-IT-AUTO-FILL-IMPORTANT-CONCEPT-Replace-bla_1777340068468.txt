@@ -1,0 +1,212 @@
+🔧 ✅ HOW TO MAKE IT AUTO-FILL (IMPORTANT CONCEPT)
+
+Replace blanks like:
+
+____________________
+
+with dynamic variables like:
+
+{{full_name}}
+{{age}}
+{{address}}
+{{purpose}}
+{{date_issued}}
+{{control_no}}
+📄 ✅ FINAL CLEAN AUTO-FILL TEMPLATES
+🟢 1. BARANGAY CLEARANCE (AUTO-FILL)
+REPUBLIC OF THE PHILIPPINES
+PROVINCE OF ZAMBALES
+MUNICIPALITY OF SAN ANTONIO
+BARANGAY SANTIAGO
+
+OFFICE OF THE PUNONG BARANGAY
+
+
+BARANGAY CLEARANCE
+
+
+TO WHOM IT MAY CONCERN:
+
+This is to certify that {{full_name}}, {{age}} years old, a resident of {{address}}, Barangay Santiago, San Antonio, Zambales, is known to be of good moral character and a law-abiding citizen in this community.
+
+He/She has no derogatory and/or criminal records filed in this barangay.
+
+ISSUED this {{date_issued}} for {{purpose}}.
+
+
+Control No: {{control_no}}
+
+______________________________
+Hon. Roberto S. Dela Cruz
+Punong Barangay
+
+O.R. No.: {{or_number}}
+Date Issued: {{date_issued}}
+Doc. Stamp: Paid
+🟡 2. CERTIFICATE OF RESIDENCY
+REPUBLIC OF THE PHILIPPINES
+PROVINCE OF ZAMBALES
+MUNICIPALITY OF SAN ANTONIO
+BARANGAY SANTIAGO
+
+OFFICE OF THE PUNONG BARANGAY
+
+
+CERTIFICATE OF RESIDENCY
+
+
+TO WHOM IT MAY CONCERN:
+
+This is to certify that {{full_name}} is a bonafide resident of {{address}}, Barangay Santiago, San Antonio, Zambales.
+
+He/She has been residing in this barangay for {{years_of_stay}}.
+
+Issued upon request for {{purpose}}.
+
+
+Control No: {{control_no}}
+
+______________________________
+Hon. Roberto S. Dela Cruz
+Punong Barangay
+
+O.R. No.: {{or_number}}
+Date Issued: {{date_issued}}
+Doc. Stamp: Paid
+🔴 3. CERTIFICATE OF INDIGENCY
+REPUBLIC OF THE PHILIPPINES
+PROVINCE OF ZAMBALES
+MUNICIPALITY OF SAN ANTONIO
+BARANGAY SANTIAGO
+
+OFFICE OF THE PUNONG BARANGAY
+
+
+CERTIFICATE OF INDIGENCY
+
+
+TO WHOM IT MAY CONCERN:
+
+This is to certify that {{full_name}} is an indigent resident of {{address}}, Barangay Santiago, San Antonio, Zambales.
+
+He/She belongs to a low-income family and is in need of financial assistance.
+
+Issued upon request for {{purpose}}.
+
+
+Control No: {{control_no}}
+
+______________________________
+Hon. Roberto S. Dela Cruz
+Punong Barangay
+
+O.R. No.: {{or_number}}
+Date Issued: {{date_issued}}
+Doc. Stamp: Paid
+🟣 4. BUSINESS CLEARANCE
+REPUBLIC OF THE PHILIPPINES
+PROVINCE OF ZAMBALES
+MUNICIPALITY OF SAN ANTONIO
+BARANGAY SANTIAGO
+
+OFFICE OF THE PUNONG BARANGAY
+
+
+BARANGAY BUSINESS CLEARANCE
+
+
+TO WHOM IT MAY CONCERN:
+
+This is to certify that {{owner_name}}, owner of {{business_name}}, located at {{business_address}}, Barangay Santiago, San Antonio, Zambales, is granted clearance to operate.
+
+This is issued in connection with the application for a Mayor’s Permit.
+
+ISSUED this {{date_issued}}.
+
+
+Control No: {{control_no}}
+
+______________________________
+Hon. Roberto S. Dela Cruz
+Punong Barangay
+
+O.R. No.: {{or_number}}
+Date Issued: {{date_issued}}
+Doc. Stamp: Paid
+🚨 🧾 5. BLOTTER REPORT TEMPLATE (UPGRADED WITH RESOLUTION)
+REPUBLIC OF THE PHILIPPINES
+BARANGAY SANTIAGO
+OFFICE OF THE BARANGAY CAPTAIN
+
+
+BARANGAY INCIDENT REPORT
+
+
+Case No: {{case_no}}
+
+Reporter: {{reporter_name}}
+Respondent: {{respondent_name}}
+Category: {{category}}
+Location: {{location}}
+Date: {{incident_date}}
+
+----------------------------------------
+INCIDENT DETAILS:
+{{incident_details}}
+
+----------------------------------------
+ACTION TAKEN:
+{{action_taken}}
+
+----------------------------------------
+STATUS:
+{{status}}
+
+----------------------------------------
+RESOLUTION / REMARKS:
+{{resolution}}
+
+Date Resolved: {{date_resolved}}
+
+Prepared by:
+{{prepared_by}}
+
+Approved by:
+Hon. Roberto S. Dela Cruz
+Punong Barangay
+📜 6. ORDINANCE TEMPLATE (WITH PREVIEW/PRINT)
+REPUBLIC OF THE PHILIPPINES
+PROVINCE OF ZAMBALES
+MUNICIPALITY OF SAN ANTONIO
+BARANGAY SANTIAGO
+
+
+BARANGAY ORDINANCE NO. {{ordinance_no}}
+
+
+TITLE:
+{{title}}
+
+
+DESCRIPTION:
+{{description}}
+
+
+BE IT ORDAINED BY THE SANGGUNIANG BARANGAY:
+
+
+SECTION 1:
+{{section_1}}
+
+SECTION 2:
+{{section_2}}
+
+SECTION 3:
+{{section_3}}
+
+
+Enacted on: {{date_enacted}}
+
+
+______________________________
+Barangay Council

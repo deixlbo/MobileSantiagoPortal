@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/admin-layout";
 import { useListBlotterReports, useGetBlotterStats, useCreateBlotterReport, useUpdateBlotterReport, getListBlotterReportsQueryKey, getGetBlotterStatsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,19 +9,42 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { FileWarning, AlertCircle, Search, Filter, Plus, MoreHorizontal, ShieldAlert, CheckCircle2, History, FolderOpen } from "lucide-react";
+import { FileWarning, AlertCircle, Search, Filter, Plus, MoreHorizontal, ShieldAlert, CheckCircle2, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { PrintModal, BlotterTemplate } from "@/components/document-template";
+
+const blotterSchema = z.object({
+  reporter: z.string().min(1, "Required"),
+  respondent: z.string().optional(),
+  category: z.string().min(1, "Required"),
+  location: z.string().min(1, "Required"),
+  dateReported: z.string().min(1, "Required"),
+  description: z.string().min(1, "Required"),
+  status: z.string().default("pending"),
+});
+
+const updateSchema = z.object({
+  status: z.string().min(1, "Required"),
+  resolutionNotes: z.string().optional(),
+  dateResolved: z.string().optional(),
+  preparedBy: z.string().optional(),
+  actionTaken: z.string().optional(),
+  description: z.string().min(1),
+});
 
 export default function Blotter() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const { data: stats } = useGetBlotterStats();
   const { data: reports = [], isLoading } = useListBlotterReports({ search: search || undefined });
@@ -33,6 +56,7 @@ export default function Blotter() {
         queryClient.invalidateQueries({ queryKey: getGetBlotterStatsQueryKey() });
         toast.success("Blotter report created successfully");
         setIsCreateOpen(false);
+        createForm.reset();
       }
     }
   });
@@ -42,28 +66,57 @@ export default function Blotter() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListBlotterReportsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetBlotterStatsQueryKey() });
-        toast.success("Status updated successfully");
+        toast.success("Report updated successfully");
+        setSelectedReport(null);
       }
     }
   });
 
-  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    createReport.mutate({
-      data: {
-        reporter: formData.get("reporter") as string,
-        category: formData.get("category") as string,
-        location: formData.get("location") as string,
-        dateReported: formData.get("dateReported") as string,
-        description: formData.get("description") as string,
-        status: "pending",
-      }
+  const createForm = useForm<z.infer<typeof blotterSchema>>({
+    resolver: zodResolver(blotterSchema),
+    defaultValues: {
+      category: "Others",
+      dateReported: new Date().toISOString().split('T')[0],
+      status: "pending",
+    }
+  });
+
+  const updateForm = useForm<z.infer<typeof updateSchema>>({
+    resolver: zodResolver(updateSchema)
+  });
+
+  const handleCreateSubmit = (data: z.infer<typeof blotterSchema>) => {
+    createReport.mutate({ data });
+  };
+
+  const handleUpdateSubmit = (data: z.infer<typeof updateSchema>) => {
+    if (!selectedReport) return;
+    const merged = {
+      reporter: selectedReport.reporter,
+      respondent: selectedReport.respondent,
+      category: selectedReport.category,
+      location: selectedReport.location,
+      dateReported: selectedReport.dateReported,
+      ...data,
+    };
+    updateReport.mutate({ id: selectedReport.id, data: merged });
+  };
+
+  const openUpdateModal = (report: any) => {
+    setSelectedReport(report);
+    updateForm.reset({
+      status: report.status,
+      resolutionNotes: report.resolutionNotes || "",
+      dateResolved: report.dateResolved ? new Date(report.dateResolved).toISOString().split('T')[0] : "",
+      preparedBy: report.preparedBy || "",
+      actionTaken: report.actionTaken || "",
+      description: report.description,
     });
   };
 
-  const handleStatusUpdate = (id: number, status: string) => {
-    updateReport.mutate({ id, data: { status, description: "" } }); // description is required by input schema, passing empty if not changing
+  const handlePrint = (report: any) => {
+    setSelectedReport(report);
+    setIsPrintModalOpen(true);
   };
 
   const statCards = [
@@ -75,10 +128,11 @@ export default function Blotter() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'resolved': return <Badge className="bg-emerald-500 hover:bg-emerald-600">Resolved</Badge>;
-      case 'investigating': return <Badge className="bg-blue-500 hover:bg-blue-600">Investigating</Badge>;
-      case 'dismissed': return <Badge variant="destructive">Dismissed</Badge>;
-      default: return <Badge className="bg-amber-500 hover:bg-amber-600">Pending</Badge>;
+      case 'resolved': return <Badge className="bg-emerald-500">Resolved</Badge>;
+      case 'investigating': return <Badge className="bg-blue-500">Investigating</Badge>;
+      case 'for-mediation': return <Badge className="bg-purple-500">For Mediation</Badge>;
+      case 'archived': return <Badge variant="secondary">Archived</Badge>;
+      default: return <Badge className="bg-amber-500">Pending</Badge>;
     }
   };
 
@@ -94,40 +148,45 @@ export default function Blotter() {
             <DialogTrigger asChild>
               <Button className="bg-red-700 hover:bg-red-800 text-white"><Plus className="w-4 h-4 mr-2" /> File Report</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-xl">
+            <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>File New Blotter Report</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={createForm.handleSubmit(handleCreateSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="reporter">Complainant / Reporter</Label>
-                    <Input id="reporter" name="reporter" required />
+                    <Label>Complainant / Reporter</Label>
+                    <Input {...createForm.register("reporter")} required />
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="category">Incident Category</Label>
-                    <Select name="category" defaultValue="Disturbance">
+                    <Label>Respondent / Accused (Optional)</Label>
+                    <Input {...createForm.register("respondent")} />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Incident Category</Label>
+                    <Select onValueChange={(val) => createForm.setValue("category", val)} defaultValue={createForm.getValues("category")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Disturbance">Noise/Disturbance</SelectItem>
+                        <SelectItem value="Noise Complaint">Noise Complaint</SelectItem>
                         <SelectItem value="Theft">Theft/Robbery</SelectItem>
-                        <SelectItem value="Assault">Physical Altercation</SelectItem>
-                        <SelectItem value="Property">Property Dispute</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Property Damage">Property Damage</SelectItem>
+                        <SelectItem value="Animal Complaint">Animal Complaint</SelectItem>
+                        <SelectItem value="Physical Altercation">Physical Altercation</SelectItem>
+                        <SelectItem value="Others">Others</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="location">Location of Incident</Label>
-                    <Input id="location" name="location" required />
-                  </div>
-                  <div className="space-y-2 col-span-2 sm:col-span-1">
-                    <Label htmlFor="dateReported">Date of Incident</Label>
-                    <Input id="dateReported" name="dateReported" type="date" required defaultValue={new Date().toISOString().split('T')[0]} />
+                    <Label>Date of Incident</Label>
+                    <Input type="date" {...createForm.register("dateReported")} required />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="description">Incident Narrative</Label>
-                    <Textarea id="description" name="description" rows={4} required placeholder="Detailed description of the incident..." />
+                    <Label>Exact Location</Label>
+                    <Input {...createForm.register("location")} required />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Incident Narrative</Label>
+                    <Textarea {...createForm.register("description")} rows={4} required />
                   </div>
                 </div>
                 <div className="flex justify-end pt-4">
@@ -161,7 +220,7 @@ export default function Blotter() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search records, names..."
+                placeholder="Search records..."
                 className="pl-8"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -175,8 +234,8 @@ export default function Blotter() {
                 <TableRow>
                   <TableHead>Case Ref</TableHead>
                   <TableHead>Reporter</TableHead>
+                  <TableHead>Respondent</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Location</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
@@ -185,7 +244,7 @@ export default function Blotter() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">Loading records...</TableCell>
+                    <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
@@ -196,8 +255,8 @@ export default function Blotter() {
                     <TableRow key={report.id}>
                       <TableCell className="font-mono text-sm font-medium">{report.referenceNo}</TableCell>
                       <TableCell className="font-medium">{report.reporter}</TableCell>
+                      <TableCell>{report.respondent || '-'}</TableCell>
                       <TableCell>{report.category}</TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={report.location}>{report.location}</TableCell>
                       <TableCell>{format(new Date(report.dateReported), "MMM d, yyyy")}</TableCell>
                       <TableCell>{getStatusBadge(report.status)}</TableCell>
                       <TableCell>
@@ -209,83 +268,8 @@ export default function Blotter() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>View Details</DropdownMenuItem>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                  <div className="flex items-center justify-between pr-6">
-                                    <DialogTitle>Case {report.referenceNo}</DialogTitle>
-                                    {getStatusBadge(report.status)}
-                                  </div>
-                                </DialogHeader>
-                                <Tabs defaultValue="details" className="mt-4">
-                                  <TabsList className="grid w-full grid-cols-4">
-                                    <TabsTrigger value="details">Details</TabsTrigger>
-                                    <TabsTrigger value="investigation">Investigation</TabsTrigger>
-                                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                                    <TabsTrigger value="history">History</TabsTrigger>
-                                  </TabsList>
-                                  <TabsContent value="details" className="space-y-4 mt-4">
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                      <div>
-                                        <div className="text-muted-foreground mb-1">Complainant</div>
-                                        <div className="font-medium">{report.reporter}</div>
-                                      </div>
-                                      <div>
-                                        <div className="text-muted-foreground mb-1">Date Reported</div>
-                                        <div className="font-medium">{format(new Date(report.dateReported), "MMMM d, yyyy")}</div>
-                                      </div>
-                                      <div>
-                                        <div className="text-muted-foreground mb-1">Category</div>
-                                        <div className="font-medium">{report.category}</div>
-                                      </div>
-                                      <div>
-                                        <div className="text-muted-foreground mb-1">Location</div>
-                                        <div className="font-medium">{report.location}</div>
-                                      </div>
-                                    </div>
-                                    <div className="pt-4 border-t">
-                                      <div className="text-muted-foreground text-sm mb-2">Incident Narrative</div>
-                                      <p className="text-sm bg-muted/30 p-4 rounded-md whitespace-pre-wrap">
-                                        {report.description}
-                                      </p>
-                                    </div>
-                                  </TabsContent>
-                                  <TabsContent value="investigation" className="mt-4">
-                                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                                      <ShieldAlert className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                      <p>Investigation notes will appear here.</p>
-                                      <Button variant="outline" size="sm" className="mt-4">Add Note</Button>
-                                    </div>
-                                  </TabsContent>
-                                  <TabsContent value="documents" className="mt-4">
-                                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                                      <FolderOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                      <p>Attached evidence and documents.</p>
-                                      <Button variant="outline" size="sm" className="mt-4">Upload File</Button>
-                                    </div>
-                                  </TabsContent>
-                                  <TabsContent value="history" className="mt-4">
-                                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                                      <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                      <p>Case timeline and status changes.</p>
-                                    </div>
-                                  </TabsContent>
-                                </Tabs>
-                              </DialogContent>
-                            </Dialog>
-                            <DropdownMenuSeparator />
-                            {report.status !== 'investigating' && report.status !== 'resolved' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(report.id, 'investigating')} className="text-blue-600">Start Investigation</DropdownMenuItem>
-                            )}
-                            {report.status !== 'resolved' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(report.id, 'resolved')} className="text-emerald-600">Mark Resolved</DropdownMenuItem>
-                            )}
-                            {report.status === 'pending' && (
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(report.id, 'dismissed')} className="text-destructive">Dismiss Case</DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem onClick={() => openUpdateModal(report)}>View / Update Case</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePrint(report)}><FileText className="w-4 h-4 mr-2" /> Print Report</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -297,6 +281,83 @@ export default function Blotter() {
           </div>
         </Card>
       </div>
+
+      <Dialog open={!!selectedReport && !isPrintModalOpen} onOpenChange={(open) => !open && setSelectedReport(null)}>
+        {selectedReport && (
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between pr-6">
+                <DialogTitle>Case {selectedReport.referenceNo}</DialogTitle>
+                {getStatusBadge(selectedReport.status)}
+              </div>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm mt-4 p-4 bg-muted/20 rounded-lg">
+              <div><span className="font-medium">Complainant:</span> {selectedReport.reporter}</div>
+              <div><span className="font-medium">Respondent:</span> {selectedReport.respondent || '-'}</div>
+              <div><span className="font-medium">Date Reported:</span> {format(new Date(selectedReport.dateReported), "MMMM d, yyyy")}</div>
+              <div><span className="font-medium">Category:</span> {selectedReport.category}</div>
+              <div className="col-span-2"><span className="font-medium">Location:</span> {selectedReport.location}</div>
+              <div className="col-span-2">
+                <span className="font-medium">Narrative:</span>
+                <p className="mt-1 p-3 bg-background rounded border whitespace-pre-wrap">{selectedReport.description}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t pt-4">
+              <h3 className="font-semibold mb-4">Update Case Status</h3>
+              <form onSubmit={updateForm.handleSubmit(handleUpdateSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Status</Label>
+                    <Select onValueChange={(val) => updateForm.setValue("status", val)} defaultValue={updateForm.getValues("status")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="investigating">Investigating</SelectItem>
+                        <SelectItem value="for-mediation">For Mediation</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Date Resolved</Label>
+                    <Input type="date" {...updateForm.register("dateResolved")} />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-1">
+                    <Label>Prepared By</Label>
+                    <Input {...updateForm.register("preparedBy")} placeholder="Officer in charge" />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Action Taken</Label>
+                    <Textarea {...updateForm.register("actionTaken")} rows={3} placeholder="Describe actions taken by the barangay..." />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Resolution Notes</Label>
+                    <Textarea {...updateForm.register("resolutionNotes")} rows={3} placeholder="Final resolution or agreement..." />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setSelectedReport(null)}>Cancel</Button>
+                  <Button type="submit" disabled={updateReport.isPending}>
+                    {updateReport.isPending ? "Saving..." : "Save Updates"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      <PrintModal 
+        title="Print Blotter Report"
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+      >
+        {selectedReport && <BlotterTemplate report={selectedReport} />}
+      </PrintModal>
+
     </AdminLayout>
   );
 }

@@ -3,6 +3,9 @@ import { pgTable, serial, text, timestamp, numeric, boolean } from "drizzle-orm/
 export const documentRequestsTable = pgTable("document_requests", {
   id: serial("id").primaryKey(),
   referenceNo: text("reference_no").notNull(),
+  controlNo: text("control_no"),
+  orNumber: text("or_number"),
+  residentId: text("resident_id"),
   residentName: text("resident_name").notNull(),
   documentType: text("document_type").notNull(),
   purpose: text("purpose").notNull(),
@@ -10,6 +13,8 @@ export const documentRequestsTable = pgTable("document_requests", {
   status: text("status").notNull().default("pending"),
   paymentMethod: text("payment_method"),
   requestedDate: text("requested_date").notNull(),
+  businessName: text("business_name"),
+  businessAddress: text("business_address"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
