@@ -27,7 +27,7 @@ const mockProjects = [
     projectHead: "Juan Dela Cruz",
     projectHeadPosition: "Barangay Kagawad",
     beneficiaries: "Residents of Purok 3",
-    remarks: "Project is progressing as scheduled with no major delays."
+
   },
   {
     id: "PRJ-2026-002",
@@ -44,7 +44,7 @@ const mockProjects = [
     projectHead: "Maria Santos",
     projectHeadPosition: "Barangay Kagawad - Health",
     beneficiaries: "All Barangay Santiago Residents",
-    remarks: "Successfully completed ahead of schedule."
+
   },
   {
     id: "PRJ-2026-003",
@@ -61,7 +61,7 @@ const mockProjects = [
     projectHead: "Pedro Reyes",
     projectHeadPosition: "Barangay Treasurer",
     beneficiaries: "All Residents",
-    remarks: "Awaiting procurement of materials."
+
   },
   {
     id: "PRJ-2026-004",
@@ -78,7 +78,7 @@ const mockProjects = [
     projectHead: "Juan Dela Cruz",
     projectHeadPosition: "Barangay Kagawad - Peace and Order",
     beneficiaries: "All Residents",
-    remarks: "Volunteer recruitment ongoing in Puroks 4-6."
+
   },
 ]
 
@@ -225,14 +225,11 @@ export default function ProjectsPage() {
               <p class="value">${selectedProject.beneficiaries}</p>
             </div>
             
-            <div class="section">
-              <p class="section-title">REMARKS</p>
-              <p>${selectedProject.remarks}</p>
-            </div>
-            
             <div class="signatures">
               <div class="signature-box">
-                <p class="signature-line">Prepared by</p>
+                <p class="signature-line" style="font-weight: 600;">ROLANDO C. BORJA</p>
+                <p>Punong Barangay</p>
+                <p class="signature-label">Prepared by</p>
               </div>
               <div class="signature-box">
                 <p class="signature-line" style="font-weight: 600;">ROLANDO C. BORJA</p>
@@ -438,17 +435,14 @@ export default function ProjectsPage() {
                     <p className="text-gray-600">BENEFICIARIES</p>
                     <p className="font-medium">{selectedProject.beneficiaries}</p>
                   </div>
-
-                  <div className="border-t pt-4">
-                    <p className="text-gray-600">REMARKS</p>
-                    <p>{selectedProject.remarks}</p>
-                  </div>
                 </div>
 
                 {/* Footer */}
                 <div className="mt-8 sm:mt-12 grid grid-cols-2 gap-4 sm:gap-8 text-center text-xs sm:text-sm">
                   <div>
-                    <p className="border-t border-black pt-1">Prepared by</p>
+                    <p className="border-t border-black pt-1 font-semibold">ROLANDO C. BORJA</p>
+                    <p>Punong Barangay</p>
+                    <p className="text-gray-600 mt-1">Prepared by</p>
                   </div>
                   <div>
                     <p className="border-t border-black pt-1 font-semibold">ROLANDO C. BORJA</p>
