@@ -16,10 +16,18 @@ import { toast } from "sonner"
 
 const puroks = ["Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5", "Purok 6"]
 const documentTypes = [
-  { value: "valid_id", label: "Valid Government ID" },
-  { value: "birth_cert", label: "Birth Certificate" },
+  { value: "national_id", label: "National ID (PhilSys)" },
+  { value: "passport", label: "Philippine Passport" },
+  { value: "drivers_license", label: "Driver's License" },
+  { value: "sss_id", label: "SSS ID" },
+  { value: "tin_id", label: "TIN ID (BIR)" },
   { value: "voters_id", label: "Voter's ID" },
-  { value: "philhealth", label: "PhilHealth ID" },
+  { value: "pnp_id", label: "PNP ID" },
+  { value: "military_id", label: "Military ID" },
+  { value: "senior_citizen_id", label: "Senior Citizen ID" },
+  { value: "pwd_id", label: "PWD ID" },
+  { value: "philhealth_id", label: "PhilHealth ID" },
+  { value: "birth_cert", label: "Birth Certificate" },
 ]
 
 export default function ResidentRegisterPage() {
@@ -27,6 +35,7 @@ export default function ResidentRegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<string | null>(null)
+  const [documentType, setDocumentType] = useState("")
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -154,7 +163,7 @@ export default function ResidentRegisterPage() {
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}docType`}>Identification Document</Label>
-        <Select required>
+        <Select value={documentType} onValueChange={setDocumentType} required>
           <SelectTrigger id={`${idPrefix}docType`}>
             <SelectValue placeholder="Select ID type" />
           </SelectTrigger>
