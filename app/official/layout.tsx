@@ -14,7 +14,6 @@ import {
   FolderKanban,
   Megaphone,
   Package,
-  BarChart3,
   LogOut,
   Menu,
 } from "lucide-react"
@@ -33,8 +32,6 @@ const navigation = [
   { name: "Projects", href: "/official/projects", icon: FolderKanban },
   { name: "Announcements", href: "/official/announcements", icon: Megaphone },
   { name: "Assets", href: "/official/assets", icon: Package },
-  { name: "Reports", href: "/official/reports", icon: BarChart3 },
-  { name: "Users", href: "/official/users", icon: Users },
 ]
 
 export default function OfficialLayout({
