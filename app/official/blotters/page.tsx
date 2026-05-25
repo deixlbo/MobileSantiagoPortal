@@ -364,7 +364,18 @@ export default function OfficialBlottersPage() {
                                 className="h-7 md:h-8 px-2 text-xs"
                                 onClick={() => {
                                   setSelectedBlotter(blotter)
-                                  setShowPrintPreview(true)
+                                  // Direct print without preview
+                                  setTimeout(() => {
+                                    const printContent = document.getElementById(`blotter-print-${blotter.id}`)
+                                    if (printContent) {
+                                      const printWindow = window.open("", "", "width=1000,height=600")
+                                      if (printWindow) {
+                                        printWindow.document.write(printContent.innerHTML)
+                                        printWindow.document.close()
+                                        printWindow.print()
+                                      }
+                                    }
+                                  }, 100)
                                 }}
                               >
                                 <Printer className="h-3 w-3" />
@@ -445,7 +456,21 @@ export default function OfficialBlottersPage() {
                 Update
               </Button>
             )}
-            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setShowPrintPreview(true)}>
+            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => {
+              if (selectedBlotter) {
+                setTimeout(() => {
+                  const printContent = document.getElementById(`blotter-print-${selectedBlotter.id}`)
+                  if (printContent) {
+                    const printWindow = window.open("", "", "width=1000,height=600")
+                    if (printWindow) {
+                      printWindow.document.write(printContent.innerHTML)
+                      printWindow.document.close()
+                      printWindow.print()
+                    }
+                  }
+                }, 100)
+              }
+            }}>
               <Printer className="mr-1 h-3 w-3" />
               Print
             </Button>
@@ -593,6 +618,110 @@ export default function OfficialBlottersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden Print Containers for Direct Printing */}
+      {mockBlotters.map((blotter) => (
+        <div key={blotter.id} id={`blotter-print-${blotter.id}`} className="hidden print:block">
+          <div style={{ padding: '20px', textAlign: 'center', color: '#333', fontFamily: 'Arial, sans-serif' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '3px solid #333' }}>
+              <div style={{ width: '80px', height: '80px' }}>
+                <img src="/images/santiagologo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ textAlign: 'center', flex: 1, paddingLeft: '20px', paddingRight: '20px' }}>
+                <p style={{ fontSize: '12px', margin: '4px 0' }}>Republic of the Philippines</p>
+                <p style={{ fontSize: '12px', margin: '4px 0' }}>Province of Zambales</p>
+                <p style={{ fontSize: '12px', margin: '4px 0' }}>Municipality of San Antonio</p>
+                <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '4px 0' }}>Barangay Santiago</p>
+              </div>
+              <div style={{ width: '80px', height: '80px' }}>
+                <img src="/images/saz.jpg" alt="Municipality" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', margin: '20px 0', letterSpacing: '1px' }}>
+              BLOTTER REPORT
+            </h2>
+
+            {/* Case Details */}
+            <div style={{ textAlign: 'left', marginTop: '20px', fontSize: '13px', lineHeight: '1.6' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Reference No.:</p>
+                  <p>{blotter.id}</p>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Date Reported:</p>
+                  <p>{blotter.date}</p>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Incident Type:</p>
+                  <p>{blotter.type}</p>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Status:</p>
+                  <p>{blotter.status.toUpperCase()}</p>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Location:</p>
+                <p>{blotter.location}</p>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Description:</p>
+                <p style={{ textAlign: 'justify' }}>{blotter.description}</p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Complainant:</p>
+                  <p>{blotter.complainant}</p>
+                  <p style={{ fontSize: '11px', color: '#666' }}>{blotter.complainantAddress}</p>
+                </div>
+                <div>
+                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Respondent:</p>
+                  <p>{blotter.respondent}</p>
+                  <p style={{ fontSize: '11px', color: '#666' }}>{blotter.respondentAddress}</p>
+                </div>
+              </div>
+
+              {blotter.actionTaken && (
+                <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f5f5f5', borderLeft: '3px solid #333' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Action Taken:</p>
+                  <p>{blotter.actionTaken}</p>
+                </div>
+              )}
+
+              {blotter.resolution && (
+                <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#e8f5e9', borderLeft: '3px solid #4caf50' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '5px', color: '#2e7d32' }}>Resolution:</p>
+                  <p style={{ color: '#2e7d32' }}>{blotter.resolution}</p>
+                </div>
+              )}
+
+              {/* Signature Section */}
+              <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #ccc' }}>
+                <p style={{ fontSize: '11px', color: '#666', marginBottom: '30px', textAlign: 'center' }}>Certified Correct:</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
+                    <p style={{ fontWeight: 'bold', fontSize: '12px' }}>ROLANDO C. BORJA</p>
+                    <p style={{ fontSize: '11px' }}>Barangay Captain</p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
+                    <p style={{ fontWeight: 'bold', fontSize: '12px' }}>Date</p>
+                    <p style={{ fontSize: '11px' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </motion.div>
   )
 }

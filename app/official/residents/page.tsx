@@ -127,6 +127,8 @@ export default function ResidentsPage() {
   const [selectedResident, setSelectedResident] = useState<typeof mockResidents[0] | null>(null)
   const [selectedPuroks, setSelectedPuroks] = useState<string[]>([])
   const [selectedAgeRanges, setSelectedAgeRanges] = useState<string[]>([])
+  const [selectedGenders, setSelectedGenders] = useState<string[]>([])
+  const [showFilters, setShowFilters] = useState(false)
 
   // Get unique puroks
   const puroks = Array.from(new Set(mockResidents.map(r => r.purok))).sort()
@@ -157,7 +159,10 @@ export default function ResidentsPage() {
       })
     }
 
-    return matchesSearch && matchesPurok && matchesAge
+    // Gender filter
+    const matchesGender = selectedGenders.length === 0 || selectedGenders.includes(res.gender)
+
+    return matchesSearch && matchesPurok && matchesAge && matchesGender
   })
 
   // Calculate stats based on filtered residents
@@ -181,10 +186,18 @@ export default function ResidentsPage() {
     )
   }
 
+  // Toggle gender selection
+  const toggleGender = (gender: string) => {
+    setSelectedGenders(prev => 
+      prev.includes(gender) ? prev.filter(g => g !== gender) : [...prev, gender]
+    )
+  }
+
   // Reset filters
   const resetFilters = () => {
     setSelectedPuroks([])
     setSelectedAgeRanges([])
+    setSelectedGenders([])
     setSearchTerm("")
   }
 
@@ -262,59 +275,104 @@ export default function ResidentsPage() {
         </Card>
       </motion.div>
 
-      {/* Filters */}
-      <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2">
-        {/* Purok Filter */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Purok
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid grid-cols-2 gap-3">
-              {puroks.map((purok) => (
-                <label key={purok} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox 
-                    checked={selectedPuroks.includes(purok)}
-                    onCheckedChange={() => togglePurok(purok)}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">{purok}</span>
-                </label>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Age Range Filter */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Age
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid grid-cols-2 gap-3">
-              {ageRanges.map((range) => (
-                <label key={range.label} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox 
-                    checked={selectedAgeRanges.includes(range.label)}
-                    onCheckedChange={() => toggleAgeRange(range.label)}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">{range.label}</span>
-                </label>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Search with Filter Button */}
+      <motion.div variants={itemVariants} className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input 
+            placeholder="Search residents..." 
+            className="pl-10 h-9 md:h-10 text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button 
+          variant={showFilters ? "default" : "outline"}
+          size="sm"
+          className="h-9 md:h-10 px-3"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="h-4 w-4" />
+          <span className="hidden sm:inline ml-2">Filters</span>
+        </Button>
       </motion.div>
 
+      {/* Filters - Collapsible */}
+      {showFilters && (
+        <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-3">
+          {/* Purok Filter */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Filter by Purok</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="space-y-2">
+                {puroks.map((purok) => (
+                  <label key={purok} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox 
+                      checked={selectedPuroks.includes(purok)}
+                      onCheckedChange={() => togglePurok(purok)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">{purok}</span>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Age Range Filter */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Filter by Age</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="space-y-2">
+                {ageRanges.map((range) => (
+                  <label key={range.label} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox 
+                      checked={selectedAgeRanges.includes(range.label)}
+                      onCheckedChange={() => toggleAgeRange(range.label)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">{range.label} yrs</span>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gender Filter */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Filter by Gender</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox 
+                    checked={selectedGenders.includes("Male")}
+                    onCheckedChange={() => toggleGender("Male")}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Male</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox 
+                    checked={selectedGenders.includes("Female")}
+                    onCheckedChange={() => toggleGender("Female")}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">Female</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Active Filters & Reset */}
-      {(selectedPuroks.length > 0 || selectedAgeRanges.length > 0) && (
+      {(selectedPuroks.length > 0 || selectedAgeRanges.length > 0 || selectedGenders.length > 0) && (
         <motion.div variants={itemVariants} className="flex items-center gap-2 flex-wrap p-3 bg-muted/50 rounded-lg">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {selectedPuroks.map(purok => (
@@ -322,6 +380,9 @@ export default function ResidentsPage() {
           ))}
           {selectedAgeRanges.map(range => (
             <Badge key={range} variant="secondary">{range} yrs</Badge>
+          ))}
+          {selectedGenders.map(gender => (
+            <Badge key={gender} variant="secondary">{gender}</Badge>
           ))}
           <Button 
             variant="ghost" 
@@ -333,17 +394,6 @@ export default function ResidentsPage() {
           </Button>
         </motion.div>
       )}
-
-      {/* Search */}
-      <motion.div variants={itemVariants} className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input 
-          placeholder="Search residents..." 
-          className="pl-10 h-9 md:h-10 text-sm"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </motion.div>
 
       {/* Residents Table */}
       <motion.div variants={itemVariants}>

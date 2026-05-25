@@ -243,7 +243,19 @@ export default function OfficialOrdinancesPage() {
                         <span className="hidden md:inline">Edit</span>
                       </Button>
                       {ordinance.status === "Published" && (
-                        <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
+                        <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => {
+                          setTimeout(() => {
+                            const printContent = document.getElementById(`ordinance-print-${ordinance.id}`)
+                            if (printContent) {
+                              const printWindow = window.open("", "", "width=1000,height=600")
+                              if (printWindow) {
+                                printWindow.document.write(printContent.innerHTML)
+                                printWindow.document.close()
+                                printWindow.print()
+                              }
+                            }
+                          }, 100)
+                        }}>
                           <Printer className="h-3 w-3" />
                         </Button>
                       )}
@@ -269,7 +281,19 @@ export default function OfficialOrdinancesPage() {
                       <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => setSelectedOrdinance(ordinance)}>
                         <Eye className="h-3 w-3" />
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
+                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => {
+                        setTimeout(() => {
+                          const printContent = document.getElementById(`ordinance-print-${ordinance.id}`)
+                          if (printContent) {
+                            const printWindow = window.open("", "", "width=1000,height=600")
+                            if (printWindow) {
+                              printWindow.document.write(printContent.innerHTML)
+                              printWindow.document.close()
+                              printWindow.print()
+                            }
+                          }
+                        }, 100)
+                      }}>
                         <Printer className="h-3 w-3" />
                       </Button>
                     </div>
@@ -425,6 +449,81 @@ export default function OfficialOrdinancesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden Print Containers for Direct Printing */}
+      {mockOrdinances.map((ordinance) => (
+        <div key={ordinance.id} id={`ordinance-print-${ordinance.id}`} className="hidden print:block">
+          <div style={{ padding: '30px', textAlign: 'center', color: '#000', fontFamily: 'Times New Roman, serif' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '20px', borderBottom: '3px solid #000' }}>
+              <div style={{ width: '80px', height: '80px' }}>
+                <img src="/images/santiagologo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ textAlign: 'center', flex: 1, paddingLeft: '20px', paddingRight: '20px' }}>
+                <p style={{ fontSize: '11px', margin: '2px 0' }}>Republic of the Philippines</p>
+                <p style={{ fontSize: '11px', margin: '2px 0' }}>Province of Zambales</p>
+                <p style={{ fontSize: '11px', margin: '2px 0' }}>Municipality of San Antonio</p>
+                <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '2px 0' }}>Barangay Santiago</p>
+              </div>
+              <div style={{ width: '80px', height: '80px' }}>
+                <img src="/images/saz.jpg" alt="Municipality" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+            </div>
+
+            {/* Title Box */}
+            <div style={{ borderTop: '3px solid #000', borderBottom: '3px solid #000', padding: '10px 0', margin: '20px 0' }}>
+              <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '5px 0' }}>
+                BARANGAY ORDINANCE NO. {ordinance.number} SERIES OF {ordinance.year}
+              </p>
+            </div>
+
+            {/* Full Title */}
+            <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: '20px 0 15px 0', textAlign: 'center', textDecoration: 'underline' }}>
+              {ordinance.fullTitle}
+            </h3>
+
+            {/* Whereas Clauses */}
+            <div style={{ textAlign: 'justify', fontSize: '12px', lineHeight: '1.8', marginBottom: '20px' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>WHEREAS:</p>
+              {ordinance.whereas.map((clause, i) => (
+                <p key={i} style={{ marginBottom: '8px' }}>{clause}</p>
+              ))}
+            </div>
+
+            {/* Sections */}
+            <div style={{ textAlign: 'justify', fontSize: '12px', lineHeight: '1.8' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '15px' }}>NOW, THEREFORE BE IT ORDAINED:</p>
+              {ordinance.sections.map((section, i) => (
+                <div key={i} style={{ marginBottom: '15px' }}>
+                  <p style={{ fontWeight: 'bold' }}>SECTION {i + 1}. {section.title}</p>
+                  <p style={{ whiteSpace: 'pre-line' }}>{section.content}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Enactment */}
+            <div style={{ marginTop: '30px', fontSize: '12px', lineHeight: '1.8' }}>
+              <p style={{ textAlign: 'justify', marginBottom: '30px' }}>
+                ENACTED this {ordinance.date} at Barangay Santiago, San Antonio, Zambales.
+              </p>
+
+              {/* Signature Section */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '40px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
+                  <p style={{ fontWeight: 'bold', fontSize: '13px' }}>APRIL JOY C. CANO</p>
+                  <p style={{ fontSize: '11px' }}>Barangay Secretary</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
+                  <p style={{ fontWeight: 'bold', fontSize: '13px' }}>ROLANDO C. BORJA</p>
+                  <p style={{ fontSize: '11px' }}>Punong Barangay</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </motion.div>
   )
 }

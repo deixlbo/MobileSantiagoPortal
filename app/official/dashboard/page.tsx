@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +60,25 @@ export default function AdminDashboard() {
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
           <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Management System</p>
+        </div>
+
+        {/* Residents Management Card */}
+        <div className="mb-6 sm:mb-8">
+          <Link href="/official/residents">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-emerald-900">Residents Management</h2>
+                    <p className="text-sm text-emerald-700 mt-1">Manage and verify resident accounts</p>
+                  </div>
+                  <div className="bg-emerald-600 p-2.5 sm:p-3 rounded-lg shrink-0">
+                    <Users className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Key Stats */}
