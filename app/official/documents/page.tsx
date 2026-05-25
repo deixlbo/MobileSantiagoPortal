@@ -26,7 +26,11 @@ import {
   Settings,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  Bell,
+  Paperclip,
+  Image as ImageIcon,
+  File
 } from "lucide-react"
 
 const mockRequests = [
@@ -40,7 +44,12 @@ const mockRequests = [
     status: "pending",
     date: "April 28, 2026",
     fee: "50",
-    documentsUploaded: true
+    documentsUploaded: true,
+    uploadedFiles: [
+      { name: "Valid_ID_Front.jpg", type: "image", size: "245 KB", uploadDate: "April 28, 2026" },
+      { name: "Valid_ID_Back.jpg", type: "image", size: "198 KB", uploadDate: "April 28, 2026" },
+      { name: "Proof_of_Residency.pdf", type: "document", size: "1.2 MB", uploadDate: "April 28, 2026" }
+    ]
   },
   {
     id: "REQ-2026-002",
@@ -53,7 +62,10 @@ const mockRequests = [
     date: "April 27, 2026",
     fee: "30",
     pickupTime: "April 30, 2026, 2:00 PM",
-    documentsUploaded: true
+    documentsUploaded: true,
+    uploadedFiles: [
+      { name: "National_ID.jpg", type: "image", size: "320 KB", uploadDate: "April 27, 2026" }
+    ]
   },
   {
     id: "REQ-2026-003",
@@ -65,7 +77,11 @@ const mockRequests = [
     status: "pending",
     date: "April 26, 2026",
     fee: "200",
-    documentsUploaded: false
+    documentsUploaded: false,
+    uploadedFiles: [
+      { name: "Business_Permit.pdf", type: "document", size: "890 KB", uploadDate: "April 26, 2026" }
+    ],
+    missingDocuments: ["DTI Registration", "Barangay Clearance"]
   },
   {
     id: "REQ-2026-004",
@@ -78,7 +94,11 @@ const mockRequests = [
     date: "April 20, 2026",
     fee: "Free",
     releaseDate: "April 22, 2026",
-    documentsUploaded: true
+    documentsUploaded: true,
+    uploadedFiles: [
+      { name: "Valid_ID.jpg", type: "image", size: "210 KB", uploadDate: "April 20, 2026" },
+      { name: "Birth_Certificate.pdf", type: "document", size: "456 KB", uploadDate: "April 20, 2026" }
+    ]
   },
 ]
 
@@ -169,6 +189,10 @@ export default function OfficialDocumentsPage() {
   const [printRequest, setPrintRequest] = useState<typeof mockRequests[0] | null>(null)
   const [exportDateFrom, setExportDateFrom] = useState("")
   const [exportDateTo, setExportDateTo] = useState("")
+  const [showNotifyDialog, setShowNotifyDialog] = useState(false)
+  const [notifyRequest, setNotifyRequest] = useState<typeof mockRequests[0] | null>(null)
+  const [notifyMessage, setNotifyMessage] = useState("")
+  const [requiredDocuments, setRequiredDocuments] = useState<string[]>([])
 
   const pendingCount = mockRequests.filter(r => r.status === "pending").length
   const approvedCount = mockRequests.filter(r => r.status === "approved").length
@@ -336,35 +360,6 @@ export default function OfficialDocumentsPage() {
           </CardHeader>
           <CardContent className="p-3 md:p-6 pt-0">
             <div className="space-y-4">
-              {/* Filter Indicator */}
-              <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-blue-600" />
-                  <div>
-                    <p className="font-semibold text-sm text-blue-900">Active Filters</p>
-                    <p className="text-xs text-blue-700">{searchTerm ? `Search: "${searchTerm}"` : "No active filters"}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-white text-blue-600">
-                    {mockRequests.filter(r => 
-                      r.requester.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      r.id.toLowerCase().includes(searchTerm.toLowerCase())
-                    ).length} results
-                  </Badge>
-                  {searchTerm && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setSearchTerm("")}
-                      className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-100"
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-              </div>
-
               {/* Tabs */}
               <Tabs defaultValue="pending">
                 <TabsList className="h-10 w-full justify-start overflow-x-auto bg-muted/50 p-1">
@@ -555,10 +550,82 @@ export default function OfficialDocumentsPage() {
                   <p className="font-medium text-sm md:text-base">{selectedRequest.date}</p>
                 </div>
               </div>
+
+              {/* Uploaded Files Section */}
+              <div className="border-t pt-3 mt-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-medium text-sm">Uploaded Documents</p>
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedRequest.uploadedFiles?.length || 0} files
+                  </Badge>
+                </div>
+                
+                {selectedRequest.uploadedFiles && selectedRequest.uploadedFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedRequest.uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          {file.type === "image" ? (
+                            <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
+                              <ImageIcon className="h-4 w-4 text-blue-600" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-amber-100 flex items-center justify-center">
+                              <File className="h-4 w-4 text-amber-600" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{file.size} - {file.uploadDate}</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-8 px-2">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-700">No documents uploaded yet</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Missing Documents Warning */}
+              {selectedRequest.missingDocuments && selectedRequest.missingDocuments.length > 0 && (
+                <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <XCircle className="h-4 w-4 text-red-600" />
+                    <p className="text-sm font-medium text-red-700">Missing Documents</p>
+                  </div>
+                  <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                    {selectedRequest.missingDocuments.map((doc, index) => (
+                      <li key={index}>{doc}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter className="flex-col-reverse sm:flex-row gap-2 pt-4">
             <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setSelectedRequest(null)}>Close</Button>
+            {selectedRequest?.status === "pending" && !selectedRequest.documentsUploaded && (
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="w-full sm:w-auto gap-1"
+                onClick={() => {
+                  setNotifyRequest(selectedRequest)
+                  setRequiredDocuments(selectedRequest.missingDocuments || [])
+                  setShowNotifyDialog(true)
+                }}
+              >
+                <Bell className="h-3 w-3" />
+                Request Documents
+              </Button>
+            )}
             {selectedRequest?.status === "pending" && selectedRequest.documentsUploaded && (
               <>
                 <Button variant="destructive" size="sm" className="w-full sm:w-auto">Reject</Button>
@@ -935,6 +1002,131 @@ export default function OfficialDocumentsPage() {
               setEditingType(null)
             }}>
               Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notify Resident Dialog - Request Additional Documents */}
+      <Dialog open={showNotifyDialog} onOpenChange={(open) => {
+        setShowNotifyDialog(open)
+        if (!open) {
+          setNotifyRequest(null)
+          setNotifyMessage("")
+          setRequiredDocuments([])
+        }
+      }}>
+        <DialogContent className="w-[95vw] max-w-lg sm:w-full bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base md:text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5 text-amber-500" />
+              Request Additional Documents
+            </DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              Notify the resident to submit missing or additional documents for their request
+            </DialogDescription>
+          </DialogHeader>
+          
+          {notifyRequest && (
+            <div className="space-y-4">
+              {/* Request Info */}
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">{notifyRequest.requester}</p>
+                <p className="text-xs text-muted-foreground">{notifyRequest.type} - {notifyRequest.id}</p>
+                <p className="text-xs text-muted-foreground">Email: {notifyRequest.email}</p>
+              </div>
+
+              {/* Required Documents */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Required Documents</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 gap-1 text-xs"
+                    onClick={() => setRequiredDocuments([...requiredDocuments, ""])}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {requiredDocuments.map((doc, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input 
+                        placeholder="e.g., Birth Certificate, Valid ID"
+                        value={doc}
+                        onChange={(e) => {
+                          const updated = [...requiredDocuments]
+                          updated[index] = e.target.value
+                          setRequiredDocuments(updated)
+                        }}
+                        className="h-9 text-sm flex-1"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-9 w-9 p-0"
+                        onClick={() => setRequiredDocuments(requiredDocuments.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                  {requiredDocuments.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-2">Click &quot;Add&quot; to specify required documents</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Message */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Additional Message (Optional)</Label>
+                <Textarea 
+                  placeholder="Add any additional instructions or notes for the resident..."
+                  value={notifyMessage}
+                  onChange={(e) => setNotifyMessage(e.target.value)}
+                  className="min-h-[80px] text-sm"
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-xs font-medium text-amber-800 mb-2">Notification Preview:</p>
+                <p className="text-xs text-amber-700">
+                  Dear {notifyRequest.requester}, your document request ({notifyRequest.id}) requires additional documents: 
+                  {requiredDocuments.filter(d => d.trim()).join(", ") || "[No documents specified]"}. 
+                  {notifyMessage && ` Note: ${notifyMessage}`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2 pt-4">
+            <Button variant="outline" size="sm" onClick={() => {
+              setShowNotifyDialog(false)
+              setNotifyRequest(null)
+              setNotifyMessage("")
+              setRequiredDocuments([])
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-amber-600 hover:bg-amber-700 gap-1"
+              disabled={requiredDocuments.filter(d => d.trim()).length === 0}
+              onClick={() => {
+                // Handle notification logic here
+                alert(`Notification sent to ${notifyRequest?.email}`)
+                setShowNotifyDialog(false)
+                setNotifyRequest(null)
+                setNotifyMessage("")
+                setRequiredDocuments([])
+                setSelectedRequest(null)
+              }}
+            >
+              <Bell className="h-3 w-3" />
+              Send Notification
             </Button>
           </DialogFooter>
         </DialogContent>
