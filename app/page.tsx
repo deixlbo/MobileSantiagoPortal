@@ -214,31 +214,63 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-background py-20 md:py-40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section className="relative overflow-hidden py-20 md:py-40" style={{
+        backgroundImage: "url('/images/bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-8 md:space-y-12 text-center">
-            <div className="space-y-4 md:space-y-6">
-              <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-tight">
-                Barangay Services <span className="text-primary">Made Easy</span>
+            <motion.div 
+              className="space-y-4 md:space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <h1 className="text-balance text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl leading-tight drop-shadow-lg">
+                Barangay Services <span className="text-yellow-400">Made Easy</span>
               </h1>
-              <p className="text-pretty text-lg text-muted-foreground sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
+              <p className="text-pretty text-lg text-white/90 sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed drop-shadow">
                 Access government services online in seconds. Request documents, file reports, and stay connected with your community.
               </p>
-            </div>
+            </motion.div>
             
             {/* Login Options */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 md:pt-8">
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 md:pt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
               <Link href="/resident/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full px-10 h-14 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                  Resident Login
-                </Button>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="w-full sm:w-auto"
+                >
+                  <Button size="lg" className="w-full px-10 h-14 text-base font-semibold rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 bg-primary hover:bg-primary/90">
+                    Resident Login
+                  </Button>
+                </motion.div>
               </Link>
               <Link href="/official/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full px-10 h-14 text-base font-semibold rounded-lg border-2 hover:bg-muted transition-colors">
-                  Official Login
-                </Button>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="w-full sm:w-auto"
+                >
+                  <Button size="lg" variant="outline" className="w-full px-10 h-14 text-base font-semibold rounded-lg border-2 shadow-lg hover:shadow-2xl hover:bg-white/10 transition-all duration-300 border-white text-white hover:border-white/80">
+                    Official Login
+                  </Button>
+                </motion.div>
               </Link>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>

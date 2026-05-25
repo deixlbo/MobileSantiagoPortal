@@ -35,7 +35,6 @@ export default function ResidentRegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<string | null>(null)
-  const [documentType, setDocumentType] = useState("")
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -44,6 +43,7 @@ export default function ResidentRegisterPage() {
     password: "",
     purok: "",
     gender: "",
+    documentType: "",
   })
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,7 +163,11 @@ export default function ResidentRegisterPage() {
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}docType`}>Identification Document</Label>
-        <Select value={documentType} onValueChange={setDocumentType} required>
+        <Select 
+          value={formData.documentType}
+          onValueChange={(value) => setFormData({ ...formData, documentType: value })}
+          required
+        >
           <SelectTrigger id={`${idPrefix}docType`}>
             <SelectValue placeholder="Select ID type" />
           </SelectTrigger>
