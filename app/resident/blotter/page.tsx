@@ -21,6 +21,7 @@ import {
   Printer,
   Download
 } from "lucide-react"
+import { LocationPicker } from "@/components/location-picker"
 
 const incidentTypes = [
   "Noise Complaint",
@@ -106,7 +107,22 @@ function getStatusBadge(status: string) {
 export default function BlotterPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [showPreview, setShowPreview] = useState<typeof mockBlotters[0] | null>(null)
+  const [location, setLocation] = useState("")
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
+
+  const handleLocationChange = (newLocation: string, coords?: { lat: number; lng: number }) => {
+    setLocation(newLocation)
+    if (coords) {
+      setLocationCoords(coords)
+    }
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setLocation("")
+    setLocationCoords(null)
+  }
 
   const handlePrint = () => {
     if (!showPreview) return
@@ -232,7 +248,10 @@ export default function BlotterPage() {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Blotter Reports</h1>
           <p className="text-sm text-muted-foreground">File and track incident reports</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          if (!open) handleDialogClose()
+          else setIsDialogOpen(open)
+        }}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
@@ -268,10 +287,11 @@ export default function BlotterPage() {
                 <Input type="date" />
               </div>
 
-              <div className="space-y-2">
-                <Label>Location</Label>
-                <Input placeholder="e.g., Purok 3, near the chapel" />
-              </div>
+              <LocationPicker
+                value={location}
+                onChange={handleLocationChange}
+                placeholder="e.g., Purok 3, malapit sa chapel"
+              />
 
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -292,10 +312,10 @@ export default function BlotterPage() {
               </div>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={handleDialogClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
+              <Button onClick={handleDialogClose} className="w-full sm:w-auto">
                 Submit Report
               </Button>
             </DialogFooter>

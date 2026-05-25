@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 
 import { useState } from "react"
 import { LogOut } from "lucide-react"
+import { ResidentChatbot } from "@/components/resident-chatbot"
 
 const navigation = [
   { name: "Dashboard", href: "/resident/dashboard", icon: LayoutDashboard },
@@ -246,6 +247,9 @@ export default function ResidentLayout({
           </motion.main>
         </AnimatePresence>
       </div>
+      
+      {/* AI Chatbot */}
+      <ResidentChatbot />
     </div>
   )
 }

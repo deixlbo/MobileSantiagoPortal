@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState } from "react"
+import { OfficialChatbot } from "@/components/official-chatbot"
 
 
 const navigation = [
@@ -178,6 +179,9 @@ export default function OfficialLayout({
           {children}
         </main>
       </div>
+      
+      {/* AI Chatbot */}
+      <OfficialChatbot />
     </div>
   )
 }
