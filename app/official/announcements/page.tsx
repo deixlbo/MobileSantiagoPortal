@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -193,6 +194,20 @@ export default function AnnouncementsPage() {
 
   const handleDelete = (id: string) => {
     setAnnouncements(announcements.filter((ann) => ann.id !== id))
+  }
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  const requestDeleteAnnouncement = (id: string) => {
+    setConfirmDeleteId(id)
+    setIsConfirmOpen(true)
+  }
+
+  const confirmDeleteAnnouncement = () => {
+    if (!confirmDeleteId) return
+    setAnnouncements((s) => s.filter((a) => a.id !== confirmDeleteId))
+    setConfirmDeleteId(null)
+    setIsConfirmOpen(false)
   }
 
   const publishedCount = announcements.filter((a) => a.status === "published").length
@@ -456,7 +471,7 @@ export default function AnnouncementsPage() {
                       )}
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => handleDelete(announcement.id)}
+                        onClick={() => requestDeleteAnnouncement(announcement.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
@@ -525,6 +540,23 @@ export default function AnnouncementsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>This action will permanently delete the announcement. Are you sure?</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm">{confirmDeleteId ? `Delete announcement ${confirmDeleteId}? This cannot be undone.` : "Delete selected announcement?"}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteAnnouncement}>Delete</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -22,6 +22,7 @@ import {
   Edit,
   Calendar
 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 const mockOrdinances = [
   {
@@ -85,12 +86,27 @@ function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
 
 export default function OfficialOrdinancesPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [ordinances, setOrdinances] = useState(mockOrdinances)
   const [selectedOrdinance, setSelectedOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-  const publishedCount = mockOrdinances.filter(o => o.status === "Published").length
-  const draftCount = mockOrdinances.filter(o => o.status === "Draft").length
+  const requestDeleteOrdinance = (id: string) => {
+    setConfirmDeleteId(id)
+    setIsConfirmOpen(true)
+  }
+
+  const confirmDeleteOrdinance = () => {
+    if (!confirmDeleteId) return
+    setOrdinances((s) => s.filter((o) => o.id !== confirmDeleteId))
+    setConfirmDeleteId(null)
+    setIsConfirmOpen(false)
+  }
+
+  const publishedCount = ordinances.filter(o => o.status === "Published").length
+  const draftCount = ordinances.filter(o => o.status === "Draft").length
 
   return (
     <motion.div
@@ -215,7 +231,7 @@ export default function OfficialOrdinancesPage() {
           </TabsList>
           <TabsContent value="all" className="mt-3 md:mt-4">
             <div className="space-y-3 md:space-y-4">
-              {mockOrdinances.map((ordinance) => (
+              {ordinances.map((ordinance) => (
                 <Card key={ordinance.id} className="transition-shadow hover:shadow-lg">
                   <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
                     <div className="flex items-center justify-between gap-2">
@@ -255,7 +271,7 @@ export default function OfficialOrdinancesPage() {
           </TabsContent>
           <TabsContent value="published" className="mt-3 md:mt-4">
             <div className="space-y-3 md:space-y-4">
-              {mockOrdinances.filter(o => o.status === "Published").map((ordinance) => (
+              {ordinances.filter(o => o.status === "Published").map((ordinance) => (
                 <Card key={ordinance.id}>
                   <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
                     <div className="flex items-center justify-between gap-2">
@@ -280,7 +296,7 @@ export default function OfficialOrdinancesPage() {
           </TabsContent>
           <TabsContent value="drafts" className="mt-3 md:mt-4">
             <div className="space-y-3 md:space-y-4">
-              {mockOrdinances.filter(o => o.status === "Draft").map((ordinance) => (
+              {ordinances.filter(o => o.status === "Draft").map((ordinance) => (
                 <Card key={ordinance.id}>
                   <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
                     <div className="flex items-center justify-between gap-2">
@@ -295,6 +311,9 @@ export default function OfficialOrdinancesPage() {
                         <Edit className="h-3 w-3" />
                       </Button>
                       <Button size="sm" className="h-7 md:h-8 px-2 text-xs bg-emerald-600 hover:bg-emerald-700">Publish</Button>
+                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs text-destructive" onClick={() => requestDeleteOrdinance(ordinance.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -422,6 +441,22 @@ export default function OfficialOrdinancesPage() {
               <Printer className="mr-2 h-3 w-3" />
               Print
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Confirm Delete Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>This action will permanently delete the ordinance. Are you sure?</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm">{confirmDeleteId ? `Delete ordinance ${confirmDeleteId}? This cannot be undone.` : "Delete selected ordinance?"}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={confirmDeleteOrdinance}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

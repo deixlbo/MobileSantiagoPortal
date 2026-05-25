@@ -24,6 +24,7 @@ import {
   Calendar,
   Wallet
 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 const mockProjects = [
   {
@@ -112,12 +113,27 @@ function getStatusBadge(status: string) {
 
 export default function OfficialProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [projects, setProjects] = useState(mockProjects)
   const [selectedProject, setSelectedProject] = useState<typeof mockProjects[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showPrintPreview, setShowPrintPreview] = useState(false)
+  const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-  const ongoingCount = mockProjects.filter(p => p.status === "Ongoing").length
-  const completedCount = mockProjects.filter(p => p.status === "Completed").length
+  const requestDeleteProject = (id: string) => {
+    setConfirmDeleteProjectId(id)
+    setIsConfirmOpen(true)
+  }
+
+  const confirmDeleteProject = () => {
+    if (!confirmDeleteProjectId) return
+    setProjects((s) => s.filter((p) => p.id !== confirmDeleteProjectId))
+    setConfirmDeleteProjectId(null)
+    setIsConfirmOpen(false)
+  }
+
+  const ongoingCount = projects.filter(p => p.status === "Ongoing").length
+  const completedCount = projects.filter(p => p.status === "Completed").length
 
   return (
     <div className="space-y-6">
@@ -286,7 +302,7 @@ export default function OfficialProjectsPage() {
 
       {/* Projects Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {mockProjects.map((project) => (
+        {projects.map((project) => (
           <Card key={project.id} className="transition-shadow hover:shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -317,7 +333,7 @@ export default function OfficialProjectsPage() {
                   {project.targetCompletion}
                 </div>
               </div>
-              <div className="flex gap-2">
+                <div className="flex gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -330,6 +346,10 @@ export default function OfficialProjectsPage() {
                   <Edit className="mr-1 h-3 w-3" />
                   Update
                 </Button>
+                  <Button variant="outline" size="sm" className="text-destructive" onClick={() => requestDeleteProject(project.id)}>
+                    <Trash2 className="mr-1 h-3 w-3" />
+                    Delete
+                  </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -419,6 +439,23 @@ export default function OfficialProjectsPage() {
               <Printer className="mr-2 h-4 w-4" />
               Print Report
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>This action will permanently delete the project. Are you sure?</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm">{confirmDeleteProjectId ? `Delete project ${confirmDeleteProjectId}? This cannot be undone.` : "Delete selected project?"}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteProject}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

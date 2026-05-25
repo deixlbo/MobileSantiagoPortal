@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -228,7 +229,23 @@ export default function AssetsPage() {
   }
 
   const handleDeleteAsset = (id: string) => {
+    // immediate delete kept for programmatic calls; UI uses confirmation
     setAssets(assets.filter((a) => a.id !== id))
+  }
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  const requestDeleteAsset = (id: string) => {
+    setConfirmDeleteId(id)
+    setIsConfirmOpen(true)
+  }
+
+  const confirmDeleteAsset = () => {
+    if (!confirmDeleteId) return
+    setAssets((s) => s.filter((a) => a.id !== confirmDeleteId))
+    setConfirmDeleteId(null)
+    setIsConfirmOpen(false)
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -561,7 +578,7 @@ export default function AssetsPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={() => handleDeleteAsset(asset.id)}
+                            onClick={() => requestDeleteAsset(asset.id)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
@@ -652,6 +669,23 @@ export default function AssetsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>This action will permanently delete the asset. Are you sure?</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm">{confirmDeleteId ? `Delete asset ${confirmDeleteId}? This cannot be undone.` : "Delete selected asset?"}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteAsset}>Delete</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
