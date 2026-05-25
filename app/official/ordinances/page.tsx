@@ -244,17 +244,90 @@ export default function OfficialOrdinancesPage() {
                       </Button>
                       {ordinance.status === "Published" && (
                         <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => {
-                          setTimeout(() => {
-                            const printContent = document.getElementById(`ordinance-print-${ordinance.id}`)
-                            if (printContent) {
-                              const printWindow = window.open("", "", "width=1000,height=600")
-                              if (printWindow) {
-                                printWindow.document.write(printContent.innerHTML)
-                                printWindow.document.close()
-                                printWindow.print()
-                              }
-                            }
-                          }, 100)
+                          const printContent = `
+                            <html>
+                              <head>
+                                <title>Ordinance ${ordinance.number}</title>
+                                <style>
+                                  body { font-family: 'Times New Roman', serif; padding: 30px; color: #000; }
+                                  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #000; }
+                                  .logo { width: 80px; height: 80px; }
+                                  .logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+                                  .header-text { text-align: center; flex: 1; padding: 0 20px; font-size: 11px; }
+                                  .header-text .main-title { font-size: 16px; font-weight: bold; margin: 2px 0; }
+                                  .title-box { border-top: 3px solid #000; border-bottom: 3px solid #000; padding: 10px 0; margin: 20px 0; }
+                                  .title-box p { font-size: 14px; font-weight: bold; margin: 5px 0; }
+                                  h3 { font-size: 13px; font-weight: bold; margin: 20px 0 15px 0; text-align: center; text-decoration: underline; }
+                                  .content { text-align: justify; font-size: 12px; line-height: 1.8; }
+                                  .content p { margin-bottom: 8px; }
+                                  .section { margin-bottom: 15px; }
+                                  .section strong { display: block; margin-bottom: 5px; }
+                                  .signature-section { margin-top: 30px; font-size: 12px; line-height: 1.8; }
+                                  .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
+                                  .signature-line { text-align: center; }
+                                  .signature-line p:first-child { border-bottom: 1px solid #000; min-height: 50px; margin-bottom: 5px; }
+                                  .signature-line strong { font-size: 13px; }
+                                  .signature-line .title { font-size: 11px; }
+                                </style>
+                              </head>
+                              <body>
+                                <div class="header">
+                                  <div class="logo">
+                                    <img src="/images/santiagologo.jpg" alt="Logo" />
+                                  </div>
+                                  <div class="header-text">
+                                    <p>Republic of the Philippines</p>
+                                    <p>Province of Zambales</p>
+                                    <p>Municipality of San Antonio</p>
+                                    <p class="main-title">Barangay Santiago</p>
+                                  </div>
+                                  <div class="logo">
+                                    <img src="/images/saz.jpg" alt="Municipality" />
+                                  </div>
+                                </div>
+                                <div class="title-box">
+                                  <p>BARANGAY ORDINANCE NO. ${ordinance.number} SERIES OF ${ordinance.year}</p>
+                                </div>
+                                <h3>${ordinance.fullTitle}</h3>
+                                <div class="content">
+                                  <p style="font-weight: bold; margin-bottom: 10px;">WHEREAS:</p>
+                                  ${ordinance.whereas.map((clause) => `<p>${clause}</p>`).join('')}
+                                  <p style="font-weight: bold; margin: 15px 0;">NOW, THEREFORE BE IT ORDAINED:</p>
+                                  ${ordinance.sections.map((section, i) => `
+                                    <div class="section">
+                                      <strong>SECTION ${i + 1}. ${section.title}</strong>
+                                      <p>${section.content.replace(/\n/g, '</p><p>')}</p>
+                                    </div>
+                                  `).join('')}
+                                </div>
+                                <div class="signature-section">
+                                  <p>ENACTED this ${ordinance.date} at Barangay Santiago, San Antonio, Zambales.</p>
+                                  <div class="signature-grid">
+                                    <div class="signature-line">
+                                      <p></p>
+                                      <strong>APRIL JOY C. CANO</strong>
+                                      <span class="title">Barangay Secretary</span>
+                                    </div>
+                                    <div class="signature-line">
+                                      <p></p>
+                                      <strong>ROLANDO C. BORJA</strong>
+                                      <span class="title">Punong Barangay</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </body>
+                            </html>
+                          `;
+                          
+                          const printWindow = window.open("", "", "width=1000,height=600");
+                          if (printWindow) {
+                            printWindow.document.write(printContent);
+                            printWindow.document.close();
+                            printWindow.focus();
+                            setTimeout(() => {
+                              printWindow.print();
+                            }, 250);
+                          }
                         }}>
                           <Printer className="h-3 w-3" />
                         </Button>
@@ -282,17 +355,90 @@ export default function OfficialOrdinancesPage() {
                         <Eye className="h-3 w-3" />
                       </Button>
                       <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => {
-                        setTimeout(() => {
-                          const printContent = document.getElementById(`ordinance-print-${ordinance.id}`)
-                          if (printContent) {
-                            const printWindow = window.open("", "", "width=1000,height=600")
-                            if (printWindow) {
-                              printWindow.document.write(printContent.innerHTML)
-                              printWindow.document.close()
-                              printWindow.print()
-                            }
-                          }
-                        }, 100)
+                        const printContent = `
+                          <html>
+                            <head>
+                              <title>Ordinance ${ordinance.number}</title>
+                              <style>
+                                body { font-family: 'Times New Roman', serif; padding: 30px; color: #000; }
+                                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #000; }
+                                .logo { width: 80px; height: 80px; }
+                                .logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+                                .header-text { text-align: center; flex: 1; padding: 0 20px; font-size: 11px; }
+                                .header-text .main-title { font-size: 16px; font-weight: bold; margin: 2px 0; }
+                                .title-box { border-top: 3px solid #000; border-bottom: 3px solid #000; padding: 10px 0; margin: 20px 0; }
+                                .title-box p { font-size: 14px; font-weight: bold; margin: 5px 0; }
+                                h3 { font-size: 13px; font-weight: bold; margin: 20px 0 15px 0; text-align: center; text-decoration: underline; }
+                                .content { text-align: justify; font-size: 12px; line-height: 1.8; }
+                                .content p { margin-bottom: 8px; }
+                                .section { margin-bottom: 15px; }
+                                .section strong { display: block; margin-bottom: 5px; }
+                                .signature-section { margin-top: 30px; font-size: 12px; line-height: 1.8; }
+                                .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
+                                .signature-line { text-align: center; }
+                                .signature-line p:first-child { border-bottom: 1px solid #000; min-height: 50px; margin-bottom: 5px; }
+                                .signature-line strong { font-size: 13px; }
+                                .signature-line .title { font-size: 11px; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <div class="logo">
+                                  <img src="/images/santiagologo.jpg" alt="Logo" />
+                                </div>
+                                <div class="header-text">
+                                  <p>Republic of the Philippines</p>
+                                  <p>Province of Zambales</p>
+                                  <p>Municipality of San Antonio</p>
+                                  <p class="main-title">Barangay Santiago</p>
+                                </div>
+                                <div class="logo">
+                                  <img src="/images/saz.jpg" alt="Municipality" />
+                                </div>
+                              </div>
+                              <div class="title-box">
+                                <p>BARANGAY ORDINANCE NO. ${ordinance.number} SERIES OF ${ordinance.year}</p>
+                              </div>
+                              <h3>${ordinance.fullTitle}</h3>
+                              <div class="content">
+                                <p style="font-weight: bold; margin-bottom: 10px;">WHEREAS:</p>
+                                ${ordinance.whereas.map((clause) => `<p>${clause}</p>`).join('')}
+                                <p style="font-weight: bold; margin: 15px 0;">NOW, THEREFORE BE IT ORDAINED:</p>
+                                ${ordinance.sections.map((section, i) => `
+                                  <div class="section">
+                                    <strong>SECTION ${i + 1}. ${section.title}</strong>
+                                    <p>${section.content.replace(/\n/g, '</p><p>')}</p>
+                                  </div>
+                                `).join('')}
+                              </div>
+                              <div class="signature-section">
+                                <p>ENACTED this ${ordinance.date} at Barangay Santiago, San Antonio, Zambales.</p>
+                                <div class="signature-grid">
+                                  <div class="signature-line">
+                                    <p></p>
+                                    <strong>APRIL JOY C. CANO</strong>
+                                    <span class="title">Barangay Secretary</span>
+                                  </div>
+                                  <div class="signature-line">
+                                    <p></p>
+                                    <strong>ROLANDO C. BORJA</strong>
+                                    <span class="title">Punong Barangay</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </body>
+                          </html>
+                        `;
+                        
+                        const printWindow = window.open("", "", "width=1000,height=600");
+                        if (printWindow) {
+                          printWindow.document.write(printContent);
+                          printWindow.document.close();
+                          printWindow.focus();
+                          setTimeout(() => {
+                            printWindow.print();
+                          }, 250);
+                        }
                       }}>
                         <Printer className="h-3 w-3" />
                       </Button>
@@ -450,80 +596,7 @@ export default function OfficialOrdinancesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Print Containers for Direct Printing */}
-      {mockOrdinances.map((ordinance) => (
-        <div key={ordinance.id} id={`ordinance-print-${ordinance.id}`} className="hidden print:block">
-          <div style={{ padding: '30px', textAlign: 'center', color: '#000', fontFamily: 'Times New Roman, serif' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '20px', borderBottom: '3px solid #000' }}>
-              <div style={{ width: '80px', height: '80px' }}>
-                <img src="/images/santiagologo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              </div>
-              <div style={{ textAlign: 'center', flex: 1, paddingLeft: '20px', paddingRight: '20px' }}>
-                <p style={{ fontSize: '11px', margin: '2px 0' }}>Republic of the Philippines</p>
-                <p style={{ fontSize: '11px', margin: '2px 0' }}>Province of Zambales</p>
-                <p style={{ fontSize: '11px', margin: '2px 0' }}>Municipality of San Antonio</p>
-                <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '2px 0' }}>Barangay Santiago</p>
-              </div>
-              <div style={{ width: '80px', height: '80px' }}>
-                <img src="/images/saz.jpg" alt="Municipality" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              </div>
-            </div>
 
-            {/* Title Box */}
-            <div style={{ borderTop: '3px solid #000', borderBottom: '3px solid #000', padding: '10px 0', margin: '20px 0' }}>
-              <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '5px 0' }}>
-                BARANGAY ORDINANCE NO. {ordinance.number} SERIES OF {ordinance.year}
-              </p>
-            </div>
-
-            {/* Full Title */}
-            <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: '20px 0 15px 0', textAlign: 'center', textDecoration: 'underline' }}>
-              {ordinance.fullTitle}
-            </h3>
-
-            {/* Whereas Clauses */}
-            <div style={{ textAlign: 'justify', fontSize: '12px', lineHeight: '1.8', marginBottom: '20px' }}>
-              <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>WHEREAS:</p>
-              {ordinance.whereas.map((clause, i) => (
-                <p key={i} style={{ marginBottom: '8px' }}>{clause}</p>
-              ))}
-            </div>
-
-            {/* Sections */}
-            <div style={{ textAlign: 'justify', fontSize: '12px', lineHeight: '1.8' }}>
-              <p style={{ fontWeight: 'bold', marginBottom: '15px' }}>NOW, THEREFORE BE IT ORDAINED:</p>
-              {ordinance.sections.map((section, i) => (
-                <div key={i} style={{ marginBottom: '15px' }}>
-                  <p style={{ fontWeight: 'bold' }}>SECTION {i + 1}. {section.title}</p>
-                  <p style={{ whiteSpace: 'pre-line' }}>{section.content}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Enactment */}
-            <div style={{ marginTop: '30px', fontSize: '12px', lineHeight: '1.8' }}>
-              <p style={{ textAlign: 'justify', marginBottom: '30px' }}>
-                ENACTED this {ordinance.date} at Barangay Santiago, San Antonio, Zambales.
-              </p>
-
-              {/* Signature Section */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '40px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
-                  <p style={{ fontWeight: 'bold', fontSize: '13px' }}>APRIL JOY C. CANO</p>
-                  <p style={{ fontSize: '11px' }}>Barangay Secretary</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
-                  <p style={{ fontWeight: 'bold', fontSize: '13px' }}>ROLANDO C. BORJA</p>
-                  <p style={{ fontSize: '11px' }}>Punong Barangay</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
     </motion.div>
   )
 }

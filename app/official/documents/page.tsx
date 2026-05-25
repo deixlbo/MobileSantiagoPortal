@@ -455,19 +455,80 @@ export default function OfficialDocumentsPage() {
                           <TableCell className="py-2 md:py-4 text-right">
                             <div className="flex gap-1 md:gap-2 justify-end">
                               <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs flex-shrink-0" onClick={() => {
-                                setPrintRequest(request)
-                                // Direct print without preview
-                                setTimeout(() => {
-                                  const printContent = document.getElementById("print-document-direct")
-                                  if (printContent) {
-                                    const printWindow = window.open("", "", "width=1000,height=600")
-                                    if (printWindow) {
-                                      printWindow.document.write(printContent.innerHTML)
-                                      printWindow.document.close()
-                                      printWindow.print()
-                                    }
-                                  }
-                                }, 100)
+                                // Create printable content
+                                const printContent = `
+                                  <html>
+                                    <head>
+                                      <title>${request.type}</title>
+                                      <style>
+                                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                                        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #333; }
+                                        .logo { width: 80px; height: 80px; }
+                                        .logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+                                        .header-text { text-align: center; flex: 1; padding: 0 20px; }
+                                        .header-text p { font-size: 12px; margin: 4px 0; }
+                                        .header-text .main-title { font-size: 18px; font-weight: bold; }
+                                        h2 { font-size: 20px; font-weight: bold; text-transform: uppercase; margin: 20px 0; letter-spacing: 2px; text-align: center; }
+                                        .request-id { font-size: 12px; color: #666; margin-bottom: 30px; text-align: center; }
+                                        .content { text-align: justify; line-height: 1.8; font-size: 14px; }
+                                        .content p { margin: 15px 0; font-weight: bold; }
+                                        .content .paragraph { font-weight: normal; }
+                                        .signature-section { margin-top: 50px; text-align: center; }
+                                        .signature-line { margin-bottom: 50px; }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="header">
+                                        <div class="logo">
+                                          <img src="/images/santiagologo.jpg" alt="Logo" />
+                                        </div>
+                                        <div class="header-text">
+                                          <p>Republic of the Philippines</p>
+                                          <p>Province of Zambales</p>
+                                          <p>Municipality of San Antonio</p>
+                                          <p class="main-title">Barangay Santiago</p>
+                                        </div>
+                                        <div class="logo">
+                                          <img src="/images/saz.jpg" alt="Municipality" />
+                                        </div>
+                                      </div>
+                                      <h2>${request.type}</h2>
+                                      <p class="request-id">Request ID: ${request.id}</p>
+                                      <div class="content">
+                                        <p>TO WHOM IT MAY CONCERN:</p>
+                                        ${
+                                          request.type === "Barangay Clearance" 
+                                            ? `<p class="paragraph">This is to certify that <strong>${request.requester}</strong>, a resident of Barangay Santiago, San Antonio, Zambales, is of good moral character and has no derogatory record on file in this office.</p>
+                                               <p class="paragraph">This certification is issued upon request for <strong>${request.purpose}</strong>.</p>`
+                                            : request.type === "Certificate of Residency"
+                                            ? `<p class="paragraph">This is to certify that <strong>${request.requester}</strong> is a bonafide resident of Barangay Santiago, San Antonio, Zambales.</p>
+                                               <p class="paragraph">This certification is issued upon request for <strong>${request.purpose}</strong>.</p>`
+                                            : request.type === "Certificate of Indigency"
+                                            ? `<p class="paragraph">This is to certify that <strong>${request.requester}</strong> is a resident of Barangay Santiago, San Antonio, Zambales, and belongs to an indigent family in this barangay.</p>
+                                               <p class="paragraph">This certification is issued upon request for <strong>${request.purpose}</strong>.</p>`
+                                            : `<p class="paragraph">This is to certify that <strong>${request.requester}</strong>, owner/operator, located at Barangay Santiago, San Antonio, Zambales, has been granted clearance to operate their business in this barangay.</p>
+                                               <p class="paragraph">This certification is issued upon request for <strong>${request.purpose}</strong>.</p>`
+                                        }
+                                        <p>Issued this _____ day of __________, 2026 at Barangay Santiago, San Antonio, Zambales.</p>
+                                        <div class="signature-section">
+                                          <p class="signature-line">_________________________</p>
+                                          <p><strong>ROLANDO C. BORJA</strong></p>
+                                          <p>Barangay Captain</p>
+                                        </div>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `;
+                                
+                                const printWindow = window.open("", "", "width=1000,height=600");
+                                if (printWindow) {
+                                  printWindow.document.write(printContent);
+                                  printWindow.document.close();
+                                  printWindow.focus();
+                                  setTimeout(() => {
+                                    printWindow.print();
+                                  }, 250);
+                                }
                               }}>
                                 <Printer className="h-3 w-3 md:mr-1" />
                                 <span className="hidden md:inline">Print</span>
@@ -951,95 +1012,7 @@ export default function OfficialDocumentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Print Container for Direct Printing */}
-      {printRequest && (
-        <div id="print-document-direct" className="hidden">
-          <div className="print:block text-gray-900">
-            <div style={{ padding: '20px', textAlign: 'center' }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '3px solid #333' }}>
-                <div style={{ width: '80px', height: '80px' }}>
-                  <img src="/images/santiagologo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                </div>
-                <div style={{ textAlign: 'center', flex: 1, paddingLeft: '20px', paddingRight: '20px' }}>
-                  <p style={{ fontSize: '12px', margin: '4px 0' }}>Republic of the Philippines</p>
-                  <p style={{ fontSize: '12px', margin: '4px 0' }}>Province of Zambales</p>
-                  <p style={{ fontSize: '12px', margin: '4px 0' }}>Municipality of San Antonio</p>
-                  <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '4px 0' }}>Barangay Santiago</p>
-                </div>
-                <div style={{ width: '80px', height: '80px' }}>
-                  <img src="/images/saz.jpg" alt="Municipality" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                </div>
-              </div>
 
-              {/* Document Title */}
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase', margin: '20px 0', letterSpacing: '2px' }}>
-                {printRequest.type}
-              </h2>
-              <p style={{ fontSize: '12px', color: '#666', marginBottom: '30px' }}>Request ID: {printRequest.id}</p>
-
-              {/* Document Body */}
-              <div style={{ textAlign: 'justify', lineHeight: '1.8', fontSize: '14px' }}>
-                <p style={{ fontWeight: 'bold' }}>TO WHOM IT MAY CONCERN:</p>
-
-                {printRequest.type === "Barangay Clearance" && (
-                  <>
-                    <p style={{ marginTop: '15px' }}>
-                      This is to certify that <span style={{ fontWeight: 'bold' }}>{printRequest.requester}</span>, a resident of Barangay Santiago, San Antonio, Zambales, is of good moral character and has no derogatory record on file in this office.
-                    </p>
-                    <p style={{ marginTop: '15px' }}>
-                      This certification is issued upon request for <span style={{ fontWeight: 'bold' }}>{printRequest.purpose}</span>.
-                    </p>
-                  </>
-                )}
-
-                {printRequest.type === "Certificate of Residency" && (
-                  <>
-                    <p style={{ marginTop: '15px' }}>
-                      This is to certify that <span style={{ fontWeight: 'bold' }}>{printRequest.requester}</span> is a bonafide resident of Barangay Santiago, San Antonio, Zambales.
-                    </p>
-                    <p style={{ marginTop: '15px' }}>
-                      This certification is issued upon request for <span style={{ fontWeight: 'bold' }}>{printRequest.purpose}</span>.
-                    </p>
-                  </>
-                )}
-
-                {printRequest.type === "Certificate of Indigency" && (
-                  <>
-                    <p style={{ marginTop: '15px' }}>
-                      This is to certify that <span style={{ fontWeight: 'bold' }}>{printRequest.requester}</span> is a resident of Barangay Santiago, San Antonio, Zambales, and belongs to an indigent family in this barangay.
-                    </p>
-                    <p style={{ marginTop: '15px' }}>
-                      This certification is issued upon request for <span style={{ fontWeight: 'bold' }}>{printRequest.purpose}</span>.
-                    </p>
-                  </>
-                )}
-
-                {printRequest.type === "Business Clearance" && (
-                  <>
-                    <p style={{ marginTop: '15px' }}>
-                      This is to certify that <span style={{ fontWeight: 'bold' }}>{printRequest.requester}</span>, owner/operator, located at Barangay Santiago, San Antonio, Zambales, has been granted clearance to operate their business in this barangay.
-                    </p>
-                    <p style={{ marginTop: '15px' }}>
-                      This certification is issued upon request for <span style={{ fontWeight: 'bold' }}>{printRequest.purpose}</span>.
-                    </p>
-                  </>
-                )}
-
-                <p style={{ marginTop: '30px' }}>
-                  Issued this _____ day of __________, 2026 at Barangay Santiago, San Antonio, Zambales.
-                </p>
-
-                <div style={{ marginTop: '50px', textAlign: 'center' }}>
-                  <p style={{ marginBottom: '50px' }}>_________________________</p>
-                  <p style={{ fontWeight: 'bold' }}>ROLANDO C. BORJA</p>
-                  <p>Barangay Captain</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </motion.div>
   )
 }

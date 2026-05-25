@@ -363,19 +363,120 @@ export default function OfficialBlottersPage() {
                                 size="sm"
                                 className="h-7 md:h-8 px-2 text-xs"
                                 onClick={() => {
-                                  setSelectedBlotter(blotter)
-                                  // Direct print without preview
-                                  setTimeout(() => {
-                                    const printContent = document.getElementById(`blotter-print-${blotter.id}`)
-                                    if (printContent) {
-                                      const printWindow = window.open("", "", "width=1000,height=600")
-                                      if (printWindow) {
-                                        printWindow.document.write(printContent.innerHTML)
-                                        printWindow.document.close()
-                                        printWindow.print()
-                                      }
-                                    }
-                                  }, 100)
+                                  const printContent = `
+                                    <html>
+                                      <head>
+                                        <title>Blotter Report - ${blotter.id}</title>
+                                        <style>
+                                          body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                                          .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #333; }
+                                          .logo { width: 80px; height: 80px; }
+                                          .logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+                                          .header-text { text-align: center; flex: 1; padding: 0 20px; font-size: 12px; }
+                                          .header-text .main-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
+                                          h2 { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 20px 0; letter-spacing: 1px; text-align: center; }
+                                          .content { text-align: left; margin-top: 20px; font-size: 13px; line-height: 1.6; }
+                                          .detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+                                          .detail-item { margin-bottom: 15px; }
+                                          .detail-item strong { display: block; margin-bottom: 2px; font-weight: bold; }
+                                          .detail-item p { margin: 2px 0; }
+                                          .detail-item small { font-size: 11px; color: #666; }
+                                          .section-box { margin: 15px 0; padding: 10px; background-color: #f5f5f5; border-left: 3px solid #333; }
+                                          .resolution-box { background-color: #e8f5e9; border-left: 3px solid #4caf50; color: #2e7d32; }
+                                          .signature-section { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+                                          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+                                          .signature-line { text-align: center; }
+                                          .signature-line p:first-child { border-bottom: 1px solid #000; min-height: 50px; margin-bottom: 5px; }
+                                          .signature-line strong { display: block; font-size: 12px; font-weight: bold; }
+                                          .signature-line .title { font-size: 11px; }
+                                        </style>
+                                      </head>
+                                      <body>
+                                        <div class="header">
+                                          <div class="logo">
+                                            <img src="/images/santiagologo.jpg" alt="Logo" />
+                                          </div>
+                                          <div class="header-text">
+                                            <p>Republic of the Philippines</p>
+                                            <p>Province of Zambales</p>
+                                            <p>Municipality of San Antonio</p>
+                                            <p class="main-title">Barangay Santiago</p>
+                                          </div>
+                                          <div class="logo">
+                                            <img src="/images/saz.jpg" alt="Municipality" />
+                                          </div>
+                                        </div>
+                                        <h2>BLOTTER REPORT</h2>
+                                        <div class="content">
+                                          <div class="detail-row">
+                                            <div class="detail-item">
+                                              <strong>Reference No.:</strong>
+                                              <p>${blotter.id}</p>
+                                            </div>
+                                            <div class="detail-item">
+                                              <strong>Date Reported:</strong>
+                                              <p>${blotter.date}</p>
+                                            </div>
+                                            <div class="detail-item">
+                                              <strong>Incident Type:</strong>
+                                              <p>${blotter.type}</p>
+                                            </div>
+                                            <div class="detail-item">
+                                              <strong>Status:</strong>
+                                              <p>${blotter.status.toUpperCase()}</p>
+                                            </div>
+                                          </div>
+                                          <div class="detail-item">
+                                            <strong>Location:</strong>
+                                            <p>${blotter.location}</p>
+                                          </div>
+                                          <div class="detail-item">
+                                            <strong>Description:</strong>
+                                            <p>${blotter.description}</p>
+                                          </div>
+                                          <div class="detail-row">
+                                            <div class="detail-item">
+                                              <strong>Complainant:</strong>
+                                              <p>${blotter.complainant}</p>
+                                              <small>${blotter.complainantAddress}</small>
+                                            </div>
+                                            <div class="detail-item">
+                                              <strong>Respondent:</strong>
+                                              <p>${blotter.respondent}</p>
+                                              <small>${blotter.respondentAddress}</small>
+                                            </div>
+                                          </div>
+                                          ${blotter.actionTaken ? `<div class="section-box"><strong>Action Taken:</strong><p>${blotter.actionTaken}</p></div>` : ''}
+                                          ${blotter.resolution ? `<div class="section-box resolution-box"><strong>Resolution:</strong><p>${blotter.resolution}</p></div>` : ''}
+                                          <div class="signature-section">
+                                            <p style="font-size: 11px; color: #666; text-align: center; margin-bottom: 30px;">Certified Correct:</p>
+                                            <div class="signature-grid">
+                                              <div class="signature-line">
+                                                <p></p>
+                                                <strong>ROLANDO C. BORJA</strong>
+                                                <span class="title">Barangay Captain</span>
+                                              </div>
+                                              <div class="signature-line">
+                                                <p></p>
+                                                <strong>Date</strong>
+                                                <span class="title">${new Date().toLocaleDateString()}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </body>
+                                    </html>
+                                  `;
+                                  
+                                  const printWindow = window.open("", "", "width=1000,height=600");
+                                  if (printWindow) {
+                                    printWindow.document.write(printContent);
+                                    printWindow.document.close();
+                                    printWindow.focus();
+                                    setTimeout(() => {
+                                      printWindow.print();
+                                    }, 250);
+                                  }
                                 }}
                               >
                                 <Printer className="h-3 w-3" />
@@ -458,17 +559,121 @@ export default function OfficialBlottersPage() {
             )}
             <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => {
               if (selectedBlotter) {
-                setTimeout(() => {
-                  const printContent = document.getElementById(`blotter-print-${selectedBlotter.id}`)
-                  if (printContent) {
-                    const printWindow = window.open("", "", "width=1000,height=600")
-                    if (printWindow) {
-                      printWindow.document.write(printContent.innerHTML)
-                      printWindow.document.close()
-                      printWindow.print()
-                    }
-                  }
-                }, 100)
+                const blotter = selectedBlotter;
+                const printContent = `
+                  <html>
+                    <head>
+                      <title>Blotter Report - ${blotter.id}</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px solid #333; }
+                        .logo { width: 80px; height: 80px; }
+                        .logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+                        .header-text { text-align: center; flex: 1; padding: 0 20px; font-size: 12px; }
+                        .header-text .main-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
+                        h2 { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 20px 0; letter-spacing: 1px; text-align: center; }
+                        .content { text-align: left; margin-top: 20px; font-size: 13px; line-height: 1.6; }
+                        .detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+                        .detail-item { margin-bottom: 15px; }
+                        .detail-item strong { display: block; margin-bottom: 2px; font-weight: bold; }
+                        .detail-item p { margin: 2px 0; }
+                        .detail-item small { font-size: 11px; color: #666; }
+                        .section-box { margin: 15px 0; padding: 10px; background-color: #f5f5f5; border-left: 3px solid #333; }
+                        .resolution-box { background-color: #e8f5e9; border-left: 3px solid #4caf50; color: #2e7d32; }
+                        .signature-section { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+                        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+                        .signature-line { text-align: center; }
+                        .signature-line p:first-child { border-bottom: 1px solid #000; min-height: 50px; margin-bottom: 5px; }
+                        .signature-line strong { display: block; font-size: 12px; font-weight: bold; }
+                        .signature-line .title { font-size: 11px; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div class="logo">
+                          <img src="/images/santiagologo.jpg" alt="Logo" />
+                        </div>
+                        <div class="header-text">
+                          <p>Republic of the Philippines</p>
+                          <p>Province of Zambales</p>
+                          <p>Municipality of San Antonio</p>
+                          <p class="main-title">Barangay Santiago</p>
+                        </div>
+                        <div class="logo">
+                          <img src="/images/saz.jpg" alt="Municipality" />
+                        </div>
+                      </div>
+                      <h2>BLOTTER REPORT</h2>
+                      <div class="content">
+                        <div class="detail-row">
+                          <div class="detail-item">
+                            <strong>Reference No.:</strong>
+                            <p>${blotter.id}</p>
+                          </div>
+                          <div class="detail-item">
+                            <strong>Date Reported:</strong>
+                            <p>${blotter.date}</p>
+                          </div>
+                          <div class="detail-item">
+                            <strong>Incident Type:</strong>
+                            <p>${blotter.type}</p>
+                          </div>
+                          <div class="detail-item">
+                            <strong>Status:</strong>
+                            <p>${blotter.status.toUpperCase()}</p>
+                          </div>
+                        </div>
+                        <div class="detail-item">
+                          <strong>Location:</strong>
+                          <p>${blotter.location}</p>
+                        </div>
+                        <div class="detail-item">
+                          <strong>Description:</strong>
+                          <p>${blotter.description}</p>
+                        </div>
+                        <div class="detail-row">
+                          <div class="detail-item">
+                            <strong>Complainant:</strong>
+                            <p>${blotter.complainant}</p>
+                            <small>${blotter.complainantAddress}</small>
+                          </div>
+                          <div class="detail-item">
+                            <strong>Respondent:</strong>
+                            <p>${blotter.respondent}</p>
+                            <small>${blotter.respondentAddress}</small>
+                          </div>
+                        </div>
+                        ${blotter.actionTaken ? `<div class="section-box"><strong>Action Taken:</strong><p>${blotter.actionTaken}</p></div>` : ''}
+                        ${blotter.resolution ? `<div class="section-box resolution-box"><strong>Resolution:</strong><p>${blotter.resolution}</p></div>` : ''}
+                        <div class="signature-section">
+                          <p style="font-size: 11px; color: #666; text-align: center; margin-bottom: 30px;">Certified Correct:</p>
+                          <div class="signature-grid">
+                            <div class="signature-line">
+                              <p></p>
+                              <strong>ROLANDO C. BORJA</strong>
+                              <span class="title">Barangay Captain</span>
+                            </div>
+                            <div class="signature-line">
+                              <p></p>
+                              <strong>Date</strong>
+                              <span class="title">${new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                  </html>
+                `;
+                
+                const printWindow = window.open("", "", "width=1000,height=600");
+                if (printWindow) {
+                  printWindow.document.write(printContent);
+                  printWindow.document.close();
+                  printWindow.focus();
+                  setTimeout(() => {
+                    printWindow.print();
+                  }, 250);
+                }
               }
             }}>
               <Printer className="mr-1 h-3 w-3" />
@@ -619,109 +824,7 @@ export default function OfficialBlottersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden Print Containers for Direct Printing */}
-      {mockBlotters.map((blotter) => (
-        <div key={blotter.id} id={`blotter-print-${blotter.id}`} className="hidden print:block">
-          <div style={{ padding: '20px', textAlign: 'center', color: '#333', fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '3px solid #333' }}>
-              <div style={{ width: '80px', height: '80px' }}>
-                <img src="/images/santiagologo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              </div>
-              <div style={{ textAlign: 'center', flex: 1, paddingLeft: '20px', paddingRight: '20px' }}>
-                <p style={{ fontSize: '12px', margin: '4px 0' }}>Republic of the Philippines</p>
-                <p style={{ fontSize: '12px', margin: '4px 0' }}>Province of Zambales</p>
-                <p style={{ fontSize: '12px', margin: '4px 0' }}>Municipality of San Antonio</p>
-                <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '4px 0' }}>Barangay Santiago</p>
-              </div>
-              <div style={{ width: '80px', height: '80px' }}>
-                <img src="/images/saz.jpg" alt="Municipality" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              </div>
-            </div>
 
-            {/* Title */}
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', margin: '20px 0', letterSpacing: '1px' }}>
-              BLOTTER REPORT
-            </h2>
-
-            {/* Case Details */}
-            <div style={{ textAlign: 'left', marginTop: '20px', fontSize: '13px', lineHeight: '1.6' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Reference No.:</p>
-                  <p>{blotter.id}</p>
-                </div>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Date Reported:</p>
-                  <p>{blotter.date}</p>
-                </div>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Incident Type:</p>
-                  <p>{blotter.type}</p>
-                </div>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Status:</p>
-                  <p>{blotter.status.toUpperCase()}</p>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Location:</p>
-                <p>{blotter.location}</p>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Description:</p>
-                <p style={{ textAlign: 'justify' }}>{blotter.description}</p>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Complainant:</p>
-                  <p>{blotter.complainant}</p>
-                  <p style={{ fontSize: '11px', color: '#666' }}>{blotter.complainantAddress}</p>
-                </div>
-                <div>
-                  <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Respondent:</p>
-                  <p>{blotter.respondent}</p>
-                  <p style={{ fontSize: '11px', color: '#666' }}>{blotter.respondentAddress}</p>
-                </div>
-              </div>
-
-              {blotter.actionTaken && (
-                <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f5f5f5', borderLeft: '3px solid #333' }}>
-                  <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Action Taken:</p>
-                  <p>{blotter.actionTaken}</p>
-                </div>
-              )}
-
-              {blotter.resolution && (
-                <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#e8f5e9', borderLeft: '3px solid #4caf50' }}>
-                  <p style={{ fontWeight: 'bold', marginBottom: '5px', color: '#2e7d32' }}>Resolution:</p>
-                  <p style={{ color: '#2e7d32' }}>{blotter.resolution}</p>
-                </div>
-              )}
-
-              {/* Signature Section */}
-              <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #ccc' }}>
-                <p style={{ fontSize: '11px', color: '#666', marginBottom: '30px', textAlign: 'center' }}>Certified Correct:</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
-                    <p style={{ fontWeight: 'bold', fontSize: '12px' }}>ROLANDO C. BORJA</p>
-                    <p style={{ fontSize: '11px' }}>Barangay Captain</p>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ borderBottom: '1px solid #000', minHeight: '50px', marginBottom: '5px' }}></p>
-                    <p style={{ fontWeight: 'bold', fontSize: '12px' }}>Date</p>
-                    <p style={{ fontSize: '11px' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
     </motion.div>
   )
 }
