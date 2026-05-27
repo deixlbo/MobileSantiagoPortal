@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { OpenAI } from '@vercel/ai'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import { generateText } from 'ai'
+import { openai } from '@ai-sdk/openai'
 
 function getAppBaseUrl() {
   if (process.env.VERCEL_URL) {
@@ -56,22 +55,13 @@ export async function POST(request: NextRequest) {
     const residentContext = residentId ? await fetchResidentDocuments(residentId) : []
     const prompt = createSystemPrompt(portalType, residentContext)
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: prompt },
-        { role: 'user', content: question }
-      ],
+    const { text } = await generateText({
+      model: openai('gpt-4o-mini'),
+      system: prompt,
+      prompt: question,
       temperature: 0.4,
-      max_tokens: 512,
+      maxTokens: 512,
     })
-
-    const content = response.output?.[0]?.content
-    const text = Array.isArray(content)
-      ? content.map((item: any) => item?.text || '').join('')
-      : typeof content === 'string'
-        ? content
-        : ''
 
     return NextResponse.json({ answer: text || 'Pasensya na, hindi available ang sagot ngayon.' })
   } catch (error) {
