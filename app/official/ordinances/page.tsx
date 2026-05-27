@@ -23,6 +23,7 @@ import {
   Calendar
 } from "lucide-react"
 import { Trash2 } from "lucide-react"
+import { updateOrdinance, deleteOrdinance, publishOrdinance, draftOrdinance } from "@/lib/ordinance-utils"
 
 const mockOrdinances = [
   {
@@ -98,11 +99,41 @@ export default function OfficialOrdinancesPage() {
     setIsConfirmOpen(true)
   }
 
-  const confirmDeleteOrdinance = () => {
+  const confirmDeleteOrdinance = async () => {
     if (!confirmDeleteId) return
-    setOrdinances((s) => s.filter((o) => o.id !== confirmDeleteId))
-    setConfirmDeleteId(null)
-    setIsConfirmOpen(false)
+    try {
+      await deleteOrdinance(confirmDeleteId)
+      setOrdinances((s) => s.filter((o) => o.id !== confirmDeleteId))
+      setConfirmDeleteId(null)
+      setIsConfirmOpen(false)
+    } catch (error) {
+      console.error('Failed to delete ordinance:', error)
+      alert('Failed to delete ordinance')
+    }
+  }
+
+  const handlePublish = async (ordinanceId: string) => {
+    try {
+      await publishOrdinance(ordinanceId)
+      setOrdinances((s) => s.map((o) => 
+        o.id === ordinanceId ? { ...o, status: "Published" } : o
+      ))
+    } catch (error) {
+      console.error('Failed to publish ordinance:', error)
+      alert('Failed to publish ordinance')
+    }
+  }
+
+  const handleDraft = async (ordinanceId: string) => {
+    try {
+      await draftOrdinance(ordinanceId)
+      setOrdinances((s) => s.map((o) => 
+        o.id === ordinanceId ? { ...o, status: "Draft" } : o
+      ))
+    } catch (error) {
+      console.error('Failed to draft ordinance:', error)
+      alert('Failed to draft ordinance')
+    }
   }
 
   const publishedCount = ordinances.filter(o => o.status === "Published").length

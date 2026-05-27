@@ -25,6 +25,7 @@ import {
   Wallet
 } from "lucide-react"
 import { Trash2 } from "lucide-react"
+import { updateProject, deleteProject, updateProjectStatus, updateProjectProgress } from "@/lib/project-utils"
 
 const mockProjects = [
   {

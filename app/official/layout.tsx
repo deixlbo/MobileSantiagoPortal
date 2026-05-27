@@ -58,11 +58,11 @@ export default function OfficialLayout({
       <div className="flex items-center gap-3 px-4 py-5">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/30">
           <Image
-            src="/santiago-logo.png"
+            src="/images/santiagologo.jpg"
             alt="Barangay Santiago"
             width={40}
             height={40}
-            className="rounded-full"
+            className="rounded-full object-cover"
           />
         </div>
         <div className="min-w-0">
