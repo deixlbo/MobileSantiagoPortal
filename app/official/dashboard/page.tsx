@@ -57,8 +57,8 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
-          <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Management System</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Welcome, Juan</h1>
+          <p className="text-sm sm:text-base text-slate-600">Barangay Santiago OFFICIAL Dashboard</p>
         </div>
 
         {/* Key Stats */}

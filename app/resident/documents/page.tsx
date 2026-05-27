@@ -23,7 +23,9 @@ import {
   X,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download,
+  Printer
 } from "lucide-react"
 
 // Available document types with requirements that have upload status
@@ -772,20 +774,75 @@ export default function DocumentsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
-                  <QRCodeCanvas
-                    value={JSON.stringify({
-                      name: selectedRequest.residentName,
-                      documentType: selectedRequest.type,
-                      paid: selectedRequest.status === 'approved' ? 'Yes' : 'No',
-                      documentNumber: selectedRequest.id,
-                    })}
-                    size={180}
-                    level="H"
-                    includeMargin={true}
-                  />
+                <div className="flex flex-col items-center gap-3">
+                  <div id="qr-code-container" className="rounded-lg border border-border/50 bg-muted/30 p-4">
+                    <QRCodeCanvas
+                      id="document-qr-code"
+                      value={`Name: ${selectedRequest.residentName}\nRequest Number: ${selectedRequest.id}\nDocument: ${selectedRequest.type}\nStatus: ${selectedRequest.status === 'approved' ? 'Approved' : selectedRequest.status === 'pending' ? 'Pending' : 'Rejected'}\nPaid: ${selectedRequest.status === 'approved' ? 'Yes' : 'No'}`}
+                      size={180}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                  {/* QR Action Buttons */}
+                  <div className="flex gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        const canvas = document.getElementById('document-qr-code') as HTMLCanvasElement
+                        if (canvas) {
+                          const link = document.createElement('a')
+                          link.download = `QR-${selectedRequest.id}.png`
+                          link.href = canvas.toDataURL('image/png')
+                          link.click()
+                        }
+                      }}
+                    >
+                      <Download className="mr-1 h-3 w-3" />
+                      Download QR
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        const canvas = document.getElementById('document-qr-code') as HTMLCanvasElement
+                        if (canvas) {
+                          const printWindow = window.open('', '_blank')
+                          if (printWindow) {
+                            printWindow.document.write(`
+                              <html>
+                                <head>
+                                  <title>QR Code - ${selectedRequest.id}</title>
+                                  <style>
+                                    body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
+                                    h2 { margin-bottom: 10px; }
+                                    p { margin: 5px 0; color: #666; }
+                                  </style>
+                                </head>
+                                <body>
+                                  <h2>${selectedRequest.type}</h2>
+                                  <p><strong>Request #:</strong> ${selectedRequest.id}</p>
+                                  <p><strong>Resident:</strong> ${selectedRequest.residentName}</p>
+                                  <img src="${canvas.toDataURL('image/png')}" />
+                                  <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
+                                </body>
+                              </html>
+                            `)
+                            printWindow.document.close()
+                            printWindow.print()
+                          }
+                        }
+                      }}
+                    >
+                      <Printer className="mr-1 h-3 w-3" />
+                      Print QR
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-sm flex-1">
                   <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
                     <p className="text-muted-foreground text-xs">Resident Name</p>
                     <p className="font-medium">{selectedRequest.residentName}</p>
@@ -799,6 +856,10 @@ export default function DocumentsPage() {
                     <p className="font-medium">{selectedRequest.type}</p>
                   </div>
                   <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
+                    <p className="text-muted-foreground text-xs">Status</p>
+                    <p className="font-medium">{selectedRequest.status === 'approved' ? 'Approved' : selectedRequest.status === 'pending' ? 'Pending' : 'Rejected'}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
                     <p className="text-muted-foreground text-xs">Paid</p>
                     <p className="font-medium">{selectedRequest.status === 'approved' ? 'Yes' : 'No'}</p>
                   </div>
@@ -808,8 +869,21 @@ export default function DocumentsPage() {
           </div>
         </div>
       )}
-      <DialogFooter>
-        <Button onClick={() => setSelectedRequest(null)} className="w-full">
+      <DialogFooter className="flex-col sm:flex-row gap-2">
+        {selectedRequest?.status === 'approved' && (
+          <Button 
+            variant="outline"
+            onClick={() => {
+              // Simulate PDF download
+              alert('Document PDF download will be available when document is released.')
+            }}
+            className="w-full sm:w-auto"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
+          </Button>
+        )}
+        <Button onClick={() => setSelectedRequest(null)} className="w-full sm:w-auto">
           Close
         </Button>
       </DialogFooter>

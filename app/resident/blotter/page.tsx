@@ -18,11 +18,13 @@ import {
   CheckCircle2, 
   MapPin,
   FileText,
-  Download
+  Download,
+  Printer
 } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { ComplaintStatusTimeline } from "@/components/complaint-status-timeline"
 import { deleteBlotter } from "@/lib/blotter-utils"
+import { QRCodeCanvas } from 'qrcode.react'
 
 const incidentTypes = [
   "Noise Complaint",
@@ -439,6 +441,106 @@ export default function BlotterPage() {
                       hearingDate={showPreview.hearingDate}
                       resolutionDate={showPreview.resolutionDate}
                     />
+                    
+                    {/* Blotter QR Code Section */}
+                    <div className="rounded-lg border p-4 bg-white space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-full bg-blue-100 p-2 text-blue-700">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">Blotter QR Code</p>
+                          <p className="text-xs text-muted-foreground">Contains complaint details for verification</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="rounded-lg border bg-muted/30 p-3">
+                            <QRCodeCanvas
+                              id={`blotter-qr-${showPreview.id}`}
+                              value={`Name: ${showPreview.complainant}\nComplaint #: ${showPreview.id}\nStatus: ${showPreview.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}\nType: ${showPreview.type}`}
+                              size={140}
+                              level="H"
+                              includeMargin={true}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const canvas = document.getElementById(`blotter-qr-${showPreview.id}`) as HTMLCanvasElement
+                                if (canvas) {
+                                  const link = document.createElement('a')
+                                  link.download = `Blotter-QR-${showPreview.id}.png`
+                                  link.href = canvas.toDataURL('image/png')
+                                  link.click()
+                                }
+                              }}
+                            >
+                              <Download className="mr-1 h-3 w-3" />
+                              Download
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const canvas = document.getElementById(`blotter-qr-${showPreview.id}`) as HTMLCanvasElement
+                                if (canvas) {
+                                  const printWindow = window.open('', '_blank')
+                                  if (printWindow) {
+                                    printWindow.document.write(`
+                                      <html>
+                                        <head>
+                                          <title>Blotter QR - ${showPreview.id}</title>
+                                          <style>
+                                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
+                                            h2 { margin-bottom: 10px; }
+                                            p { margin: 5px 0; color: #666; }
+                                          </style>
+                                        </head>
+                                        <body>
+                                          <h2>Blotter Report</h2>
+                                          <p><strong>Complaint #:</strong> ${showPreview.id}</p>
+                                          <p><strong>Complainant:</strong> ${showPreview.complainant}</p>
+                                          <p><strong>Type:</strong> ${showPreview.type}</p>
+                                          <img src="${canvas.toDataURL('image/png')}" />
+                                          <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
+                                        </body>
+                                      </html>
+                                    `)
+                                    printWindow.document.close()
+                                    printWindow.print()
+                                  }
+                                }
+                              }}
+                            >
+                              <Printer className="mr-1 h-3 w-3" />
+                              Print
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm space-y-1 flex-1">
+                          <div className="rounded border bg-slate-50 p-2">
+                            <p className="text-xs text-muted-foreground">Complainant</p>
+                            <p className="font-medium">{showPreview.complainant}</p>
+                          </div>
+                          <div className="rounded border bg-slate-50 p-2">
+                            <p className="text-xs text-muted-foreground">Complaint #</p>
+                            <p className="font-medium">{showPreview.id}</p>
+                          </div>
+                          <div className="rounded border bg-slate-50 p-2">
+                            <p className="text-xs text-muted-foreground">Status</p>
+                            <p className="font-medium">{showPreview.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                          </div>
+                          <div className="rounded border bg-slate-50 p-2">
+                            <p className="text-xs text-muted-foreground">Incident Type</p>
+                            <p className="font-medium">{showPreview.type}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => setShowPreview(null)} className="flex-1">
                         Close
@@ -487,8 +589,8 @@ export default function BlotterPage() {
                 </Tabs>
               ) : (
                 /* Show only blotter report if not resolved */
-                <>
-                  <ScrollArea className="max-h-[60vh]">
+                <div className="space-y-4">
+                  <ScrollArea className="max-h-[40vh]">
                     <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -497,7 +599,7 @@ export default function BlotterPage() {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Date Reported:</p>
-                          <p className="font-medium text-gray-900">{showPreview.date}</p>
+                          <p className="font-medium text-gray-900">{showPreview.filedDate}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">Incident Type:</p>
@@ -528,12 +630,131 @@ export default function BlotterPage() {
                       </div>
                     </div>
                   </ScrollArea>
+                  
+                  {/* Timeline for non-resolved */}
+                  <ComplaintStatusTimeline
+                    currentStatus={showPreview.status as any}
+                    filedDate={showPreview.filedDate}
+                    investigationDate={showPreview.investigationDate}
+                    mediationScheduledDate={showPreview.mediationScheduledDate}
+                    hearingDate={showPreview.hearingDate}
+                    resolutionDate={showPreview.resolutionDate}
+                  />
+                  
+                  {/* Blotter QR Code Section */}
+                  <div className="rounded-lg border p-4 bg-white space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-blue-100 p-2 text-blue-700">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Blotter QR Code</p>
+                        <p className="text-xs text-muted-foreground">Contains complaint details for verification</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="rounded-lg border bg-muted/30 p-3">
+                          <QRCodeCanvas
+                            id={`blotter-qr-pending-${showPreview.id}`}
+                            value={`Name: ${showPreview.complainant}\nComplaint #: ${showPreview.id}\nStatus: ${showPreview.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}\nType: ${showPreview.type}`}
+                            size={140}
+                            level="H"
+                            includeMargin={true}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const canvas = document.getElementById(`blotter-qr-pending-${showPreview.id}`) as HTMLCanvasElement
+                              if (canvas) {
+                                const link = document.createElement('a')
+                                link.download = `Blotter-QR-${showPreview.id}.png`
+                                link.href = canvas.toDataURL('image/png')
+                                link.click()
+                              }
+                            }}
+                          >
+                            <Download className="mr-1 h-3 w-3" />
+                            Download
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const canvas = document.getElementById(`blotter-qr-pending-${showPreview.id}`) as HTMLCanvasElement
+                              if (canvas) {
+                                const printWindow = window.open('', '_blank')
+                                if (printWindow) {
+                                  printWindow.document.write(`
+                                    <html>
+                                      <head>
+                                        <title>Blotter QR - ${showPreview.id}</title>
+                                        <style>
+                                          body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
+                                          h2 { margin-bottom: 10px; }
+                                          p { margin: 5px 0; color: #666; }
+                                        </style>
+                                      </head>
+                                      <body>
+                                        <h2>Blotter Report</h2>
+                                        <p><strong>Complaint #:</strong> ${showPreview.id}</p>
+                                        <p><strong>Complainant:</strong> ${showPreview.complainant}</p>
+                                        <p><strong>Type:</strong> ${showPreview.type}</p>
+                                        <img src="${canvas.toDataURL('image/png')}" />
+                                        <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
+                                      </body>
+                                    </html>
+                                  `)
+                                  printWindow.document.close()
+                                  printWindow.print()
+                                }
+                              }
+                            }}
+                          >
+                            <Printer className="mr-1 h-3 w-3" />
+                            Print
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="text-sm space-y-1 flex-1">
+                        <div className="rounded border bg-slate-50 p-2">
+                          <p className="text-xs text-muted-foreground">Complainant</p>
+                          <p className="font-medium">{showPreview.complainant}</p>
+                        </div>
+                        <div className="rounded border bg-slate-50 p-2">
+                          <p className="text-xs text-muted-foreground">Complaint #</p>
+                          <p className="font-medium">{showPreview.id}</p>
+                        </div>
+                        <div className="rounded border bg-slate-50 p-2">
+                          <p className="text-xs text-muted-foreground">Status</p>
+                          <p className="font-medium">{showPreview.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                        </div>
+                        <div className="rounded border bg-slate-50 p-2">
+                          <p className="text-xs text-muted-foreground">Incident Type</p>
+                          <p className="font-medium">{showPreview.type}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <DialogFooter className="flex-col sm:flex-row gap-2">
+                    {showPreview.status === "pending-review" && (
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => handleDeleteBlotter(showPreview.id)}
+                        className="w-full sm:w-auto"
+                      >
+                        Delete Report
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={() => setShowPreview(null)} className="w-full sm:w-auto">
                       Close
                     </Button>
                   </DialogFooter>
-                </>
+                </div>
               )}
             </div>
           )}

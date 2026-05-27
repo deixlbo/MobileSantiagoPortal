@@ -16,6 +16,7 @@ import {
   Package,
   LogOut,
   Menu,
+  Camera,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,6 +26,7 @@ import { OfficialChatbot } from "./official-chatbot"
 
 const navigation = [
   { name: "Dashboard", href: "/official", icon: LayoutDashboard },
+  { name: "QR Scanner", href: "/official/qr-scan", icon: Camera },
   { name: "Residents", href: "/official/residents", icon: Users },
   { name: "Documents", href: "/official/documents", icon: FileText },
   { name: "Blotters", href: "/official/blotters", icon: AlertTriangle },

@@ -5,7 +5,6 @@ import { useChat } from "@ai-sdk/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   MessageCircle, 
@@ -324,8 +323,8 @@ export function AIChatbot({
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={cn(
-              "fixed bottom-4 right-4 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border",
-              isMinimized && "h-auto"
+              "fixed bottom-4 right-4 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col rounded-2xl bg-white shadow-2xl border",
+              isMinimized ? "h-auto" : "h-[500px]"
             )}
           >
             {/* Header */}
@@ -368,10 +367,10 @@ export function AIChatbot({
 
             {/* Chat Content */}
             {!isMinimized && (
-              <>
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 {/* Messages Area */}
-                <ScrollArea className="flex-1 min-h-0 p-4">
-                  <div className="space-y-4" ref={scrollRef}>
+                <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+                  <div className="space-y-4">
                     {activeMessages.map((message) => (
                       <motion.div
                         key={message.id}
@@ -436,7 +435,7 @@ export function AIChatbot({
                       </motion.div>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
 
                 {/* Suggested Questions */}
                 {activeMessages.length <= 2 && (
@@ -476,7 +475,7 @@ export function AIChatbot({
                 )}
 
                 {/* Input Area */}
-                <form onSubmit={handleFormSubmit} className="border-t p-3 shrink-0">
+                <form onSubmit={handleFormSubmit} className="border-t p-3 shrink-0 bg-white">
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -484,7 +483,7 @@ export function AIChatbot({
                       size="icon"
                       onClick={handleVoiceToggle}
                       className={cn(
-                        "rounded-full",
+                        "rounded-full shrink-0",
                         isListening ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
                       )}
                     >
@@ -496,7 +495,7 @@ export function AIChatbot({
                       size="icon"
                       onClick={() => setVoiceOutputEnabled((prev) => !prev)}
                       className={cn(
-                        "rounded-full",
+                        "rounded-full shrink-0",
                         voiceOutputEnabled ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
                       )}
                     >
@@ -508,7 +507,7 @@ export function AIChatbot({
                       onChange={activeHandleInputChange}
                       onKeyDown={handleKeyPress}
                       placeholder={isListening ? "Listening... magsalita na" : "Mag-type ng mensahe..."}
-                      className="flex-1 rounded-full border-gray-200 bg-gray-50 focus:bg-white"
+                      className="flex-1 min-w-0 rounded-full border-gray-200 bg-gray-50 focus:bg-white"
                       disabled={activeIsLoading}
                     />
                     <Button
@@ -516,7 +515,7 @@ export function AIChatbot({
                       disabled={!activeInput.trim() || activeIsLoading}
                       size="icon"
                       className={cn(
-                        "rounded-full",
+                        "rounded-full shrink-0",
                         portalType === "resident"
                           ? "bg-emerald-500 hover:bg-emerald-600"
                           : "bg-emerald-700 hover:bg-emerald-800"
@@ -530,7 +529,7 @@ export function AIChatbot({
                     </Button>
                   </div>
                 </form>
-              </>
+              </div>
             )}
           </motion.div>
         )}
