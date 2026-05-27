@@ -47,12 +47,15 @@ const mockBlotters = [
     complainantAddress: "Purok 3, Barangay Santiago",
     respondent: "Pedro Santos",
     respondentAddress: "Purok 3, Barangay Santiago",
-    status: "filed",
-    date: "April 28, 2026",
-    actionTaken: null,
-    resolution: null,
-    resolutionDate: null,
-    resolutionDocument: null
+    status: "resolved",
+    filedDate: "April 20, 2026",
+    investigationDate: "April 21, 2026",
+    mediationScheduledDate: "April 23, 2026",
+    hearingDate: "April 24, 2026",
+    actionTaken: "Mediation conducted on April 24, 2026. Both parties reached mutual agreement.",
+    resolution: "Parties agreed to limit karaoke hours until 9PM. Respondent to install soundproofing.",
+    resolutionDate: "April 25, 2026",
+    resolutionDocument: "/documents/resolution-BLT-2026-001.pdf"
   },
   {
     id: "BLT-2026-002",
@@ -64,9 +67,12 @@ const mockBlotters = [
     complainantAddress: "Lot 14, Purok 2",
     respondent: "Pedro Reyes",
     respondentAddress: "Lot 16, Purok 2",
-    status: "processing",
-    date: "April 26, 2026",
-    actionTaken: "Mediation scheduled for May 2, 2026",
+    status: "scheduled-mediation",
+    filedDate: "April 26, 2026",
+    investigationDate: "April 27, 2026",
+    mediationScheduledDate: "May 2, 2026",
+    hearingDate: null,
+    actionTaken: "Investigation completed. Property survey conducted.",
     resolution: null,
     resolutionDate: null,
     resolutionDocument: null
@@ -81,17 +87,52 @@ const mockBlotters = [
     complainantAddress: "Purok 1, Barangay Santiago",
     respondent: "Carlos Mendoza",
     respondentAddress: "Purok 1, Barangay Santiago",
-    status: "resolved",
-    date: "April 20, 2026",
-    actionTaken: "Mediation conducted on April 23, 2026",
-    resolution: "Both parties agreed to share the cost of installing proper drainage.",
-    resolutionDate: "April 25, 2026",
-    resolutionDocument: "/documents/resolution-BLT-2026-003.pdf"
+    status: "pending-review",
+    filedDate: "April 28, 2026",
+    investigationDate: null,
+    mediationScheduledDate: null,
+    hearingDate: null,
+    actionTaken: null,
+    resolution: null,
+    resolutionDate: null,
+    resolutionDocument: null
   },
 ]
 
 function getStatusBadge(status: string) {
   switch (status) {
+    case "pending-review":
+      return (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-[10px] md:text-xs">
+          <AlertTriangle className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Pending Review</span>
+          <span className="sm:hidden">Pending</span>
+        </Badge>
+      )
+    case "under-investigation":
+      return (
+        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px] md:text-xs">
+          <Clock className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Under Investigation</span>
+          <span className="sm:hidden">Investigating</span>
+        </Badge>
+      )
+    case "scheduled-mediation":
+      return (
+        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[10px] md:text-xs">
+          <Clock className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Scheduled for Mediation</span>
+          <span className="sm:hidden">Mediation</span>
+        </Badge>
+      )
+    case "ongoing-hearing":
+      return (
+        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] md:text-xs">
+          <AlertTriangle className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Ongoing Hearing</span>
+          <span className="sm:hidden">Hearing</span>
+        </Badge>
+      )
     case "resolved":
       return (
         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-[10px] md:text-xs">
@@ -100,20 +141,20 @@ function getStatusBadge(status: string) {
           <span className="sm:hidden">Done</span>
         </Badge>
       )
-    case "processing":
+    case "dismissed":
       return (
-        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px] md:text-xs">
-          <Clock className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
-          <span className="hidden sm:inline">Processing</span>
-          <span className="sm:hidden">In Progress</span>
+        <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 text-[10px] md:text-xs">
+          <FileText className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Dismissed</span>
+          <span className="sm:hidden">Dismissed</span>
         </Badge>
       )
-    case "filed":
+    case "escalated":
       return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-[10px] md:text-xs">
-          <FileText className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
-          <span className="hidden sm:inline">Filed</span>
-          <span className="sm:hidden">New</span>
+        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 text-[10px] md:text-xs">
+          <AlertTriangle className="mr-0.5 md:mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Escalated</span>
+          <span className="sm:hidden">Escalated</span>
         </Badge>
       )
     default:
@@ -165,9 +206,9 @@ export default function OfficialBlottersPage() {
     b.location.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filedCount = blotters.filter(b => b.status === "filed").length
-  const processingCount = blotters.filter(b => b.status === "processing").length
-  const resolvedCount = blotters.filter(b => b.status === "resolved").length
+  const pendingCount = blotters.filter(b => b.status === "pending-review").length
+  const processingCount = blotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).length
+  const resolvedCount = blotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).length
 
   const handlePrintBlotter = (blotter: typeof mockBlotters[0]) => {
     setSelectedPrintBlotter(blotter)
@@ -295,13 +336,13 @@ export default function OfficialBlottersPage() {
             <CardDescription className="text-xs md:text-sm">Process and resolve incident reports</CardDescription>
           </CardHeader>
           <CardContent className="p-3 md:p-6 pt-0">
-            <Tabs defaultValue="filed">
+            <Tabs defaultValue="pending">
               <TabsList className="h-8 md:h-9 w-full justify-start overflow-x-auto">
-                <TabsTrigger value="filed" className="text-xs md:text-sm px-2 md:px-3">New ({filedCount})</TabsTrigger>
+                <TabsTrigger value="pending" className="text-xs md:text-sm px-2 md:px-3">Pending ({pendingCount})</TabsTrigger>
                 <TabsTrigger value="processing" className="text-xs md:text-sm px-2 md:px-3">Processing ({processingCount})</TabsTrigger>
                 <TabsTrigger value="all" className="text-xs md:text-sm px-2 md:px-3">All Records</TabsTrigger>
               </TabsList>
-              <TabsContent value="filed" className="mt-3 md:mt-4">
+              <TabsContent value="pending" className="mt-3 md:mt-4">
                 <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -313,7 +354,7 @@ export default function OfficialBlottersPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredBlotters.filter(b => b.status === "filed").map((blotter) => (
+                      {filteredBlotters.filter(b => b.status === "pending-review").map((blotter) => (
                         <TableRow key={blotter.id}>
                           <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
                           <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>
@@ -360,7 +401,7 @@ export default function OfficialBlottersPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredBlotters.filter(b => b.status === "processing").map((blotter) => (
+                      {filteredBlotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
                         <TableRow key={blotter.id}>
                           <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
                           <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>

@@ -21,6 +21,7 @@ import {
   Download
 } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
+import { ComplaintStatusTimeline } from "@/components/complaint-status-timeline"
 
 const incidentTypes = [
   "Noise Complaint",
@@ -40,9 +41,12 @@ const mockBlotters = [
     description: "Loud karaoke past 10PM in Purok 3",
     location: "Purok 3, near the chapel",
     status: "resolved",
-    date: "April 22, 2026",
-    resolution: "Parties agreed to limit karaoke hours until 9PM",
+    filedDate: "April 20, 2026",
+    investigationDate: "April 21, 2026",
+    mediationScheduledDate: "April 23, 2026",
+    hearingDate: "April 24, 2026",
     resolutionDate: "April 25, 2026",
+    resolution: "Parties agreed to limit karaoke hours until 9PM",
     resolutionDocument: "/documents/resolution-BLT-2026-001.pdf",
     complainant: "Juan Dela Cruz",
     respondent: "Pedro Santos"
@@ -52,10 +56,13 @@ const mockBlotters = [
     type: "Property Dispute",
     description: "Fence encroachment on neighboring lot",
     location: "Purok 2, Lot 15",
-    status: "processing",
-    date: "April 26, 2026",
-    resolution: null,
+    status: "scheduled-mediation",
+    filedDate: "April 26, 2026",
+    investigationDate: "April 27, 2026",
+    mediationScheduledDate: "May 2, 2026",
+    hearingDate: null,
     resolutionDate: null,
+    resolution: null,
     resolutionDocument: null,
     complainant: "Juan Dela Cruz",
     respondent: "Maria Garcia"
@@ -65,10 +72,13 @@ const mockBlotters = [
     type: "Neighborhood Dispute",
     description: "Ongoing argument about water drainage",
     location: "Purok 1",
-    status: "filed",
-    date: "April 28, 2026",
-    resolution: null,
+    status: "pending-review",
+    filedDate: "April 28, 2026",
+    investigationDate: null,
+    mediationScheduledDate: null,
+    hearingDate: null,
     resolutionDate: null,
+    resolution: null,
     resolutionDocument: null,
     complainant: "Juan Dela Cruz",
     respondent: "Jose Reyes"
@@ -77,6 +87,34 @@ const mockBlotters = [
 
 function getStatusBadge(status: string) {
   switch (status) {
+    case "pending-review":
+      return (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+          <FileText className="mr-1 h-3 w-3" />
+          Pending Review
+        </Badge>
+      )
+    case "under-investigation":
+      return (
+        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+          <Clock className="mr-1 h-3 w-3" />
+          Under Investigation
+        </Badge>
+      )
+    case "scheduled-mediation":
+      return (
+        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+          <Clock className="mr-1 h-3 w-3" />
+          Scheduled for Mediation
+        </Badge>
+      )
+    case "ongoing-hearing":
+      return (
+        <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+          <AlertTriangle className="mr-1 h-3 w-3" />
+          Ongoing Hearing
+        </Badge>
+      )
     case "resolved":
       return (
         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
@@ -84,18 +122,18 @@ function getStatusBadge(status: string) {
           Resolved
         </Badge>
       )
-    case "processing":
+    case "dismissed":
       return (
-        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
-          <Clock className="mr-1 h-3 w-3" />
-          Processing
+        <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
+          <FileText className="mr-1 h-3 w-3" />
+          Dismissed
         </Badge>
       )
-    case "filed":
+    case "escalated":
       return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-          <FileText className="mr-1 h-3 w-3" />
-          Filed
+        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+          <AlertTriangle className="mr-1 h-3 w-3" />
+          Escalated
         </Badge>
       )
     default:
@@ -228,9 +266,9 @@ export default function BlotterPage() {
           <Tabs defaultValue="all">
             <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
               <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-              <TabsTrigger value="filed" className="text-xs sm:text-sm">Filed</TabsTrigger>
+              <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending</TabsTrigger>
               <TabsTrigger value="processing" className="text-xs sm:text-sm">Processing</TabsTrigger>
-              <TabsTrigger value="resolved" className="text-xs sm:text-sm">Resolved</TabsTrigger>
+              <TabsTrigger value="resolved" className="text-xs sm:text-sm">Closed</TabsTrigger>
             </TabsList>
             <TabsContent value="all" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
@@ -246,7 +284,7 @@ export default function BlotterPage() {
                         {getStatusBadge(blotter.status)}
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        {blotter.id} | {blotter.date}
+                        {blotter.id} | {blotter.filedDate}
                       </p>
                       <p className="text-xs sm:text-sm">{blotter.description}</p>
                       <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
@@ -258,9 +296,9 @@ export default function BlotterPage() {
                 ))}
               </div>
             </TabsContent>
-            <TabsContent value="filed" className="mt-4">
+            <TabsContent value="pending" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => b.status === "filed").map((blotter) => (
+                {mockBlotters.filter(b => b.status === "pending-review").map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -270,14 +308,14 @@ export default function BlotterPage() {
                       <span className="font-medium text-sm">{blotter.type}</span>
                       {getStatusBadge(blotter.status)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.date}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.filedDate}</p>
                   </div>
                 ))}
               </div>
             </TabsContent>
             <TabsContent value="processing" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => b.status === "processing").map((blotter) => (
+                {mockBlotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -287,14 +325,14 @@ export default function BlotterPage() {
                       <span className="font-medium text-sm">{blotter.type}</span>
                       {getStatusBadge(blotter.status)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.date}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.filedDate}</p>
                   </div>
                 ))}
               </div>
             </TabsContent>
             <TabsContent value="resolved" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => b.status === "resolved").map((blotter) => (
+                {mockBlotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -304,7 +342,7 @@ export default function BlotterPage() {
                       <span className="font-medium text-sm">{blotter.type}</span>
                       {getStatusBadge(blotter.status)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.date}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{blotter.id} | {blotter.filedDate}</p>
                   </div>
                 ))}
               </div>
@@ -335,8 +373,8 @@ export default function BlotterPage() {
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="blotter" className="mt-4">
-                    <ScrollArea className="max-h-[55vh]">
+                  <TabsContent value="blotter" className="mt-4 space-y-4">
+                    <ScrollArea className="max-h-[40vh]">
                       <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 space-y-4">
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
@@ -345,7 +383,7 @@ export default function BlotterPage() {
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Date Reported:</p>
-                            <p className="font-medium text-gray-900">{showPreview.date}</p>
+                            <p className="font-medium text-gray-900">{showPreview.filedDate}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Incident Type:</p>
@@ -376,7 +414,15 @@ export default function BlotterPage() {
                         </div>
                       </div>
                     </ScrollArea>
-                    <div className="flex gap-2 mt-4">
+                    <ComplaintStatusTimeline
+                      currentStatus={showPreview.status as any}
+                      filedDate={showPreview.filedDate}
+                      investigationDate={showPreview.investigationDate}
+                      mediationScheduledDate={showPreview.mediationScheduledDate}
+                      hearingDate={showPreview.hearingDate}
+                      resolutionDate={showPreview.resolutionDate}
+                    />
+                    <div className="flex gap-2">
                       <Button variant="outline" onClick={() => setShowPreview(null)} className="flex-1">
                         Close
                       </Button>
