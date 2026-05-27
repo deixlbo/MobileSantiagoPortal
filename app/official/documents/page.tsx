@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { exportToCSV, exportToXLSX, prepareDataForExport } from "@/lib/export-utils"
+import { printElementById } from "@/lib/utils"
 
 import { DocumentStatusTimeline } from "@/components/document-status-timeline"
 import { 
@@ -194,249 +195,17 @@ export default function OfficialDocumentsPage() {
   const [notifyRequest, setNotifyRequest] = useState<typeof mockRequests[0] | null>(null)
   const [notifyMessage, setNotifyMessage] = useState("")
   const [requiredDocuments, setRequiredDocuments] = useState<string[]>([])
+  const [selectedPrintRequest, setSelectedPrintRequest] = useState<typeof mockRequests[0] | null>(null)
 
-  const handleDirectPrint = (request: typeof mockRequests[0]) => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
+  const handlePrintRequest = (request: typeof mockRequests[0]) => {
+    setSelectedPrintRequest(request)
 
-    const documentContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Document - ${request.id}</title>
-        <meta charset="UTF-8">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          @page {
-            size: A4;
-            margin: 0.5in;
-          }
-          
-          body {
-            font-family: 'Arial', sans-serif;
-            font-size: 12pt;
-            line-height: 1.6;
-            color: #000;
-            background: white;
-            padding: 0;
-            margin: 0;
-          }
-          
-          .container {
-            width: 100%;
-            max-width: 8.5in;
-            margin: 0 auto;
-            padding: 0;
-          }
-          
-          .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.5in;
-            padding-bottom: 0.2in;
-            border-bottom: 3px solid #333;
-            text-align: center;
-          }
-          
-          .logo-placeholder {
-            width: 0.8in;
-            height: 0.8in;
-            background: #f0f0f0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10pt;
-            color: #999;
-            flex-shrink: 0;
-          }
-          
-          .header-text {
-            flex: 1;
-            padding: 0 0.3in;
-          }
-          
-          .header-text p {
-            margin: 0;
-            font-size: 11pt;
-            line-height: 1.4;
-          }
-          
-          .header-text .gov-info {
-            font-size: 10pt;
-            color: #333;
-          }
-          
-          .header-text .main-title {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #000;
-            margin-top: 0.1in;
-          }
-          
-          .document-title {
-            text-align: center;
-            margin: 0.3in 0;
-            padding: 0.2in 0;
-          }
-          
-          .document-title h1 {
-            font-size: 16pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin: 0.1in 0;
-            letter-spacing: 0.05in;
-          }
-          
-          .document-title p {
-            font-size: 10pt;
-            color: #666;
-            margin: 0.05in 0 0 0;
-          }
-          
-          .document-body {
-            margin: 0.2in 0;
-            text-align: justify;
-          }
-          
-          .greeting {
-            font-weight: bold;
-            margin-bottom: 0.1in;
-          }
-          
-          .document-body p {
-            margin-bottom: 0.15in;
-            line-height: 1.8;
-          }
-          
-          .signature-area {
-            margin-top: 0.4in;
-            padding-top: 0.3in;
-            border-top: 2px solid #000;
-          }
-          
-          .signature-line {
-            width: 2.5in;
-            height: 0.6in;
-            margin: 0.1in 0;
-          }
-          
-          .signature-name {
-            font-weight: bold;
-            font-size: 12pt;
-            margin-top: 0.05in;
-          }
-          
-          .signature-title {
-            font-weight: 600;
-            font-size: 11pt;
-          }
-          
-          .footer {
-            margin-top: 0.3in;
-            padding-top: 0.2in;
-            border-top: 2px solid #333;
-            text-align: center;
-            font-size: 9pt;
-            color: #666;
-          }
-          
-          .footer p {
-            margin: 0.05in 0;
-          }
-          
-          @media print {
-            body {
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              margin: 0;
-              padding: 0;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <!-- Header -->
-          <div class="header">
-            <div class="logo-placeholder">LOGO</div>
-            <div class="header-text">
-              <p class="gov-info">Republic of the Philippines</p>
-              <p class="gov-info">Province of Zambales</p>
-              <p class="gov-info">Municipality of San Antonio</p>
-              <p class="main-title">Barangay Santiago</p>
-            </div>
-            <div class="logo-placeholder">SEAL</div>
-          </div>
-          
-          <!-- Document Title -->
-          <div class="document-title">
-            <h1>${request.type}</h1>
-            <p>Request ID: ${request.id}</p>
-          </div>
-          
-          <!-- Document Body -->
-          <div class="document-body">
-            <p class="greeting">TO WHOM IT MAY CONCERN:</p>
-            
-            ${request.type === "Barangay Clearance" ? `
-              <p>This is to certify that <strong>${request.requester}</strong>, a resident of Barangay Santiago, San Antonio, Zambales, is of good moral character and has no derogatory record on file in this office.</p>
-              <p>This certification is issued upon request for <strong>${request.purpose}</strong>.</p>
-            ` : ''}
-            
-            ${request.type === "Certificate of Residency" ? `
-              <p>This is to certify that <strong>${request.requester}</strong> is a bonafide resident of Barangay Santiago, San Antonio, Zambales.</p>
-              <p>This certification is issued upon request for <strong>${request.purpose}</strong>.</p>
-            ` : ''}
-            
-            ${request.type === "Certificate of Indigency" ? `
-              <p>This is to certify that <strong>${request.requester}</strong> is a resident of Barangay Santiago, San Antonio, Zambales, and belongs to an indigent family in this barangay.</p>
-              <p>This certification is issued upon request for <strong>${request.purpose}</strong>.</p>
-            ` : ''}
-            
-            ${request.type === "Business Clearance" ? `
-              <p>This is to certify that <strong>${request.requester}</strong>, owner/operator of <strong>${request.purpose}</strong>, located at Barangay Santiago, San Antonio, Zambales, has been granted clearance to operate their business in this barangay.</p>
-              <p>This certification is issued upon request for business operations.</p>
-            ` : ''}
-            
-            <p>Issued this <strong>${new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</strong> at Barangay Santiago, San Antonio, Zambales.</p>
-          </div>
-          
-          <!-- Signature Section -->
-          <div class="signature-area">
-            <div class="signature-line"></div>
-            <div class="signature-name">ROLANDO C. BORJA</div>
-            <div class="signature-title">Barangay Captain</div>
-          </div>
-          
-          <!-- Footer -->
-          <div class="footer">
-            <p>This is an official document from Barangay Santiago</p>
-            <p>For inquiries, visit the Barangay Hall or call the office</p>
-          </div>
-        </div>
-        
-        <script>
-          window.addEventListener('load', function() {
-            setTimeout(function() {
-              window.print();
-            }, 100);
-          });
-        </script>
-      </body>
-      </html>
-    `
-
-    printWindow.document.write(documentContent)
-    printWindow.document.close()
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        printElementById("print-request-content")
+        setSelectedPrintRequest(null)
+      })
+    })
   }
 
   const pendingCount = mockRequests.filter(r => r.status === "pending").length
@@ -729,7 +498,7 @@ export default function OfficialDocumentsPage() {
                           <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden md:table-cell">{request.requester}</TableCell>
                           <TableCell className="py-2 md:py-4 text-right">
                             <div className="flex gap-1 md:gap-2 justify-end">
-                              <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs flex-shrink-0" onClick={() => handleDirectPrint(request)}>
+                              <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs flex-shrink-0" onClick={() => handlePrintRequest(request)}>
                                 <Printer className="h-3 w-3 md:mr-1" />
                                 <span className="hidden md:inline">Print</span>
                               </Button>
@@ -924,7 +693,7 @@ export default function OfficialDocumentsPage() {
               </>
             )}
             {selectedRequest?.status === "approved" && (
-              <Button size="sm" className="w-full sm:w-auto" onClick={() => handleDirectPrint(selectedRequest)}>
+              <Button size="sm" className="w-full sm:w-auto" onClick={() => selectedRequest && handlePrintRequest(selectedRequest)}>
                 <Printer className="mr-2 h-3 w-3" />
                 Print Document
               </Button>
@@ -1321,6 +1090,68 @@ export default function OfficialDocumentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div id="print-request-content" className="hidden">
+        {selectedPrintRequest && (
+          <div className="document-container">
+            <div className="document-header">
+              <div className="logo-placeholder">LOGO</div>
+              <div className="header-text">
+                <p className="gov-info">Republic of the Philippines</p>
+                <p className="gov-info">Province of Zambales</p>
+                <p className="gov-info">Municipality of San Antonio</p>
+                <p className="main-title">Barangay Santiago</p>
+              </div>
+              <div className="logo-placeholder">SEAL</div>
+            </div>
+
+            <div className="document-title">
+              <h1>{selectedPrintRequest.type}</h1>
+              <p>Request ID: {selectedPrintRequest.id}</p>
+            </div>
+
+            <div className="document-body">
+              <p className="greeting">TO WHOM IT MAY CONCERN:</p>
+              {selectedPrintRequest.type === "Barangay Clearance" && (
+                <>
+                  <p>This is to certify that <strong>{selectedPrintRequest.requester}</strong>, a resident of Barangay Santiago, San Antonio, Zambales, is of good moral character and has no derogatory record on file in this office.</p>
+                  <p>This certification is issued upon request for <strong>{selectedPrintRequest.purpose}</strong>.</p>
+                </>
+              )}
+              {selectedPrintRequest.type === "Certificate of Residency" && (
+                <>
+                  <p>This is to certify that <strong>{selectedPrintRequest.requester}</strong> is a bonafide resident of Barangay Santiago, San Antonio, Zambales.</p>
+                  <p>This certification is issued upon request for <strong>{selectedPrintRequest.purpose}</strong>.</p>
+                </>
+              )}
+              {selectedPrintRequest.type === "Certificate of Indigency" && (
+                <>
+                  <p>This is to certify that <strong>{selectedPrintRequest.requester}</strong> is a resident of Barangay Santiago, San Antonio, Zambales, and belongs to an indigent family in this barangay.</p>
+                  <p>This certification is issued upon request for <strong>{selectedPrintRequest.purpose}</strong>.</p>
+                </>
+              )}
+              {selectedPrintRequest.type === "Business Clearance" && (
+                <>
+                  <p>This is to certify that <strong>{selectedPrintRequest.requester}</strong>, owner/operator of <strong>{selectedPrintRequest.purpose}</strong>, located at Barangay Santiago, San Antonio, Zambales, has been granted clearance to operate their business in this barangay.</p>
+                  <p>This certification is issued upon request for business operations.</p>
+                </>
+              )}
+              <p>Issued this <strong>{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</strong> at Barangay Santiago, San Antonio, Zambales.</p>
+            </div>
+
+            <div className="signature-area">
+              <div className="signature-line" />
+              <div className="signature-name">ROLANDO C. BORJA</div>
+              <div className="signature-title">Barangay Captain</div>
+            </div>
+
+            <div className="footer">
+              <p>This is an official document from Barangay Santiago</p>
+              <p>For inquiries, visit the Barangay Hall or call the office</p>
+            </div>
+          </div>
+        )}
+      </div>
     </motion.div>
   )
 }

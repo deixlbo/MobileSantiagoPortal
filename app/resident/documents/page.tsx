@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DocumentHeader } from "@/components/document-header"
-import { QRScanner } from "@/components/qr-scanner"
+import { DocumentStatusTimeline } from "@/components/document-status-timeline"
+import { QRCodeCanvas } from 'qrcode.react'
 import { 
   FileText, 
   Clock, 
@@ -154,6 +155,7 @@ export default function DocumentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<string>("")
   const [showResubmit, setShowResubmit] = useState<typeof mockRequests[0] | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<typeof mockRequests[0] | null>(null)
   const [requirements, setRequirements] = useState<Requirement[]>([])
   const [expandedRequirement, setExpandedRequirement] = useState<string | null>(null)
   const [resubmitFiles, setResubmitFiles] = useState<{ [key: string]: File }>({})
@@ -567,7 +569,6 @@ export default function DocumentsPage() {
               <CardTitle className="text-base sm:text-lg">My Requests</CardTitle>
               <CardDescription className="text-xs sm:text-sm">Track your document request status</CardDescription>
             </div>
-            <QRScanner />
           </div>
         </CardHeader>
         <CardContent>
@@ -583,7 +584,8 @@ export default function DocumentsPage() {
                 {mockRequests.map((request) => (
                   <div 
                     key={request.id}
-                    className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedRequest(request)}
                   >
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -614,7 +616,10 @@ export default function DocumentsPage() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => setShowResubmit(request)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowResubmit(request)
+                        }}
                         className="w-full sm:w-auto text-xs sm:text-sm"
                       >
                         <Upload className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
@@ -630,7 +635,8 @@ export default function DocumentsPage() {
                 {mockRequests.filter(r => r.status === "pending").map((request) => (
                   <div 
                     key={request.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3 sm:p-4"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedRequest(request)}
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -648,7 +654,8 @@ export default function DocumentsPage() {
                 {mockRequests.filter(r => r.status === "approved").map((request) => (
                   <div 
                     key={request.id}
-                    className="rounded-lg border p-3 sm:p-4"
+                    className="rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedRequest(request)}
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-sm">{request.type}</span>
@@ -669,7 +676,8 @@ export default function DocumentsPage() {
                 {mockRequests.filter(r => r.status === "rejected").map((request) => (
                   <div 
                     key={request.id}
-                    className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedRequest(request)}
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -687,7 +695,10 @@ export default function DocumentsPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setShowResubmit(request)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowResubmit(request)
+                      }}
                       className="w-full sm:w-auto text-xs sm:text-sm"
                     >
                       <Upload className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
@@ -701,6 +712,106 @@ export default function DocumentsPage() {
         </CardContent>
       </Card>
 
-    </div>
-  )
-}
+  <Dialog open={Boolean(selectedRequest)} onOpenChange={(open) => { if (!open) setSelectedRequest(null) }}>
+    <DialogContent className="max-w-xl">
+      <DialogHeader>
+        <DialogTitle>Request Status & QR</DialogTitle>
+        <DialogDescription>
+          View the document request status and QR code for verification.
+        </DialogDescription>
+      </DialogHeader>
+      {selectedRequest && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border p-4 bg-muted/60">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">{selectedRequest.type}</p>
+                <p className="text-xs text-muted-foreground">Request ID: {selectedRequest.id}</p>
+              </div>
+              <div>{getStatusBadge(selectedRequest.status)}</div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1 text-sm">
+                <p className="text-muted-foreground">Resident</p>
+                <p className="font-medium">{selectedRequest.residentName}</p>
+              </div>
+              <div className="space-y-1 text-sm">
+                <p className="text-muted-foreground">Requested</p>
+                <p className="font-medium">{selectedRequest.date}</p>
+              </div>
+              <div className="space-y-1 text-sm">
+                <p className="text-muted-foreground">Purpose</p>
+                <p className="font-medium">{selectedRequest.purpose}</p>
+              </div>
+              {selectedRequest.pickupTime && (
+                <div className="space-y-1 text-sm">
+                  <p className="text-muted-foreground">Pickup</p>
+                  <p className="font-medium">{selectedRequest.pickupTime}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <DocumentStatusTimeline
+              currentStatus={selectedRequest.status === 'pending' ? 'processing' : selectedRequest.status === 'approved' ? 'approved' : 'rejected'}
+              submittedDate={new Date(selectedRequest.date)}
+              processingDate={new Date(selectedRequest.date)}
+              approvedDate={selectedRequest.status === 'approved' ? new Date(selectedRequest.date) : undefined}
+              rejectionReason={selectedRequest.status === 'rejected' ? selectedRequest.remarks : undefined}
+            />
+
+            <div className="rounded-xl border border-border p-4 bg-white">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="rounded-full bg-emerald-100 p-2 text-emerald-700">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Document QR Code</p>
+                  <p className="text-xs text-muted-foreground">Contains resident name, document type, paid status, and document number.</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+                  <QRCodeCanvas
+                    value={JSON.stringify({
+                      name: selectedRequest.residentName,
+                      documentType: selectedRequest.type,
+                      paid: selectedRequest.status === 'approved' ? 'Yes' : 'No',
+                      documentNumber: selectedRequest.id,
+                    })}
+                    size={180}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
+                    <p className="text-muted-foreground text-xs">Resident Name</p>
+                    <p className="font-medium">{selectedRequest.residentName}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
+                    <p className="text-muted-foreground text-xs">Request Number</p>
+                    <p className="font-medium">{selectedRequest.id}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
+                    <p className="text-muted-foreground text-xs">Document Type</p>
+                    <p className="font-medium">{selectedRequest.type}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
+                    <p className="text-muted-foreground text-xs">Paid</p>
+                    <p className="font-medium">{selectedRequest.status === 'approved' ? 'Yes' : 'No'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <DialogFooter>
+        <Button onClick={() => setSelectedRequest(null)} className="w-full">
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>

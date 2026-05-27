@@ -111,23 +111,21 @@ export function AIChatbot({
     setLocalInput(event.target.value)
   }
 
-  const handleLocalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!localInput.trim()) return
+  const sendLocalQuestion = (question: string) => {
+    const trimmedQuestion = question.trim()
+    if (!trimmedQuestion) return
 
     if (inputRef.current && isListening && recognitionRef.current) {
       recognitionRef.current.stop()
       setIsListening(false)
     }
 
-    const question = localInput.trim()
     setLocalMessages((current) => [
       ...current,
       {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: question,
+        content: trimmedQuestion,
         timestamp: new Date(),
       },
     ])
@@ -136,7 +134,7 @@ export function AIChatbot({
     setLocalIsLoading(true)
 
     setTimeout(() => {
-      const answerText = getResponse?.(question) ?? ""
+      const answerText = getResponse?.(trimmedQuestion) ?? ""
       const { cleaned, suggestion } = parseFormSuggestion(answerText)
       if (suggestion && Object.keys(suggestion).length > 0) {
         setFormSuggestion(suggestion)
@@ -155,6 +153,11 @@ export function AIChatbot({
       ])
       setLocalIsLoading(false)
     }, 250)
+  }
+
+  const handleLocalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    sendLocalQuestion(localInput)
   }
 
   const activeHandleInputChange = hasLocalAssistant ? handleLocalInputChange : handleInputChange
@@ -188,8 +191,11 @@ export function AIChatbot({
         recognition.onresult = (event: any) => {
           const transcript = event.results?.[0]?.[0]?.transcript
           if (transcript) {
-            setInputValue(transcript)
-            handleSend(transcript)
+            if (hasLocalAssistant) {
+              sendLocalQuestion(transcript)
+            } else {
+              activeHandleInputChange({ target: { value: transcript } } as any)
+            }
           }
         }
 
@@ -272,6 +278,9 @@ export function AIChatbot({
 
   const handleSuggestedQuestion = (question: string) => {
     activeHandleInputChange({ target: { value: question } } as any)
+    setTimeout(() => {
+      inputRef.current?.focus()
+    }, 0)
   }
 
   return (
@@ -285,7 +294,10 @@ export function AIChatbot({
             exit={{ scale: 0, opacity: 0 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true)
+              setIsMinimized(false)
+            }}
             className={cn(
               "fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors",
               portalType === "resident" 
@@ -358,7 +370,7 @@ export function AIChatbot({
             {!isMinimized && (
               <>
                 {/* Messages Area */}
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 min-h-0 p-4">
                   <div className="space-y-4" ref={scrollRef}>
                     {activeMessages.map((message) => (
                       <motion.div
@@ -464,7 +476,7 @@ export function AIChatbot({
                 )}
 
                 {/* Input Area */}
-                <form onSubmit={handleFormSubmit} className="border-t p-3">
+                <form onSubmit={handleFormSubmit} className="border-t p-3 shrink-0">
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -494,7 +506,7 @@ export function AIChatbot({
                       ref={inputRef}
                       value={activeInput}
                       onChange={activeHandleInputChange}
-                      onKeyPress={handleKeyPress}
+                      onKeyDown={handleKeyPress}
                       placeholder={isListening ? "Listening... magsalita na" : "Mag-type ng mensahe..."}
                       className="flex-1 rounded-full border-gray-200 bg-gray-50 focus:bg-white"
                       disabled={activeIsLoading}

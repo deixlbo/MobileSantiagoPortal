@@ -154,23 +154,11 @@ export function ComplaintStatusTimeline({
             const isUpcoming = index > currentIndex
 
             return (
-              <div key={step.status} className="relative">
-                {/* Connector line */}
-                {index < steps.length - 1 && (
+              <div key={step.status} className="relative pl-14">
+                {/* Icon and connector */}
+                <div className="absolute left-0 top-0 flex flex-col items-center">
                   <div
-                    className={`absolute left-5 top-12 h-8 w-0.5 transition-colors ${
-                      isCompleted || isCurrent
-                        ? 'bg-primary'
-                        : 'bg-muted'
-                    }`}
-                  />
-                )}
-
-                {/* Timeline item */}
-                <div className="flex gap-4">
-                  {/* Icon circle */}
-                  <div
-                    className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors flex-shrink-0 ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors ${
                       isCompleted
                         ? 'border-primary bg-primary text-primary-foreground'
                         : isCurrent
@@ -180,27 +168,24 @@ export function ComplaintStatusTimeline({
                   >
                     {step.icon}
                   </div>
+                  {index < steps.length - 1 && (
+                    <div className={`mt-2 h-full w-px ${isCompleted || isCurrent ? 'bg-primary' : 'bg-muted'}`} />
+                  )}
+                </div>
 
-                  {/* Content */}
-                  <div className="flex-1 pt-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className={`font-semibold text-sm ${
-                          isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {step.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {step.description}
-                        </p>
-                      </div>
-                    </div>
-                    {step.date && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {step.date}
-                      </p>
-                    )}
-                  </div>
+                {/* Timeline item */}
+                <div className="min-w-0">
+                  <p className={`font-semibold text-sm ${isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {step.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 break-words">
+                    {step.description}
+                  </p>
+                  {step.date && (
+                    <p className="text-xs text-muted-foreground mt-2 break-words">
+                      {step.date}
+                    </p>
+                  )}
                 </div>
               </div>
             )
