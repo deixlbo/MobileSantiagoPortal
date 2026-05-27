@@ -17,8 +17,6 @@ import {
   LogOut,
   Menu,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState } from "react"
 import { OfficialChatbot } from "./official-chatbot"
 
@@ -55,33 +53,18 @@ export default function OfficialLayout({
   const SidebarContent = () => (
     <>
       {/* Header with Santiago Logo */}
-      <div className="px-4 py-4 border-b border-white/20">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <Image
-            src="/images/santiagologo.jpg"
-            alt="Barangay Santiago"
-            width={50}
-            height={50}
-            className="rounded-full object-cover w-12 h-12 shrink-0"
-          />
-          <div className="text-center flex-1 px-2">
-            <p className="text-[10px] text-white/80 leading-tight">Republic of the Philippines</p>
-            <p className="text-[10px] text-white/80 leading-tight">Province of Zambales</p>
-            <p className="text-[10px] text-white/80 leading-tight">Municipality of San Antonio</p>
-            <p className="text-xs font-semibold text-white leading-tight">BARANGAY SANTIAGO</p>
-          </div>
-          <Image
-            src="/images/saz.jpg"
-            alt="Municipality"
-            width={50}
-            height={50}
-            className="rounded-full object-cover w-12 h-12 shrink-0"
-          />
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/20">
+        <Image
+          src="/images/santiagologo.jpg"
+          alt="Barangay Santiago"
+          width={48}
+          height={48}
+          className="rounded-full object-cover w-12 h-12 shrink-0"
+        />
+        <div>
+          <h1 className="font-semibold text-white">Barangay Santiago</h1>
         </div>
       </div>
-
-      {/* Divider line */}
-      <div className="mx-4 h-0.5 bg-gradient-to-r from-white/20 via-white/20 to-transparent" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4">
@@ -108,20 +91,10 @@ export default function OfficialLayout({
         })}
       </nav>
 
-      {/* User Profile at Bottom */}
-      <div className="mt-auto border-t border-white/10 p-4 space-y-3">
-        <div className="flex items-center gap-3 px-2">
-          <Avatar className="h-12 w-12 ring-2 ring-white/30">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="Admin" />
-            <AvatarFallback className="bg-emerald-700 text-white font-semibold">RB</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">Rolando C. Borja</p>
-            <p className="text-xs text-white/70 truncate">Barangay Captain</p>
-          </div>
-        </div>
+      {/* Logout Button */}
+      <div className="p-4 border-t border-white/20">
         <button 
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-white/10 text-white hover:bg-white/20 transition-colors text-sm font-medium"
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 bg-white/10 text-white hover:bg-white/20 transition-colors text-sm font-medium"
           onClick={handleLogout}
           title="Logout"
         >

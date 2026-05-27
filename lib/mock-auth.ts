@@ -1,27 +1,15 @@
-// Mock users data for authentication
+// Users data for authentication - starts empty, users are added via registration
 export const mockUsers = {
-  residents: [
-    {
-      id: "resident-1",
-      email: "juan@example.com",
-      password: "password123",
-      firstName: "Juan",
-      lastName: "Dela Cruz",
-      purok: "Purok 1",
-      gender: "male",
-      role: "resident" as const,
-    },
-    {
-      id: "resident-2",
-      email: "maria@example.com",
-      password: "password123",
-      firstName: "Maria",
-      lastName: "Santos",
-      purok: "Purok 2",
-      gender: "female",
-      role: "resident" as const,
-    },
-  ],
+  residents: [] as {
+    id: string
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+    purok: string
+    gender: string
+    role: "resident"
+  }[],
   officials: [
     {
       id: "official-1",
@@ -30,15 +18,6 @@ export const mockUsers = {
       firstName: "Rolando",
       lastName: "Borja",
       position: "Barangay Captain",
-      role: "official" as const,
-    },
-    {
-      id: "official-2",
-      email: "secretary@barangaysantiago.gov.ph",
-      password: "admin123",
-      firstName: "Elena",
-      lastName: "Reyes",
-      position: "Barangay Secretary",
       role: "official" as const,
     },
   ],

@@ -47,7 +47,7 @@ export default function ResidentLayout({
   const SidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="relative flex items-center gap-3 px-4 py-5">
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/20">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 overflow-hidden">
           <Image
             src="/images/santiagologo.jpg"
@@ -59,12 +59,11 @@ export default function ResidentLayout({
         </div>
         <div>
           <h1 className="font-semibold text-white">Barangay Santiago</h1>
-          <p className="text-xs text-white/70">Resident Portal</p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
+      <nav className="flex flex-1 flex-col gap-1 p-4 pt-4">
         {navigation.map((item, index) => {
           const isActive = pathname === item.href || 
             (item.href !== "/resident/dashboard" && pathname.startsWith(item.href))
@@ -109,7 +108,7 @@ export default function ResidentLayout({
   const MobileSidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="flex items-center gap-3 px-4 py-5">
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/20">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 overflow-hidden">
           <Image
             src="/images/santiagologo.jpg"
@@ -121,12 +120,11 @@ export default function ResidentLayout({
         </div>
         <div>
           <h1 className="font-semibold text-white">Barangay Santiago</h1>
-          <p className="text-xs text-white/70">Resident Portal</p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
+      <nav className="flex flex-1 flex-col gap-1 p-4 pt-4">
         {navigation.map((item, index) => {
           const isActive = pathname === item.href || 
             (item.href !== "/resident/dashboard" && pathname.startsWith(item.href))
@@ -156,10 +154,7 @@ export default function ResidentLayout({
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-white/20 space-y-2">
-        <div className="text-xs text-white/60 px-2">
-          Logged in as Resident
-        </div>
+      <div className="p-4 border-t border-white/20">
         <Link
           href="/resident/login"
           onClick={() => setSidebarOpen(false)}
