@@ -16,7 +16,7 @@ import {
   Minimize2,
   Mic,
   Volume2,
-  SpeakerWave
+  VolumeX
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -441,7 +441,7 @@ export function AIChatbot({
                         voiceOutputEnabled ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
                       )}
                     >
-                      {voiceOutputEnabled ? <Volume2 className="h-4 w-4" /> : <SpeakerWave className="h-4 w-4" />}
+                      {voiceOutputEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                     </Button>
                     <Input
                       ref={inputRef}
