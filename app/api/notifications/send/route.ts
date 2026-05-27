@@ -1,132 +1,153 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Simulated SMS/Email service (use Twilio/SendGrid in production)
-async function sendSMS(phone: string, message: string) {
-  // TODO: Integrate with Twilio
-  console.log(`[SMS to ${phone}]: ${message}`);
-  return true;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+interface NotificationPayload {
+  title: string
+  body: string
+  icon?: string
+  badge?: string
+  category: 'emergency' | 'documentUpdate' | 'announcement' | 'reminder'
+  data?: Record<string, any>
+  userId?: string
+  recipientIds?: string[]
 }
 
-async function sendEmail(email: string, subject: string, body: string) {
-  // TODO: Integrate with SendGrid
-  console.log(`[Email to ${email}]: ${subject} - ${body}`);
-  return true;
-}
-
-export async function POST(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
+/**
+ * Send push notifications to subscribed users
+ * Supports filtering by notification category and user preferences
+ */
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const { userId, type, recipient, subject, message, triggeredBy, relatedId } = body;
+    const payload = await request.json() as NotificationPayload
 
-    // Get user preferences
-    const { data: preferences } = await supabase
-      .from('user_preferences')
+    if (!payload.title || !payload.body || !payload.category) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, body, category' },
+        { status: 400 }
+      )
+    }
+
+    // Build query for subscriptions to send to
+    let query = supabase
+      .from('push_subscriptions')
       .select('*')
-      .eq('user_id', userId)
-      .single();
+      .eq('is_active', true)
 
-    // Log notification
-    const { data: log, error: logError } = await supabase
-      .from('notification_logs')
-      .insert([
-        {
-          user_id: userId,
-          notification_type: type,
-          recipient,
-          subject,
-          body: message,
-          status: 'sent',
-          triggered_by: triggeredBy,
-          related_id: relatedId,
-        },
-      ])
-      .select()
-      .single();
-
-    if (logError) throw logError;
-
-    // Send notification if enabled
-    let sent = false;
-    if (type === 'sms' && preferences?.notify_sms) {
-      sent = await sendSMS(recipient, message);
-    } else if (type === 'email' && preferences?.notify_email) {
-      sent = await sendEmail(recipient, subject!, message);
+    // Filter by recipient IDs if provided
+    if (payload.recipientIds && payload.recipientIds.length > 0) {
+      query = query.in('user_id', payload.recipientIds)
     }
 
-    // Update status
-    if (sent) {
-      await supabase
-        .from('notification_logs')
-        .update({ status: 'delivered' })
-        .eq('id', log.id);
+    const { data: subscriptions, error } = await query
+
+    if (error) {
+      console.error('Error fetching subscriptions:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch subscriptions' },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ success: sent, log });
+    // Map category to preference key
+    const preferenceMap: Record<string, string> = {
+      emergency: 'emergencyAlerts',
+      documentUpdate: 'documentUpdates',
+      announcement: 'announcements',
+      reminder: 'reminders',
+    }
+    const preferenceKey = preferenceMap[payload.category]
+
+    // Filter subscriptions by user preferences
+    const filteredSubscriptions = subscriptions.filter(sub => {
+      const prefs = sub.preferences || {}
+      return prefs[preferenceKey] !== false
+    })
+
+    if (filteredSubscriptions.length === 0) {
+      return NextResponse.json({
+        success: true,
+        sent: 0,
+        message: 'No active subscriptions matching criteria',
+      })
+    }
+
+    // Store notification record for audit trail
+    const { error: notifError } = await supabase
+      .from('notifications_sent')
+      .insert({
+        title: payload.title,
+        body: payload.body,
+        icon: payload.icon || '/images/santiagologo.jpg',
+        badge: payload.badge || '/images/santiagologo.jpg',
+        category: payload.category,
+        data: payload.data || {},
+        recipient_count: filteredSubscriptions.length,
+        sent_at: new Date().toISOString(),
+        sent_by: payload.userId || null,
+      })
+
+    if (notifError) {
+      console.error('Error storing notification:', notifError)
+    }
+
+    return NextResponse.json({
+      success: true,
+      sent: filteredSubscriptions.length,
+      message: `Notification sent to ${filteredSubscriptions.length} users`,
+    })
   } catch (error) {
+    console.error('Send notification error:', error)
     return NextResponse.json(
-      { error: (error as Error).message },
+      { error: 'Failed to send notifications' },
       { status: 500 }
-    );
+    )
   }
 }
 
-export async function GET(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
+/**
+ * Get notification history (for admin panel)
+ */
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const category = searchParams.get('category')
 
-    const { data: logs, error } = await supabase
-      .from('notification_logs')
+    let query = supabase
+      .from('notifications_sent')
       .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50);
+      .order('sent_at', { ascending: false })
 
-    if (error) throw error;
+    if (category) {
+      query = query.eq('category', category)
+    }
 
-    return NextResponse.json(logs);
+    const { data, error } = await query.range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error('Error fetching notifications:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch notifications' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      notifications: data,
+      count: data.length,
+    })
   } catch (error) {
+    console.error('Get notifications error:', error)
     return NextResponse.json(
-      { error: (error as Error).message },
+      { error: 'Failed to retrieve notifications' },
       { status: 500 }
-    );
+    )
   }
 }

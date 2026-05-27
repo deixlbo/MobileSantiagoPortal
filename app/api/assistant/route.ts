@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateText } from 'ai'
+import { streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
 function getAppBaseUrl() {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const residentContext = residentId ? await fetchResidentDocuments(residentId) : []
     const prompt = createSystemPrompt(portalType, residentContext)
 
-    const { text } = await generateText({
+    const { toAIStream } = await streamText({
       model: openai('gpt-4o-mini'),
       system: prompt,
       prompt: question,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       maxTokens: 512,
     })
 
-    return NextResponse.json({ answer: text || 'Pasensya na, hindi available ang sagot ngayon.' })
+    return toAIStream()
   } catch (error) {
     console.error('AI assistant error:', error)
     return NextResponse.json({ error: 'AI assistant failed to generate a response' }, { status: 500 })

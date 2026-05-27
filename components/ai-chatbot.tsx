@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useChat } from "@ai-sdk/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,8 +36,6 @@ interface SuggestedQuestion {
 interface AIChatbotProps {
   portalType: "resident" | "official"
   suggestedQuestions: SuggestedQuestion[]
-  // getResponse may be synchronous or return a Promise<string>
-  getResponse: (question: string) => string | Promise<string>
   welcomeMessage: string
   title: string
   subtitle: string
@@ -51,7 +50,6 @@ interface AIChatbotProps {
 export function AIChatbot({
   portalType,
   suggestedQuestions,
-  getResponse,
   welcomeMessage,
   title,
   subtitle,
@@ -60,16 +58,6 @@ export function AIChatbot({
 }: AIChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: welcomeMessage,
-      timestamp: new Date()
-    }
-  ])
-  const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(true)
   const [speechSupported, setSpeechSupported] = useState(false)
@@ -78,9 +66,36 @@ export function AIChatbot({
   const inputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
 
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/assistant',
+    initialMessages: [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: welcomeMessage
+      }
+    ],
+    body: {
+      portalType,
+      residentId: userContext?.residentId
+    },
+    onFinish: (message) => {
+      const { cleaned, suggestion } = parseFormSuggestion(message.content)
+      if (suggestion && Object.keys(suggestion).length > 0) {
+        setFormSuggestion(suggestion)
+      }
+      if (voiceOutputEnabled) {
+        speakText(cleaned)
+      }
+    }
+  })
+
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      const scrollElement = scrollRef.current
+      setTimeout(() => {
+        scrollElement.scrollTop = scrollElement.scrollHeight
+      }, 0)
     }
   }, [messages])
 
@@ -164,69 +179,25 @@ export function AIChatbot({
     }
   }
 
-  const handleSend = async (text?: string) => {
-    const messageText = text || inputValue.trim()
-    if (!messageText) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: messageText,
-      timestamp: new Date()
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (inputRef.current && isListening && recognitionRef.current) {
+      recognitionRef.current.stop()
+      setIsListening(false)
     }
-
-    setMessages(prev => [...prev, userMessage])
-    setInputValue("")
-    setIsTyping(true)
+    handleSubmit(e)
     setFormSuggestion(null)
-
-    try {
-      const maybePromise = getResponse(messageText)
-      const rawResponse = await Promise.resolve(maybePromise)
-      const responseText = typeof rawResponse === 'string' ? rawResponse : String(rawResponse)
-      const { cleaned, suggestion } = parseFormSuggestion(responseText)
-
-      if (suggestion && Object.keys(suggestion).length > 0) {
-        setFormSuggestion(suggestion)
-      }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: cleaned,
-        timestamp: new Date()
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-      if (inputRef.current) inputRef.current.focus()
-      speakText(cleaned)
-    } catch (err) {
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        role: "assistant",
-        content: "Pasensya na, nagkaroon ng problema sa pagkuha ng sagot. Pakisubukang muli.",
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setIsTyping(false)
-      if (isListening && recognitionRef.current) {
-        recognitionRef.current.stop()
-        setIsListening(false)
-      }
-    }
   }
 
-  // onKeyDown is more reliable across input components
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if ((e as any).key === "Enter" && !(e as any).shiftKey) {
       e.preventDefault()
-      handleSend()
+      handleFormSubmit(e as any)
     }
   }
 
   const handleSuggestedQuestion = (question: string) => {
-    handleSend(question)
+    handleInputChange({ target: { value: question } } as any)
   }
 
   return (
@@ -313,8 +284,8 @@ export function AIChatbot({
             {!isMinimized && (
               <>
                 {/* Messages Area */}
-                <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4" ref={scrollRef}>
                     {messages.map((message) => (
                       <motion.div
                         key={message.id}
@@ -356,8 +327,8 @@ export function AIChatbot({
                       </motion.div>
                     ))}
 
-                    {/* Typing Indicator */}
-                    {isTyping && (
+                    {/* Loading Indicator */}
+                    {isLoading && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -419,9 +390,10 @@ export function AIChatbot({
                 )}
 
                 {/* Input Area */}
-                <div className="border-t p-3">
+                <form onSubmit={handleFormSubmit} className="border-t p-3">
                   <div className="flex items-center gap-2">
                     <Button
+                      type="button"
                       variant="outline"
                       size="icon"
                       onClick={handleVoiceToggle}
@@ -433,6 +405,7 @@ export function AIChatbot({
                       <Mic className="h-4 w-4" />
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       size="icon"
                       onClick={() => setVoiceOutputEnabled((prev) => !prev)}
@@ -445,16 +418,16 @@ export function AIChatbot({
                     </Button>
                     <Input
                       ref={inputRef}
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
+                      value={input}
+                      onChange={handleInputChange}
                       onKeyPress={handleKeyPress}
                       placeholder={isListening ? "Listening... magsalita na" : "Mag-type ng mensahe..."}
                       className="flex-1 rounded-full border-gray-200 bg-gray-50 focus:bg-white"
-                      disabled={isTyping}
+                      disabled={isLoading}
                     />
                     <Button
-                      onClick={() => handleSend()}
-                      disabled={!inputValue.trim() || isTyping}
+                      type="submit"
+                      disabled={!input.trim() || isLoading}
                       size="icon"
                       className={cn(
                         "rounded-full",
@@ -463,14 +436,14 @@ export function AIChatbot({
                           : "bg-emerald-700 hover:bg-emerald-800"
                       )}
                     >
-                      {isTyping ? (
+                      {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Send className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
-                </div>
+                </form>
               </>
             )}
           </motion.div>

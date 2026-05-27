@@ -10,6 +10,8 @@ interface VoiceCommandsProps {
   onCommand: (command: string, action: string) => void
   commands?: Record<string, string>
   language?: string
+  enableFeedback?: boolean
+  onCommandExecuted?: (command: string, success: boolean) => void
 }
 
 const DEFAULT_COMMANDS: Record<string, string> = {
@@ -27,6 +29,9 @@ const DEFAULT_COMMANDS: Record<string, string> = {
   'account': 'navigate-profile',
   'settings': 'navigate-settings',
   'mga setting': 'navigate-settings',
+  'dashboard': 'navigate-dashboard',
+  'analytics': 'navigate-analytics',
+  'blotter': 'navigate-blotter',
   
   // Actions
   'submit': 'action-submit',
@@ -40,6 +45,16 @@ const DEFAULT_COMMANDS: Record<string, string> = {
   'tulong': 'action-help',
   'search': 'action-search',
   'hanapin': 'action-search',
+  'open': 'action-open',
+  'close': 'action-close',
+  'print': 'action-print',
+  'i-print': 'action-print',
+  'download': 'action-download',
+  'i-download': 'action-download',
+  'delete': 'action-delete',
+  'i-delete': 'action-delete',
+  'refresh': 'action-refresh',
+  'i-refresh': 'action-refresh',
   
   // Document types
   'barangay clearance': 'request-clearance',
@@ -50,17 +65,36 @@ const DEFAULT_COMMANDS: Record<string, string> = {
   'certificate of residency': 'request-residency',
   'business permit': 'request-business-permit',
   'permit': 'request-business-permit',
+  'solo parent': 'request-solo-parent',
+  'solo parent certificate': 'request-solo-parent',
+  'medical assistance': 'request-medical-assistance',
+  'blotter report': 'request-blotter',
+  
+  // Document operations
+  'approve': 'document-approve',
+  'i-approve': 'document-approve',
+  'reject': 'document-reject',
+  'i-reject': 'document-reject',
+  'claim': 'document-claim',
+  'kunin': 'document-claim',
+  'verify': 'document-verify',
+  'i-verify': 'document-verify',
+  'track': 'document-track',
+  'subaybayan': 'document-track',
 }
 
 export function VoiceCommands({ 
   onCommand, 
   commands = DEFAULT_COMMANDS,
-  language = 'fil-PH'
+  language = 'fil-PH',
+  enableFeedback = true,
+  onCommandExecuted
 }: VoiceCommandsProps) {
   const [isSupported, setIsSupported] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [commandHistory, setCommandHistory] = useState<string[]>([])
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
   useEffect(() => {
@@ -119,8 +153,16 @@ export function VoiceCommands({
   const processCommand = useCallback((text: string) => {
     // Check for exact matches first
     if (commands[text]) {
-      onCommand(text, commands[text])
-      speak(`Executing: ${text}`)
+      const action = commands[text]
+      onCommand(text, action)
+      addToHistory(text)
+      
+      if (enableFeedback) {
+        const feedback = getCommandFeedback(action)
+        speak(feedback)
+      }
+      
+      onCommandExecuted?.(text, true)
       return
     }
 
@@ -128,20 +170,74 @@ export function VoiceCommands({
     for (const [phrase, action] of Object.entries(commands)) {
       if (text.includes(phrase)) {
         onCommand(phrase, action)
-        speak(`Executing: ${phrase}`)
+        addToHistory(phrase)
+        
+        if (enableFeedback) {
+          const feedback = getCommandFeedback(action)
+          speak(feedback)
+        }
+        
+        onCommandExecuted?.(phrase, true)
         return
       }
     }
 
     // No command found
-    speak('Hindi maintindihan ang command. Subukang muli.')
-  }, [commands, onCommand])
+    if (enableFeedback) {
+      speak('Hindi maintindihan ang command. Subukang muli.')
+    }
+    onCommandExecuted?.(text, false)
+  }, [commands, onCommand, enableFeedback, onCommandExecuted])
+
+  const addToHistory = (command: string) => {
+    setCommandHistory(prev => [command, ...prev.slice(0, 4)])
+  }
+
+  const getCommandFeedback = (action: string): string => {
+    const feedbackMap: Record<string, string> = {
+      'navigate-home': 'Pumupunta sa home page',
+      'navigate-documents': 'Nagbubukas ng mga dokumento',
+      'navigate-request': 'Pumupunta sa pag-request ng dokumento',
+      'navigate-profile': 'Nagbubukas ng profile',
+      'navigate-settings': 'Nagbubukas ng settings',
+      'navigate-dashboard': 'Nagbubukas ng dashboard',
+      'navigate-analytics': 'Nagbubukas ng analytics',
+      'navigate-blotter': 'Nagbubukas ng blotter',
+      'action-submit': 'Sinusubmit ang form',
+      'action-cancel': 'Kinakansela ang operasyon',
+      'action-back': 'Bumabalik sa nakaraang pahina',
+      'action-help': 'Nagbubukas ng tulong',
+      'action-search': 'Naghahanap ng dokumento',
+      'action-open': 'Nag-open ng dokumento',
+      'action-close': 'Nagse-close',
+      'action-print': 'Nag-print ng dokumento',
+      'action-download': 'Nag-download ng dokumento',
+      'action-delete': 'Nag-delete ng dokumento',
+      'action-refresh': 'Nag-refresh ng pahina',
+      'request-clearance': 'Nag-request ng barangay clearance',
+      'request-indigency': 'Nag-request ng certificate of indigency',
+      'request-residency': 'Nag-request ng certificate of residency',
+      'request-business-permit': 'Nag-request ng business permit',
+      'request-solo-parent': 'Nag-request ng solo parent certificate',
+      'request-medical-assistance': 'Nag-request ng medical assistance',
+      'request-blotter': 'Nag-file ng blotter report',
+      'document-approve': 'Nag-approve ng dokumento',
+      'document-reject': 'Nag-reject ng dokumento',
+      'document-claim': 'Kumukuha ng dokumento',
+      'document-verify': 'Nag-verify ng dokumento',
+      'document-track': 'Sinusubaybayan ang dokumento',
+    }
+    
+    return feedbackMap[action] || 'Executing command'
+  }
 
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = language
       utterance.rate = 0.9
+      utterance.pitch = 1.0
+      speechSynthesis.cancel()
       speechSynthesis.speak(utterance)
     }
   }
