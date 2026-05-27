@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DocumentHeader } from "@/components/document-header"
+import { QRScanner } from "@/components/qr-scanner"
 import { 
   FileText, 
   Clock, 
@@ -561,8 +562,13 @@ export default function DocumentsPage() {
       {/* Request History */}
       <Card>
         <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="text-base sm:text-lg">My Requests</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Track your document request status</CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex-1">
+              <CardTitle className="text-base sm:text-lg">My Requests</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Track your document request status</CardDescription>
+            </div>
+            <QRScanner />
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="all">

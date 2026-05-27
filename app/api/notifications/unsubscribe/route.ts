@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!
+// Initialize Supabase client only if credentials are available
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+
+  const { createClient } = require('@supabase/supabase-js')
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 /**
  * Unsubscribe user from push notifications

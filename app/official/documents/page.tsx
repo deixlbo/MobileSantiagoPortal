@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { exportToCSV, exportToXLSX, prepareDataForExport } from "@/lib/export-utils"
-import { QRVerification } from "@/components/qr-verification"
+
 import { DocumentStatusTimeline } from "@/components/document-status-timeline"
 import { 
   Search, 
@@ -601,16 +601,7 @@ export default function OfficialDocumentsPage() {
                     readyDate={selectedRequest.status === 'released' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
                   />
                 </div>
-                <div className="rounded-lg border border-muted/60 bg-muted/40 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">Verification QR</p>
-                  <QRVerification
-                    documentId={selectedRequest.id}
-                    documentName={selectedRequest.type}
-                    issuedDate={new Date(selectedRequest.date.split(',')[0].trim() + ', 2026')}
-                    issuedBy="Barangay Santiago"
-                    verificationUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${selectedRequest.id}`}
-                  />
-                </div>
+
               </div>
 
               {/* Uploaded Files Section */}
