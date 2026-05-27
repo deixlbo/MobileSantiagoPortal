@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 
 import { useState } from "react"
 import { LogOut } from "lucide-react"
-import { ResidentChatbot } from "@/components/resident-chatbot"
+import { ResidentChatbot } from "./resident-chatbot"
 
 const navigation = [
   { name: "Dashboard", href: "/resident/dashboard", icon: LayoutDashboard },

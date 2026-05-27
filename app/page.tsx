@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -214,67 +215,111 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-background py-20 md:py-40">
+      <motion.section
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative overflow-hidden bg-background py-20 md:py-40"
+      >
+        <div className="pointer-events-none absolute -left-10 top-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-24 h-56 w-56 rounded-full bg-secondary/15 blur-3xl" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="space-y-8 md:space-y-12 text-center">
-            <div className="space-y-4 md:space-y-6">
-              <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-tight">
-                Barangay Services <span className="text-primary">Made Easy</span>
+          <div className="space-y-10 text-center">
+            <div className="space-y-5 md:space-y-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-primary/90">Barangay Santiago Portal</p>
+              <h1 className="mx-auto max-w-4xl text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-tight">
+                Barangay Services <span className="text-primary">Made Easier</span>
               </h1>
-              <p className="text-pretty text-lg text-muted-foreground sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
-                Access government services online in seconds. Request documents, file reports, and stay connected with your community.
+              <p className="mx-auto max-w-3xl text-lg text-muted-foreground sm:text-xl md:text-2xl leading-relaxed">
+                Request clearances, file reports, track projects, and stay connected with your barangay—all from one polished and responsive portal.
               </p>
             </div>
-            
-            {/* Login Options */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 md:pt-8">
-              <Link href="/resident/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full px-10 h-14 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+
+            <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
+              <Link href="/resident/login" className="w-full">
+                <Button size="lg" className="w-full rounded-2xl px-10 h-14 text-base font-semibold shadow-lg shadow-primary/10 hover:shadow-xl transition-shadow">
                   Resident Login
                 </Button>
               </Link>
-              <Link href="/official/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full px-10 h-14 text-base font-semibold rounded-lg border-2 hover:bg-muted transition-colors">
+              <Link href="/official/login" className="w-full">
+                <Button size="lg" variant="outline" className="w-full rounded-2xl px-10 h-14 text-base font-semibold border-2 border-primary/70 hover:bg-primary/10 transition-colors">
                   Official Login
                 </Button>
               </Link>
             </div>
+
+            <div className="mt-12 grid gap-4 sm:grid-cols-3">
+              {[
+                { label: "Fast Requests", value: "3 min", description: "Complete applications in one place." },
+                { label: "Secure Documents", value: "Verified", description: "QR-secure and printable official copies." },
+                { label: "Community Support", value: "24/7", description: "Help for residents and officials." },
+              ].map((item) => (
+                <div key={item.label} className="rounded-3xl border border-border/80 bg-card/75 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">{item.label}</p>
+                  <p className="mt-3 text-3xl font-bold text-foreground">{item.value}</p>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 md:py-32 border-t">
+      <motion.section
+        id="services"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="py-20 md:py-32 border-t"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-16 space-y-3 text-center md:mb-20">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground">Popular Services</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Request important documents and access barangay services online</p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Request important documents and access barangay services online.</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, index) => (
-              <Link key={index} href="/resident/login">
-                <Card className="h-full transition-all hover:shadow-xl hover:-translate-y-2 cursor-pointer border-0 bg-card/50 backdrop-blur hover:bg-card">
-                  <CardHeader>
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15">
-                      <service.icon className="h-7 w-7 text-primary" />
-                    </div>
-                    <CardTitle className="text-xl">{service.title}</CardTitle>
-                    <CardDescription className="text-base">{service.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="ghost" className="p-0 h-auto font-semibold text-primary hover:text-primary/80">
-                      Request Now →
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Link>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 12 }}
+                whileHover={{ y: -4 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+              >
+                <Link href="/resident/login">
+                  <Card className="h-full overflow-hidden border-0 bg-card/60 backdrop-blur transition-all duration-300 hover:shadow-xl hover:bg-card">
+                    <CardHeader>
+                      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+                        <service.icon className="h-7 w-7 text-primary" />
+                      </div>
+                      <CardTitle className="text-xl">{service.title}</CardTitle>
+                      <CardDescription className="text-base text-muted-foreground">{service.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button variant="ghost" className="p-0 h-auto font-semibold text-primary hover:text-primary/80">
+                        Request Now →
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Announcements Section */}
-      <section id="announcements" className="py-20 md:py-32 bg-muted/30">
+      <motion.section
+        id="announcements"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="py-20 md:py-32 bg-muted/30"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:mb-20">
             <div className="space-y-2">
@@ -286,26 +331,41 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {announcements.map((announcement) => (
-              <Card key={announcement.id} className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Megaphone className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium text-muted-foreground">{announcement.date}</span>
-                  </div>
-                  <CardTitle className="text-xl">{announcement.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{announcement.content}</p>
-                </CardContent>
-              </Card>
+            {announcements.map((announcement, index) => (
+              <motion.div
+                key={announcement.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+              >
+                <Card className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Megaphone className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium text-muted-foreground">{announcement.date}</span>
+                    </div>
+                    <CardTitle className="text-xl">{announcement.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{announcement.content}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Projects Section */}
-      <section id="projects" className="py-20 md:py-32 border-t">
+      <motion.section
+        id="projects"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="py-20 md:py-32 border-t"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:mb-20">
             <div className="space-y-2">
@@ -317,44 +377,52 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <Card key={project.id} className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant={
-                      project.status === "Completed" ? "default" :
-                      project.status === "Ongoing" ? "secondary" : "outline"
-                    } className="text-xs font-semibold py-1 px-3">
-                      {project.status}
-                    </Badge>
-                    <span className="text-sm font-semibold text-primary">{project.progress}%</span>
-                  </div>
-                  <CardTitle className="text-xl">{project.title}</CardTitle>
-                  <CardDescription className="text-sm">{project.type}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all rounded-full" 
-                        style={{ width: `${project.progress}%` }}
-                      />
+            {projects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+              >
+                <Card className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant={
+                        project.status === "Completed" ? "default" :
+                        project.status === "Ongoing" ? "secondary" : "outline"
+                      } className="text-xs font-semibold py-1 px-3">
+                        {project.status}
+                      </Badge>
+                      <span className="text-sm font-semibold text-primary">{project.progress}%</span>
                     </div>
-                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 flex-shrink-0" /> {project.location}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 flex-shrink-0">₱</span> {project.budget}
-                      </span>
+                    <CardTitle className="text-xl">{project.title}</CardTitle>
+                    <CardDescription className="text-sm">{project.type}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all rounded-full" 
+                          style={{ width: `${project.progress}%` }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 flex-shrink-0" /> {project.location}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="h-4 w-4 flex-shrink-0">₱</span> {project.budget}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Officials Section */}
       <section id="officials" className="py-20 md:py-32 bg-muted/30">
@@ -364,25 +432,32 @@ export default function LandingPage() {
             <p className="text-lg text-muted-foreground">Meet the officials serving Barangay Santiago</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {officials.map((official) => (
-              <Card 
-                key={official.id} 
-                className="cursor-pointer transition-all border-0 bg-card/60 backdrop-blur hover:shadow-lg hover:-translate-y-2 overflow-hidden group"
-                onClick={() => setSelectedOfficial(official)}
+            {officials.map((official, index) => (
+              <motion.div
+                key={official.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.06 }}
               >
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="mx-auto h-24 w-24 overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/10 transition-all">
-                    <Users className="h-12 w-12 text-primary/60" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-bold text-foreground text-lg">{official.name}</h3>
-                    <p className="text-sm text-muted-foreground leading-snug">{official.position}</p>
-                  </div>
-                  <Button variant="ghost" className="w-full text-primary font-semibold hover:bg-primary/10">
-                    View Profile →
-                  </Button>
-                </CardContent>
-              </Card>
+                <Card 
+                  className="cursor-pointer transition-all border-0 bg-card/60 backdrop-blur hover:shadow-lg hover:-translate-y-2 overflow-hidden group"
+                  onClick={() => setSelectedOfficial(official)}
+                >
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="mx-auto h-24 w-24 overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/10 transition-all">
+                      <Users className="h-12 w-12 text-primary/60" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-foreground text-lg">{official.name}</h3>
+                      <p className="text-sm text-muted-foreground leading-snug">{official.position}</p>
+                    </div>
+                    <Button variant="ghost" className="w-full text-primary font-semibold hover:bg-primary/10">
+                      View Profile →
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>

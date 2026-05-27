@@ -13,7 +13,10 @@ import {
   Bot, 
   User,
   Loader2,
-  Minimize2
+  Minimize2,
+  Mic,
+  Volume2,
+  SpeakerWave
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -38,6 +41,11 @@ interface AIChatbotProps {
   title: string
   subtitle: string
   accentColor: string
+  userContext?: {
+    residentId?: string
+    residentName?: string
+    email?: string
+  }
 }
 
 export function AIChatbot({
@@ -47,7 +55,8 @@ export function AIChatbot({
   welcomeMessage,
   title,
   subtitle,
-  accentColor
+  accentColor,
+  userContext
 }: AIChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -61,8 +70,13 @@ export function AIChatbot({
   ])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(true)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [formSuggestion, setFormSuggestion] = useState<Record<string, string> | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -75,6 +89,80 @@ export function AIChatbot({
       inputRef.current.focus()
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      setSpeechSupported(Boolean(SpeechRecognition))
+      if (SpeechRecognition && !recognitionRef.current) {
+        const recognition = new SpeechRecognition()
+        recognition.lang = 'tl-PH'
+        recognition.interimResults = false
+        recognition.maxAlternatives = 1
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results?.[0]?.[0]?.transcript
+          if (transcript) {
+            setInputValue(transcript)
+            handleSend(transcript)
+          }
+        }
+
+        recognition.onend = () => {
+          setIsListening(false)
+        }
+
+        recognition.onerror = () => {
+          setIsListening(false)
+        }
+
+        recognitionRef.current = recognition
+      }
+    }
+  }, [isOpen])
+
+  const parseFormSuggestion = (text: string) => {
+    const marker = /<SUGGESTED_FORM>([\s\S]*?)<\/SUGGESTED_FORM>/i
+    const match = text.match(marker)
+    if (!match) return { cleaned: text, suggestion: null }
+
+    try {
+      const jsonText = match[1].trim()
+      const parsed = JSON.parse(jsonText)
+      const cleaned = text.replace(marker, '').trim()
+      return { cleaned, suggestion: parsed }
+    } catch (error) {
+      return { cleaned: text.replace(marker, '').trim(), suggestion: null }
+    }
+  }
+
+  const speakText = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis || !voiceOutputEnabled) return
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'tl-PH'
+    utterance.rate = 0.95
+    utterance.pitch = 1.05
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const handleVoiceToggle = () => {
+    if (!speechSupported) {
+      alert('Voice commands are not supported in this browser.')
+      return
+    }
+    const recognition = recognitionRef.current
+    if (!recognition) return
+
+    if (isListening) {
+      recognition.stop()
+      setIsListening(false)
+    } else {
+      setIsListening(true)
+      recognition.start()
+    }
+  }
 
   const handleSend = async (text?: string) => {
     const messageText = text || inputValue.trim()
@@ -90,21 +178,28 @@ export function AIChatbot({
     setMessages(prev => [...prev, userMessage])
     setInputValue("")
     setIsTyping(true)
+    setFormSuggestion(null)
 
     try {
-      // Support both sync and async getResponse implementations
       const maybePromise = getResponse(messageText)
-      const response = await Promise.resolve(maybePromise)
+      const rawResponse = await Promise.resolve(maybePromise)
+      const responseText = typeof rawResponse === 'string' ? rawResponse : String(rawResponse)
+      const { cleaned, suggestion } = parseFormSuggestion(responseText)
+
+      if (suggestion && Object.keys(suggestion).length > 0) {
+        setFormSuggestion(suggestion)
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response,
+        content: cleaned,
         timestamp: new Date()
       }
+
       setMessages(prev => [...prev, assistantMessage])
-      // restore focus so user can type follow-ups quickly
       if (inputRef.current) inputRef.current.focus()
+      speakText(cleaned)
     } catch (err) {
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -115,6 +210,10 @@ export function AIChatbot({
       setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsTyping(false)
+      if (isListening && recognitionRef.current) {
+        recognitionRef.current.stop()
+        setIsListening(false)
+      }
     }
   }
 
@@ -305,15 +404,51 @@ export function AIChatbot({
                   </div>
                 )}
 
+                {formSuggestion && (
+                  <div className="border-t px-4 py-3 bg-slate-50 text-slate-900">
+                    <p className="mb-2 text-xs font-semibold text-slate-500">AI Suggested Form Data</p>
+                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+                      {Object.entries(formSuggestion).map(([key, value]) => (
+                        <div key={key} className="rounded-lg border border-slate-200 bg-white p-2">
+                          <p className="font-medium text-slate-700">{key}</p>
+                          <p className="text-slate-500 truncate">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Input Area */}
                 <div className="border-t p-3">
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleVoiceToggle}
+                      className={cn(
+                        "rounded-full",
+                        isListening ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
+                      )}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setVoiceOutputEnabled((prev) => !prev)}
+                      className={cn(
+                        "rounded-full",
+                        voiceOutputEnabled ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
+                      )}
+                    >
+                      {voiceOutputEnabled ? <Volume2 className="h-4 w-4" /> : <SpeakerWave className="h-4 w-4" />}
+                    </Button>
                     <Input
                       ref={inputRef}
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="Mag-type ng mensahe..."
+                      placeholder={isListening ? "Listening... magsalita na" : "Mag-type ng mensahe..."}
                       className="flex-1 rounded-full border-gray-200 bg-gray-50 focus:bg-white"
                       disabled={isTyping}
                     />

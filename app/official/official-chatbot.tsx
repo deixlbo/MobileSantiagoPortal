@@ -1,6 +1,6 @@
 "use client"
 
-import { AIChatbot } from "./ai-chatbot"
+import { AIChatbot } from "@/components/ai-chatbot"
 
 const officialSuggestedQuestions = [
   { text: "Ipakita ang pending requests.", category: "requests" },
@@ -16,7 +16,6 @@ const officialSuggestedQuestions = [
 function getOfficialResponse(question: string): string {
   const lowerQuestion = question.toLowerCase()
   
-  // Dashboard & Statistics
   if (lowerQuestion.includes("pending") && lowerQuestion.includes("request")) {
     return "Mayroong 24 pending document requests na naghihintay ng inyong approval. Breakdown: 12 Barangay Clearance, 8 Certificate of Residency, at 4 Certificate of Indigency. Pumunta sa Documents section para i-review ang mga ito."
   }
@@ -29,13 +28,12 @@ function getOfficialResponse(question: string): string {
     return "Narito ang summary ng transactions ngayong araw: 15 approved requests, 3 rejected requests, 5 new blotter reports filed, at 2 blotter cases resolved. Total collection: Php 1,250.00 mula sa processing fees."
   }
 
-  // Reports
   if (lowerQuestion.includes("monthly") && lowerQuestion.includes("report")) {
     return "Para gumawa ng monthly report, pumunta sa Reports section at i-click ang 'Generate Report'. Piliin ang buwan at taon, at ang uri ng report na gusto ninyo (Document Requests, Blotter Summary, Financial Report, o Complete Summary). Ang report ay maaaring i-export sa PDF o Excel format."
   }
   
   if (lowerQuestion.includes("weekly") && lowerQuestion.includes("report")) {
-    return "Para sa weekly report, pumunta sa Reports section. Ngayong linggo: 78 total requests processed, 12 blotter cases handled, at 3 new residents registered. Ang detailed breakdown ay available sa Reports dashboard."
+    return "Para sa weekly report, pumunta sa Reports section. Ngayong linggo: 78 total requests processed, 12 blotter cases handled, at 3 new resident registrations. Ang detailed breakdown ay available sa Reports dashboard."
   }
   
   if (lowerQuestion.includes("statistics") || lowerQuestion.includes("stats") || lowerQuestion.includes("analytics")) {
@@ -46,7 +44,6 @@ function getOfficialResponse(question: string): string {
     return "Ang pinaka-requested na dokumento ngayong buwan ay ang Barangay Clearance (45%), sunod ang Certificate of Residency (30%), Certificate of Indigency (15%), at Business Clearance (10%). Karamihan ng requests ay para sa employment purposes."
   }
 
-  // Resident Records
   if (lowerQuestion.includes("hanapin") || lowerQuestion.includes("search") || lowerQuestion.includes("find")) {
     if (lowerQuestion.includes("resident")) {
       return "Para hanapin ang impormasyon ng resident, pumunta sa Residents section at gamitin ang search bar. Maaaring mag-search gamit ang pangalan, address, o resident ID. I-click ang profile para makita ang complete information at transaction history."
@@ -69,7 +66,6 @@ function getOfficialResponse(question: string): string {
     return "May 3,245 registered voters sa Barangay Santiago base sa latest COMELEC data. Para sa complete voter records at precinct assignments, pumunta sa Residents > Voter Records."
   }
 
-  // Document Processing
   if (lowerQuestion.includes("approval") || lowerQuestion.includes("for approval")) {
     return "May 24 requests na naghihintay ng inyong approval: 12 Barangay Clearance (priority), 8 Certificate of Residency, at 4 Certificate of Indigency. May 3 urgent requests na marked as 'Rush'. Pumunta sa Documents > For Approval."
   }
@@ -86,7 +82,6 @@ function getOfficialResponse(question: string): string {
     return "Para i-print ang transaction summary, pumunta sa Documents > Transaction History. Piliin ang date range at i-click ang 'Print Summary' button. Maaari ring i-export sa PDF o Excel format para sa record keeping."
   }
 
-  // Blotter Monitoring
   if (lowerQuestion.includes("blotter") && (lowerQuestion.includes("latest") || lowerQuestion.includes("recent") || lowerQuestion.includes("ipakita"))) {
     return "Narito ang 5 latest blotter reports: (1) Noise Complaint - Purok 3 (Filed), (2) Property Dispute - Purok 2 (Processing), (3) Physical Altercation - Purok 1 (For Mediation), (4) Theft Report - Purok 4 (Under Investigation), (5) Neighbor Dispute - Purok 2 (Scheduled for Hearing). Pumunta sa Blotters section para sa details."
   }
@@ -103,7 +98,6 @@ function getOfficialResponse(question: string): string {
     return "Para mag-send ng alert sa barangay tanods, pumunta sa Blotters section at piliin ang case. I-click ang 'Send Alert' button at piliin ang tanod on duty. Maaari ring mag-send ng group alert para sa emergency situations."
   }
 
-  // Announcements
   if (lowerQuestion.includes("post") && lowerQuestion.includes("announcement") || lowerQuestion.includes("mag-post")) {
     return "Para mag-post ng bagong announcement, pumunta sa Announcements section at i-click ang 'New Announcement'. Ilagay ang title, content, at category. Maaaring i-schedule ang posting o i-publish agad. Maaari ring mag-attach ng images at set ang expiration date."
   }
@@ -116,7 +110,6 @@ function getOfficialResponse(question: string): string {
     return "Para sa emergency advisory, pumunta sa Announcements > Emergency Broadcast. Ito ay automatic na ma-se-send sa lahat ng registered residents via SMS at portal notification. I-fill up ang nature of emergency, instructions, at contact numbers."
   }
 
-  // System & Admin
   if (lowerQuestion.includes("summarize") || lowerQuestion.includes("summary") && lowerQuestion.includes("today")) {
     return "Summary ngayong araw: 15 documents processed, 5 new blotter reports, 2 cases resolved, 3 new resident registrations. Top activities: Document processing (60%), Blotter handling (25%), Resident inquiries (15%). Total staff online: 4."
   }
@@ -129,7 +122,6 @@ function getOfficialResponse(question: string): string {
     return "Base sa historical data, ang predicted peak hours ngayong linggo ay: Monday 9-11 AM (document requests), Wednesday 2-4 PM (blotter filings), Friday 9 AM-12 PM (clearances for employment). I-recommend ang additional staff during these times."
   }
 
-  // Greetings
   if (lowerQuestion.includes("hello") || lowerQuestion.includes("hi") || lowerQuestion.includes("magandang")) {
     return "Magandang araw! Ako ang AI Assistant para sa Barangay Santiago Admin Portal. Paano ko kayo matutulungan ngayon? Maaari akong mag-provide ng reports, statistics, at tulong sa document processing, blotter monitoring, at iba pa."
   }
@@ -138,7 +130,6 @@ function getOfficialResponse(question: string): string {
     return "Walang anuman! Narito lang ako para tumulong sa inyong administrative tasks. May iba pa ba kayong kailangan? Maaari akong tumulong sa reports, resident records, document processing, at marami pa."
   }
 
-  // Default response
   return "Pasensya na, hindi ko masyadong naintindihan ang inyong tanong. Maaari ba ninyong i-rephrase o pumili sa mga sumusunod: Pending Requests, Monthly Reports, Resident Search, Blotter Monitoring, Announcements, o System Analytics? Narito ako para tumulong sa inyong administrative tasks."
 }
 

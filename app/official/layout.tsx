@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState } from "react"
-import { OfficialChatbot } from "@/components/official-chatbot"
+import { OfficialChatbot } from "./official-chatbot"
 
 
 const navigation = [

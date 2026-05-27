@@ -140,6 +140,155 @@ CREATE TABLE attachments (
   created_at timestamptz DEFAULT now()
 );
 
+-- ============ ENHANCEMENT TABLES ============
+
+-- households: for household grouping and census tracking
+CREATE TABLE households (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_head_id uuid REFERENCES residents(id) ON DELETE SET NULL,
+  address text NOT NULL,
+  purok text,
+  total_members integer DEFAULT 0,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- Add household_id to residents table (ALTER)
+-- ALTER TABLE residents ADD COLUMN household_id uuid REFERENCES households(id) ON DELETE SET NULL;
+
+-- payments: for online payment integration
+CREATE TABLE payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id uuid REFERENCES documents(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  amount numeric NOT NULL,
+  status text DEFAULT 'pending', -- pending, completed, failed, cancelled
+  payment_method text, -- stripe, gcash, payaya
+  transaction_id text UNIQUE,
+  receipt_url text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- qr_verifications: for QR code verification on documents
+CREATE TABLE qr_verifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id uuid REFERENCES documents(id) ON DELETE CASCADE,
+  qr_code text NOT NULL,
+  verification_code text UNIQUE,
+  scanned_count integer DEFAULT 0,
+  last_scanned timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
+-- appointments: for appointment scheduling system
+CREATE TABLE appointments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  resident_id uuid REFERENCES residents(id) ON DELETE CASCADE,
+  scheduled_at timestamptz NOT NULL,
+  duration_minutes integer DEFAULT 30,
+  purpose text,
+  status text DEFAULT 'confirmed', -- confirmed, completed, cancelled, rescheduled
+  notes text,
+  reminder_sent boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- emergency_alerts: for emergency alert system
+CREATE TABLE emergency_alerts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  alert_type text NOT NULL, -- typhoon, earthquake, fire, evacuation, etc.
+  title text NOT NULL,
+  description text,
+  evacuation_location text,
+  evacuation_map_url text,
+  severity text DEFAULT 'medium', -- low, medium, high, critical
+  created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- surveys: for survey/feedback collection
+CREATE TABLE surveys (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  status text DEFAULT 'draft', -- draft, published, closed
+  published_at timestamptz,
+  closed_at timestamptz,
+  target_audience text DEFAULT 'all', -- all, residents, officials
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- survey_questions: questions within surveys
+CREATE TABLE survey_questions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  survey_id uuid REFERENCES surveys(id) ON DELETE CASCADE,
+  question_text text NOT NULL,
+  question_type text NOT NULL, -- text, multiple_choice, rating, checkbox
+  options jsonb DEFAULT '[]'::jsonb, -- for multiple_choice and checkbox
+  is_required boolean DEFAULT false,
+  order_index integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+-- survey_responses: user responses to surveys
+CREATE TABLE survey_responses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  survey_id uuid REFERENCES surveys(id) ON DELETE CASCADE,
+  respondent_id uuid REFERENCES residents(id) ON DELETE SET NULL,
+  responses jsonb NOT NULL, -- JSON mapping question_id to answer
+  completed_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
+-- notification_logs: tracking for SMS/Email notifications
+CREATE TABLE notification_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  notification_type text NOT NULL, -- sms, email
+  recipient text NOT NULL,
+  subject text,
+  body text NOT NULL,
+  status text DEFAULT 'sent', -- sent, failed, bounced, delivered
+  error_message text,
+  triggered_by text, -- document_approved, blotter_update, announcement, etc.
+  related_id uuid,
+  created_at timestamptz DEFAULT now()
+);
+
+-- user_preferences: for language and notification preferences
+CREATE TABLE user_preferences (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  language text DEFAULT 'en', -- en, fil (Filipino/Tagalog)
+  notify_sms boolean DEFAULT true,
+  notify_email boolean DEFAULT true,
+  notify_push boolean DEFAULT true,
+  notify_document_updates boolean DEFAULT true,
+  notify_announcements boolean DEFAULT true,
+  notify_emergency_alerts boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz
+);
+
+-- document_status_history: tracking document status changes
+CREATE TABLE document_status_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id uuid REFERENCES documents(id) ON DELETE CASCADE,
+  old_status text,
+  new_status text,
+  changed_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  reason text,
+  created_at timestamptz DEFAULT now()
+);
+
 -- INDEXES / SUGGESTIONS
 -- CREATE INDEX idx_residents_purok ON residents(purok);
 -- CREATE INDEX idx_documents_resident ON documents(resident_id);

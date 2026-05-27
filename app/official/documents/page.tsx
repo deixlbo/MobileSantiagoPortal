@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import * as XLSX from "xlsx"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { printElementById } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +15,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { exportToCSV, exportToXLSX, prepareDataForExport } from "@/lib/export-utils"
+import { QRVerification } from "@/components/qr-verification"
+import { DocumentStatusTimeline } from "@/components/document-status-timeline"
 import { 
   Search, 
   Eye,
@@ -220,18 +224,18 @@ export default function OfficialDocumentsPage() {
       const typeRequests = filteredByDate.filter(req => req.type === docType)
       
       if (typeRequests.length > 0) {
-        const sheetData = typeRequests.map(req => ({
-          "Request ID": req.id,
-          "Type": req.type,
-          "Requester": req.requester,
-          "Email": req.email,
-          "Purok": req.purok,
-          "Purpose": req.purpose,
-          "Status": req.status,
-          "Date": req.date,
-          "Fee": "₱" + req.fee,
-          "Documents": req.documentsUploaded ? "Yes" : "No",
-        }))
+        const sheetData = prepareDataForExport(typeRequests, {
+          id: "Request ID",
+          type: "Type",
+          requester: "Requester",
+          email: "Email",
+          purok: "Purok",
+          purpose: "Purpose",
+          status: "Status",
+          date: "Date",
+          fee: "Fee",
+          documentsUploaded: "Documents",
+        })
 
         const ws = XLSX.utils.json_to_sheet(sheetData)
         
@@ -257,6 +261,41 @@ export default function OfficialDocumentsPage() {
     // Generate Excel file
     const fileName = `DocumentRequests_${new Date(exportDateFrom).toLocaleDateString()}_to_${new Date(exportDateTo).toLocaleDateString()}.xlsx`
     XLSX.writeFile(wb, fileName)
+    toast.success('Excel export complete')
+    setShowExportDialog(false)
+  }
+
+  const handleExportToCSV = () => {
+    const filteredRequests = mockRequests
+      .filter(req => req.date && (!exportDateFrom || !exportDateTo || (new Date(req.date.split(',')[0].trim() + ', 2026') >= new Date(exportDateFrom) && new Date(req.date.split(',')[0].trim() + ', 2026') <= new Date(exportDateTo))))
+      .map(req => ({
+        id: req.id,
+        type: req.type,
+        requester: req.requester,
+        email: req.email,
+        purok: req.purok,
+        purpose: req.purpose,
+        status: req.status,
+        date: req.date,
+        fee: `₱${req.fee}`,
+        documentsUploaded: req.documentsUploaded ? 'Yes' : 'No',
+      }))
+
+    const csvData = prepareDataForExport(filteredRequests, {
+      id: 'Request ID',
+      type: 'Type',
+      requester: 'Requester',
+      email: 'Email',
+      purok: 'Purok',
+      purpose: 'Purpose',
+      status: 'Status',
+      date: 'Date',
+      fee: 'Fee',
+      documentsUploaded: 'Documents'
+    })
+
+    exportToCSV(csvData, `DocumentRequests_${new Date().toISOString().slice(0,10)}.csv`)
+    toast.success('CSV export complete')
     setShowExportDialog(false)
   }
 
@@ -551,6 +590,29 @@ export default function OfficialDocumentsPage() {
                 </div>
               </div>
 
+              <div className="grid gap-4 lg:grid-cols-2 mt-4">
+                <div className="rounded-lg border border-muted/60 bg-muted/40 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">Status Timeline</p>
+                  <DocumentStatusTimeline
+                    currentStatus={selectedRequest.status === 'pending' ? 'processing' : selectedRequest.status === 'released' ? 'ready' : selectedRequest.status as any}
+                    submittedDate={new Date(selectedRequest.date.split(',')[0].trim() + ', 2026')}
+                    processingDate={selectedRequest.status !== 'pending' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
+                    approvedDate={selectedRequest.status === 'approved' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
+                    readyDate={selectedRequest.status === 'released' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
+                  />
+                </div>
+                <div className="rounded-lg border border-muted/60 bg-muted/40 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">Verification QR</p>
+                  <QRVerification
+                    documentId={selectedRequest.id}
+                    documentName={selectedRequest.type}
+                    issuedDate={new Date(selectedRequest.date.split(',')[0].trim() + ', 2026')}
+                    issuedBy="Barangay Santiago"
+                    verificationUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${selectedRequest.id}`}
+                  />
+                </div>
+              </div>
+
               {/* Uploaded Files Section */}
               <div className="border-t pt-3 mt-3">
                 <div className="flex items-center gap-2 mb-3">
@@ -722,12 +784,18 @@ export default function OfficialDocumentsPage() {
               </ul>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowExportDialog(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleExportToExcel}>
-              <Download className="h-3 w-3 mr-1" />
-              Export Excel
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button size="sm" className="w-full sm:w-auto" onClick={handleExportToCSV}>
+                <FileText className="h-3 w-3 mr-1" />
+                Export CSV
+              </Button>
+              <Button size="sm" className="w-full sm:w-auto" onClick={handleExportToExcel}>
+                <Download className="h-3 w-3 mr-1" />
+                Export Excel
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
