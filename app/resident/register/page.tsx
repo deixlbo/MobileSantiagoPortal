@@ -22,42 +22,35 @@ const documentTypes = [
   { value: "philhealth", label: "PhilHealth ID" },
 ]
 
-export default function ResidentRegisterPage() {
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null)
-  
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    purok: "",
-    gender: "",
-  })
+interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  purok: string
+  gender: string
+}
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0].name)
-    }
-  }
+interface FormFieldsProps {
+  idPrefix?: string
+  formData: FormData
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>
+  showPassword: boolean
+  setShowPassword: React.Dispatch<React.SetStateAction<boolean>>
+  uploadedFile: string | null
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Register the user with mock data
-    registerResident(formData)
-    
-    toast.success("Account created successfully! Please log in.")
-    router.push("/resident/login")
-  }
-
-  const FormFields = ({ idPrefix = "" }: { idPrefix?: string }) => (
+function FormFields({
+  idPrefix = "",
+  formData,
+  setFormData,
+  showPassword,
+  setShowPassword,
+  uploadedFile,
+  handleFileChange,
+}: FormFieldsProps) {
+  return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -66,7 +59,7 @@ export default function ResidentRegisterPage() {
             id={`${idPrefix}firstName`} 
             placeholder="Enter first name" 
             value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
             required 
           />
         </div>
@@ -76,7 +69,7 @@ export default function ResidentRegisterPage() {
             id={`${idPrefix}lastName`} 
             placeholder="Enter last name" 
             value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
             required 
           />
         </div>
@@ -89,7 +82,7 @@ export default function ResidentRegisterPage() {
           type="email" 
           placeholder="Enter your email" 
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
           required 
         />
       </div>
@@ -102,7 +95,7 @@ export default function ResidentRegisterPage() {
             type={showPassword ? "text" : "password"}
             placeholder="Create a password (min 6 characters)"
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
             required 
             minLength={6}
           />
@@ -120,8 +113,8 @@ export default function ResidentRegisterPage() {
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}purok`}>Purok</Label>
           <Select 
-            required
-            onValueChange={(value) => setFormData({ ...formData, purok: value })}
+            value={formData.purok}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, purok: value }))}
           >
             <SelectTrigger id={`${idPrefix}purok`}>
               <SelectValue placeholder="Select purok" />
@@ -138,8 +131,8 @@ export default function ResidentRegisterPage() {
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}gender`}>Gender</Label>
           <Select 
-            required
-            onValueChange={(value) => setFormData({ ...formData, gender: value })}
+            value={formData.gender}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
           >
             <SelectTrigger id={`${idPrefix}gender`}>
               <SelectValue placeholder="Select gender" />
@@ -154,7 +147,7 @@ export default function ResidentRegisterPage() {
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}docType`}>Identification Document</Label>
-        <Select required>
+        <Select>
           <SelectTrigger id={`${idPrefix}docType`}>
             <SelectValue placeholder="Select ID type" />
           </SelectTrigger>
@@ -199,6 +192,42 @@ export default function ResidentRegisterPage() {
       </div>
     </>
   )
+}
+
+export default function ResidentRegisterPage() {
+  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null)
+  
+  const [formData, setFormData] = useState<FormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    purok: "",
+    gender: "",
+  })
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadedFile(e.target.files[0].name)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Register the user with mock data
+    registerResident(formData)
+    
+    toast.success("Account created successfully! Please log in.")
+    router.push("/resident/login")
+  }
 
   return (
     <>
@@ -239,7 +268,15 @@ export default function ResidentRegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <FormFields idPrefix="mobile-" />
+            <FormFields 
+              idPrefix="mobile-" 
+              formData={formData}
+              setFormData={setFormData}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              uploadedFile={uploadedFile}
+              handleFileChange={handleFileChange}
+            />
 
             <Button 
               type="submit" 
@@ -308,7 +345,14 @@ export default function ResidentRegisterPage() {
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
-                <FormFields />
+                <FormFields 
+                  formData={formData}
+                  setFormData={setFormData}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  uploadedFile={uploadedFile}
+                  handleFileChange={handleFileChange}
+                />
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
                 <Button 
