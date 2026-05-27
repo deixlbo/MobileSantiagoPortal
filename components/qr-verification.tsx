@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import QRCode from 'qrcode.react'
+import { QRCodeCanvas } from 'qrcode.react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -78,7 +78,7 @@ export function QRVerification({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
-            <QRCode
+            <QRCodeCanvas
               value={qrData}
               size={150}
               level="H"
@@ -151,7 +151,7 @@ export function QRVerification({
 
           <div className="space-y-4">
             <div className="rounded-lg border border-border/50 bg-muted/30 p-6 text-center" id="qr-code-download">
-              <QRCode
+              <QRCodeCanvas
                 value={qrData}
                 size={250}
                 level="H"
