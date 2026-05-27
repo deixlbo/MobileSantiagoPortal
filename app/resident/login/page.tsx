@@ -32,7 +32,7 @@ export default function ResidentLoginPage() {
     if (user) {
       router.push("/resident")
     } else {
-      toast.error("Invalid email or password. Try: juan@example.com / password123")
+      toast.error("Invalid email or password. Please register if you don't have an account.")
       setIsLoading(false)
     }
   }
@@ -114,13 +114,6 @@ export default function ResidentLoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-
-            {/* Demo credentials hint */}
-            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-              <p className="font-medium">Demo Credentials:</p>
-              <p>Email: juan@example.com</p>
-              <p>Password: password123</p>
             </div>
 
             <Button 
@@ -238,17 +231,6 @@ export default function ResidentLoginPage() {
                   </div>
                 </motion.div>
                 
-                {/* Demo credentials hint */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"
-                >
-                  <p className="font-medium">Demo Credentials:</p>
-                  <p>Email: juan@example.com</p>
-                  <p>Password: password123</p>
-                </motion.div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
                 <motion.div

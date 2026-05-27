@@ -244,16 +244,11 @@ export default function OfficialDocumentsPage() {
             text-align: center;
           }
           
-          .logo-placeholder {
-            width: 0.8in;
-            height: 0.8in;
-            background: #f0f0f0;
+          .logo {
+            width: 0.9in;
+            height: 0.9in;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10pt;
-            color: #999;
+            object-fit: cover;
             flex-shrink: 0;
           }
           
@@ -367,14 +362,14 @@ export default function OfficialDocumentsPage() {
         <div class="container">
           <!-- Header -->
           <div class="header">
-            <div class="logo-placeholder">LOGO</div>
+            <img src="/images/santiagologo.jpg" alt="Barangay Santiago" class="logo" />
             <div class="header-text">
               <p class="gov-info">Republic of the Philippines</p>
               <p class="gov-info">Province of Zambales</p>
               <p class="gov-info">Municipality of San Antonio</p>
               <p class="main-title">Barangay Santiago</p>
             </div>
-            <div class="logo-placeholder">SEAL</div>
+            <img src="/images/saz.jpg" alt="Municipality Seal" class="logo" />
           </div>
           
           <!-- Document Title -->
@@ -425,11 +420,9 @@ export default function OfficialDocumentsPage() {
         </div>
         
         <script>
-          window.addEventListener('load', function() {
-            setTimeout(function() {
-              window.print();
-            }, 100);
-          });
+          window.onload = function() {
+            window.print();
+          };
         </script>
       </body>
       </html>

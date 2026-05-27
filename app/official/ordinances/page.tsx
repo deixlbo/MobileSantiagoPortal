@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { printElementById } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -90,7 +89,6 @@ export default function OfficialOrdinancesPage() {
   const [ordinances, setOrdinances] = useState(mockOrdinances)
   const [selectedOrdinance, setSelectedOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [editingOrdinance, setEditingOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
@@ -214,6 +212,104 @@ export default function OfficialOrdinancesPage() {
       console.error('Failed to update ordinance:', error)
       alert('Failed to update ordinance')
     }
+  }
+
+  const handleDirectPrint = (ordinance: typeof mockOrdinances[0]) => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const whereasHtml = ordinance.whereas.map(clause => `<p style="margin-bottom: 0.05in; text-align: justify;">${clause}</p>`).join('')
+    const sectionsHtml = ordinance.sections.map((section, i) => `
+      <div style="margin-bottom: 0.15in;">
+        <p style="font-weight: bold;">SECTION ${i + 1}. ${section.title}</p>
+        <p style="text-align: justify; white-space: pre-line;">${section.content}</p>
+      </div>
+    `).join('')
+
+    const documentContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ordinance - ${ordinance.id}</title>
+        <meta charset="UTF-8">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0.5in; }
+          body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000; background: white; }
+          .container { width: 100%; max-width: 8.5in; margin: 0 auto; }
+          .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3in; padding-bottom: 0.15in; border-bottom: 3px solid #333; }
+          .logo { width: 0.9in; height: 0.9in; border-radius: 50%; object-fit: cover; }
+          .header-text { flex: 1; text-align: center; padding: 0 0.2in; }
+          .header-text p { margin: 0; font-size: 10pt; }
+          .header-text .main-title { font-size: 13pt; font-weight: bold; margin-top: 0.05in; }
+          .document-title { text-align: center; margin: 0.2in 0; padding: 0.15in 0; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+          .document-title h1 { font-size: 12pt; font-weight: bold; }
+          .full-title { text-align: center; font-weight: bold; font-size: 11pt; margin: 0.2in 0; }
+          .whereas { margin: 0.2in 0; font-size: 10pt; }
+          .whereas-label { font-weight: bold; margin-bottom: 0.1in; }
+          .sections { margin: 0.2in 0; font-size: 10pt; }
+          .enacted { margin-top: 0.3in; font-size: 10pt; }
+          .signatures { display: flex; justify-content: space-between; margin-top: 0.5in; }
+          .signature-block { text-align: center; }
+          .signature-line { width: 2in; border-top: 1px solid #000; padding-top: 0.05in; margin: 0 auto; }
+          .signature-name { font-weight: bold; font-size: 10pt; }
+          .signature-title { font-size: 9pt; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="/images/santiagologo.jpg" alt="Barangay Santiago" class="logo" />
+            <div class="header-text">
+              <p>Republic of the Philippines</p>
+              <p>Province of Zambales</p>
+              <p>Municipality of San Antonio</p>
+              <p class="main-title">Barangay Santiago</p>
+            </div>
+            <img src="/images/saz.jpg" alt="Municipality Seal" class="logo" />
+          </div>
+          
+          <div class="document-title">
+            <h1>BARANGAY ORDINANCE NO. ${ordinance.number} SERIES OF ${ordinance.year}</h1>
+          </div>
+          
+          <div class="full-title">${ordinance.fullTitle}</div>
+          
+          <div class="whereas">
+            <p class="whereas-label">WHEREAS:</p>
+            ${whereasHtml}
+          </div>
+          
+          <div class="sections">
+            ${sectionsHtml}
+          </div>
+          
+          <div class="enacted">
+            <p>ENACTED this ${ordinance.date} at Barangay Santiago.</p>
+          </div>
+          
+          <div class="signatures">
+            <div class="signature-block">
+              <div class="signature-line">
+                <p class="signature-name">APRIL JOY C. CANO</p>
+                <p class="signature-title">Barangay Secretary</p>
+              </div>
+            </div>
+            <div class="signature-block">
+              <div class="signature-line">
+                <p class="signature-name">ROLANDO C. BORJA</p>
+                <p class="signature-title">Punong Barangay</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(documentContent)
+    printWindow.document.close()
   }
 
   const publishedCount = ordinances.filter(o => o.status === "Published").length
@@ -406,7 +502,7 @@ export default function OfficialOrdinancesPage() {
                         <span className="hidden md:inline">Edit</span>
                       </Button>
                       {ordinance.status === "Published" && (
-                        <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
+                        <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => handleDirectPrint(ordinance)}>
                           <Printer className="h-3 w-3" />
                         </Button>
                       )}
@@ -432,7 +528,7 @@ export default function OfficialOrdinancesPage() {
                       <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => setSelectedOrdinance(ordinance)}>
                         <Eye className="h-3 w-3" />
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
+                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => handleDirectPrint(ordinance)}>
                         <Printer className="h-3 w-3" />
                       </Button>
                     </div>
@@ -518,7 +614,7 @@ export default function OfficialOrdinancesPage() {
               setTimeout(() => handleEditOrdinance(selectedOrdinance!), 100)
             }}>Edit</Button>
             {selectedOrdinance?.status === "Published" && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowPreview(true)}>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleDirectPrint(selectedOrdinance)}>
                 <Printer className="mr-1 h-3 w-3" />
                 Print
               </Button>
@@ -527,73 +623,6 @@ export default function OfficialOrdinancesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-2xl mx-4 md:mx-auto max-h-[90vh] bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-base md:text-lg text-foreground">Ordinance Document Preview</DialogTitle>
-          </DialogHeader>
-          {selectedOrdinance && (
-            <ScrollArea className="max-h-[60vh]">
-              <div id="print-preview" className="rounded-lg border border-gray-200 bg-white p-4 md:p-8 text-gray-900">
-                {/* Header - Only visible when printing */}
-                <div className="hidden print:flex items-center justify-between mb-4 pb-4 border-b">
-                  <Image src="/images/santiagologo.jpg" alt="Barangay Santiago" width={60} height={60} className="w-16 h-16 rounded-full object-cover" />
-                  <div className="text-center flex-1 px-2">
-                    <p className="text-xs">Republic of the Philippines</p>
-                    <p className="text-xs">Province of Zambales</p>
-                    <p className="text-xs">Municipality of San Antonio</p>
-                    <p className="text-sm font-semibold">Barangay Santiago</p>
-                  </div>
-                  <Image src="/images/saz.jpg" alt="Municipality" width={60} height={60} className="w-16 h-16 rounded-full object-cover" />
-                </div>
-                <div className="border-t border-b border-black py-2 md:py-4 my-4 md:my-6">
-                  <h2 className="text-center font-bold text-sm md:text-base">
-                    BARANGAY ORDINANCE NO. {selectedOrdinance.number} SERIES OF {selectedOrdinance.year}
-                  </h2>
-                </div>
-                <h3 className="text-center font-bold text-xs md:text-sm mb-4 md:mb-6">{selectedOrdinance.fullTitle}</h3>
-                <div className="mb-4 md:mb-6 text-xs md:text-sm">
-                  <p className="font-bold mb-2">WHEREAS:</p>
-                  {selectedOrdinance.whereas.map((clause, i) => (
-                    <p key={i} className="mb-1 text-justify">{clause}</p>
-                  ))}
-                </div>
-                {selectedOrdinance.sections.map((section, i) => (
-                  <div key={i} className="mb-3 text-xs md:text-sm">
-                    <p className="font-bold">SECTION {i + 1}. {section.title}</p>
-                    <p className="text-justify whitespace-pre-line">{section.content}</p>
-                  </div>
-                ))}
-                <div className="mt-6 md:mt-8 pt-4 border-t text-xs md:text-sm">
-                  <p className="mb-6 md:mb-8">ENACTED this {selectedOrdinance.date} at Barangay Santiago.</p>
-                  <div className="flex justify-between mt-8 md:mt-12">
-                    <div className="text-center">
-                      <div className="w-28 md:w-40 border-t border-black pt-1">
-                        <p className="font-semibold text-xs md:text-sm">APRIL JOY C. CANO</p>
-                        <p className="text-[10px] md:text-xs">Barangay Secretary</p>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-28 md:w-40 border-t border-black pt-1">
-                        <p className="font-semibold text-xs md:text-sm">ROLANDO C. BORJA</p>
-                        <p className="text-[10px] md:text-xs">Punong Barangay</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          )}
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => printElementById('print-preview')}>
-              <Printer className="mr-2 h-3 w-3" />
-              Print
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl mx-4 md:mx-auto max-h-[90vh] bg-white">

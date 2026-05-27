@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { printElementById } from "@/lib/utils"
 import { deleteBlotter, markUnderInvestigation, resolveBlotter, updateBlotter } from "@/lib/blotter-utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -194,7 +193,6 @@ export default function OfficialBlottersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [blotters, setBlotters] = useState(mockBlotters)
   const [selectedBlotter, setSelectedBlotter] = useState<typeof mockBlotters[0] | null>(null)
-  const [selectedPrintBlotter, setSelectedPrintBlotter] = useState<typeof mockBlotters[0] | null>(null)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>("under-investigation")
   const [actionTaken, setActionTaken] = useState("")
@@ -222,13 +220,149 @@ export default function OfficialBlottersPage() {
   const resolvedCount = blotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).length
 
   const handlePrintBlotter = (blotter: typeof mockBlotters[0]) => {
-    setSelectedPrintBlotter(blotter)
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        printElementById("print-content")
-        setSelectedPrintBlotter(null)
-      })
-    })
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const documentContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Blotter Report - ${blotter.id}</title>
+        <meta charset="UTF-8">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0.5in; }
+          body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000; background: white; }
+          .container { width: 100%; max-width: 8.5in; margin: 0 auto; }
+          .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3in; padding-bottom: 0.15in; border-bottom: 3px solid #333; }
+          .logo { width: 0.9in; height: 0.9in; border-radius: 50%; object-fit: cover; }
+          .header-text { flex: 1; text-align: center; padding: 0 0.2in; }
+          .header-text p { margin: 0; font-size: 10pt; }
+          .header-text .main-title { font-size: 13pt; font-weight: bold; margin-top: 0.05in; }
+          .document-title { text-align: center; margin: 0.2in 0; padding: 0.15in 0; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+          .document-title h1 { font-size: 14pt; font-weight: bold; letter-spacing: 0.03in; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.1in; margin: 0.15in 0; }
+          .info-box { padding: 0.1in; border: 1px solid #ccc; border-radius: 4px; }
+          .info-box .label { font-size: 8pt; color: #666; text-transform: uppercase; margin-bottom: 0.02in; }
+          .info-box .value { font-weight: 600; font-size: 10pt; }
+          .full-width { grid-column: 1 / -1; }
+          .party-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.1in; margin: 0.1in 0; }
+          .party-box { padding: 0.1in; border: 1px solid #ccc; border-radius: 4px; }
+          .party-box .label { font-size: 8pt; color: #666; text-transform: uppercase; }
+          .party-box .name { font-weight: 600; font-size: 10pt; }
+          .party-box .address { font-size: 9pt; color: #555; }
+          .section { margin: 0.15in 0; padding: 0.1in; border: 1px solid #ccc; border-radius: 4px; }
+          .section .label { font-size: 8pt; color: #666; text-transform: uppercase; margin-bottom: 0.05in; }
+          .section .content { font-size: 10pt; line-height: 1.6; }
+          .resolution-section { background: #f0fdf4; border-color: #22c55e; }
+          .signature-area { margin-top: 0.3in; padding-top: 0.2in; border-top: 2px solid #000; }
+          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3in; text-align: center; }
+          .signature-line { border-bottom: 1px solid #000; height: 0.4in; margin-bottom: 0.05in; }
+          .signature-name { font-weight: bold; font-size: 10pt; }
+          .signature-title { font-size: 9pt; }
+          .footer { margin-top: 0.2in; text-align: center; font-size: 8pt; color: #666; border-top: 1px solid #ccc; padding-top: 0.1in; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="/images/santiagologo.jpg" alt="Barangay Santiago" class="logo" />
+            <div class="header-text">
+              <p>Republic of the Philippines</p>
+              <p>Province of Zambales</p>
+              <p>Municipality of San Antonio</p>
+              <p class="main-title">Barangay Santiago</p>
+            </div>
+            <img src="/images/saz.jpg" alt="Municipality Seal" class="logo" />
+          </div>
+          
+          <div class="document-title">
+            <h1>BLOTTER REPORT</h1>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="label">Reference Number</div>
+              <div class="value">${blotter.id}</div>
+            </div>
+            <div class="info-box">
+              <div class="label">Status</div>
+              <div class="value">${blotter.status.replace(/-/g, ' ').toUpperCase()}</div>
+            </div>
+            <div class="info-box">
+              <div class="label">Date Filed</div>
+              <div class="value">${blotter.filedDate}</div>
+            </div>
+            <div class="info-box">
+              <div class="label">Incident Type</div>
+              <div class="value">${blotter.type}</div>
+            </div>
+          </div>
+          
+          <div class="party-grid">
+            <div class="party-box">
+              <div class="label">Complainant</div>
+              <div class="name">${blotter.complainant}</div>
+              <div class="address">${blotter.complainantAddress}</div>
+            </div>
+            <div class="party-box">
+              <div class="label">Respondent</div>
+              <div class="name">${blotter.respondent}</div>
+              <div class="address">${blotter.respondentAddress}</div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="label">Location of Incident</div>
+            <div class="content">${blotter.location}</div>
+          </div>
+          
+          <div class="section">
+            <div class="label">Description</div>
+            <div class="content">${blotter.description}</div>
+          </div>
+          
+          ${blotter.actionTaken ? `
+          <div class="section">
+            <div class="label">Action Taken</div>
+            <div class="content">${blotter.actionTaken}</div>
+          </div>
+          ` : ''}
+          
+          ${blotter.resolution ? `
+          <div class="section resolution-section">
+            <div class="label">Resolution</div>
+            <div class="content">${blotter.resolution}</div>
+          </div>
+          ` : ''}
+          
+          <div class="signature-area">
+            <p style="font-size: 9pt; margin-bottom: 0.15in;">Certified Correct:</p>
+            <div class="signature-grid">
+              <div>
+                <div class="signature-line"></div>
+                <div class="signature-name">ROLANDO C. BORJA</div>
+                <div class="signature-title">Barangay Captain</div>
+              </div>
+              <div>
+                <div class="signature-line"></div>
+                <div class="signature-name">Date</div>
+                <div class="signature-title">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>This document is generated by the Barangay Santiago Management System</p>
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(documentContent)
+    printWindow.document.close()
   }
 
   const handleSaveUpdate = async () => {
@@ -732,87 +866,6 @@ export default function OfficialBlottersPage() {
         </DialogContent>
       </Dialog>
 
-      {selectedPrintBlotter && (
-        <div id="print-content" className="print-only hidden">
-          <div className="rounded-lg border bg-white p-8 text-black">
-            <div className="text-center mb-6">
-              <h2 className="text-lg md:text-xl font-bold border-y-2 border-black py-3">BLOTTER REPORT</h2>
-            </div>
-            <div className="grid gap-4 text-sm md:text-base">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg print:bg-white print:border print:border-gray-300">
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Reference</p>
-                  <p className="font-semibold">{selectedPrintBlotter.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Status</p>
-                  <p className="font-semibold">{selectedPrintBlotter.status}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Date Filed</p>
-                  <p className="font-semibold">{selectedPrintBlotter.date}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Incident Type</p>
-                  <p className="font-semibold">{selectedPrintBlotter.type}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 text-xs md:text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Complainant</p>
-                    <p className="font-semibold">{selectedPrintBlotter.complainant}</p>
-                    <p className="text-xs text-gray-500">{selectedPrintBlotter.complainantAddress}</p>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Respondent</p>
-                    <p className="font-semibold">{selectedPrintBlotter.respondent}</p>
-                    <p className="text-xs text-gray-500">{selectedPrintBlotter.respondentAddress}</p>
-                  </div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="text-xs uppercase text-gray-600">Location</p>
-                  <p className="font-semibold">{selectedPrintBlotter.location}</p>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="text-xs uppercase text-gray-600">Description</p>
-                  <p className="leading-relaxed">{selectedPrintBlotter.description}</p>
-                </div>
-                {selectedPrintBlotter.actionTaken && (
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Action Taken</p>
-                    <p>{selectedPrintBlotter.actionTaken}</p>
-                  </div>
-                )}
-                {selectedPrintBlotter.resolution && (
-                  <div className="p-3 border rounded-lg bg-emerald-50 print:bg-white print:border-gray-300">
-                    <p className="text-xs uppercase text-gray-600">Resolution</p>
-                    <p>{selectedPrintBlotter.resolution}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t text-xs text-gray-600">
-              <p className="mb-1">Certified Correct:</p>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <div className="border-b border-black h-6 mb-1" />
-                  <p className="font-semibold">ROLANDO C. BORJA</p>
-                  <p>Barangay Captain</p>
-                </div>
-                <div>
-                  <div className="border-b border-black h-6 mb-1" />
-                  <p className="font-semibold">Date</p>
-                  <p>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 border-t pt-2 text-center text-[10px] text-gray-500">
-              <p>This document is generated by the Barangay Santiago Management System</p>
-            </div>
-          </div>
-        </div>
-      )}
     </motion.div>
   )
 }

@@ -3,7 +3,6 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { printElementById } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -117,7 +116,6 @@ export default function OfficialProjectsPage() {
   const [projects, setProjects] = useState(mockProjects)
   const [selectedProject, setSelectedProject] = useState<typeof mockProjects[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<typeof mockProjects[0] | null>(null)
@@ -249,6 +247,168 @@ export default function OfficialProjectsPage() {
     setProjects(projects.map(p => p.id === selectedProject.id ? updated : p))
     setSelectedProject(updated)
     setShowProgressDialog(false)
+  }
+
+  const handleDirectPrint = (project: typeof mockProjects[0]) => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const documentContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Project Report - ${project.id}</title>
+        <meta charset="UTF-8">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0.5in; }
+          body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.5; color: #000; background: white; }
+          .container { width: 100%; max-width: 8.5in; margin: 0 auto; }
+          .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3in; padding-bottom: 0.15in; border-bottom: 3px solid #333; }
+          .logo { width: 0.9in; height: 0.9in; border-radius: 50%; object-fit: cover; }
+          .header-text { flex: 1; text-align: center; padding: 0 0.2in; }
+          .header-text p { margin: 0; font-size: 10pt; }
+          .header-text .main-title { font-size: 13pt; font-weight: bold; margin-top: 0.05in; }
+          .document-title { text-align: center; margin: 0.2in 0; padding: 0.12in 0; border-top: 2px solid #000; border-bottom: 2px solid #000; }
+          .document-title h1 { font-size: 13pt; font-weight: bold; }
+          .reference { display: flex; justify-content: space-between; margin: 0.15in 0; font-size: 10pt; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.1in; margin: 0.15in 0; padding: 0.1in; border: 1px solid #ccc; border-radius: 4px; }
+          .info-item .label { font-size: 8pt; color: #666; text-transform: uppercase; }
+          .info-item .value { font-weight: 600; font-size: 10pt; }
+          .full-width { grid-column: 1 / -1; }
+          .section { margin: 0.15in 0; }
+          .section-title { font-weight: bold; font-size: 10pt; text-transform: uppercase; margin-bottom: 0.08in; border-bottom: 1px solid #ccc; padding-bottom: 0.05in; }
+          .section-content { font-size: 10pt; line-height: 1.6; }
+          .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.1in; }
+          .budget-box { padding: 0.1in; border: 1px solid #ccc; border-radius: 4px; }
+          .budget-box .label { font-size: 8pt; color: #666; }
+          .budget-box .value { font-weight: bold; font-size: 11pt; }
+          .progress-bar { width: 100%; height: 0.15in; background: #e5e5e5; border-radius: 0.05in; overflow: hidden; margin-top: 0.05in; }
+          .progress-fill { height: 100%; background: #22c55e; }
+          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4in; margin-top: 0.4in; padding-top: 0.2in; }
+          .signature-block { text-align: center; }
+          .signature-line { border-bottom: 1px solid #000; height: 0.4in; margin-bottom: 0.05in; }
+          .signature-name { font-weight: bold; font-size: 10pt; }
+          .signature-title { font-size: 9pt; color: #666; }
+          .footer { margin-top: 0.2in; text-align: center; font-size: 8pt; color: #666; border-top: 1px solid #ccc; padding-top: 0.1in; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="/images/santiagologo.jpg" alt="Barangay Santiago" class="logo" />
+            <div class="header-text">
+              <p>Republic of the Philippines</p>
+              <p>Province of Zambales</p>
+              <p>Municipality of San Antonio</p>
+              <p class="main-title">Barangay Santiago</p>
+            </div>
+            <img src="/images/saz.jpg" alt="Municipality Seal" class="logo" />
+          </div>
+          
+          <div class="document-title">
+            <h1>PROJECT REPORT</h1>
+          </div>
+          
+          <div class="reference">
+            <span><strong>Reference No:</strong> ${project.id}</span>
+            <span><strong>Status:</strong> ${project.status}</span>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Project Title</div>
+              <div class="value">${project.title}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Project Type</div>
+              <div class="value">${project.type}</div>
+            </div>
+            <div class="info-item full-width">
+              <div class="label">Location</div>
+              <div class="value">${project.location}</div>
+            </div>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Start Date</div>
+              <div class="value">${project.startDate}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Target Completion</div>
+              <div class="value">${project.targetCompletion}</div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Project Description</div>
+            <div class="section-content">${project.description}</div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Budget Details</div>
+            <div class="budget-grid">
+              <div class="budget-box">
+                <div class="label">Total Budget</div>
+                <div class="value">PHP ${project.budget}</div>
+              </div>
+              <div class="budget-box">
+                <div class="label">Fund Source</div>
+                <div class="value">${project.source}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Progress: ${project.progress}%</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${project.progress}%"></div>
+            </div>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Project Head</div>
+              <div class="value">${project.projectHead}</div>
+              <div style="font-size: 9pt; color: #666;">${project.projectHeadPosition}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Beneficiaries</div>
+              <div class="value">${project.beneficiaries}</div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Remarks</div>
+            <div class="section-content">${project.remarks || "No remarks"}</div>
+          </div>
+          
+          <div class="signatures">
+            <div class="signature-block">
+              <div class="signature-line"></div>
+              <div class="signature-name">${project.projectHead}</div>
+              <div class="signature-title">${project.projectHeadPosition}</div>
+            </div>
+            <div class="signature-block">
+              <div class="signature-line"></div>
+              <div class="signature-name">ROLANDO C. BORJA</div>
+              <div class="signature-title">Barangay Captain</div>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>This document is generated by the Barangay Santiago Management System</p>
+            <p>Date Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(documentContent)
+    printWindow.document.close()
   }
 
   const ongoingCount = projects.filter(p => p.status === "Ongoing").length
@@ -620,7 +780,7 @@ export default function OfficialProjectsPage() {
               setNewProgress(selectedProject?.progress || 0)
               setShowProgressDialog(true)
             }}>Update Progress</Button>
-            <Button onClick={() => setShowPrintPreview(true)}>
+            <Button onClick={() => selectedProject && handleDirectPrint(selectedProject)}>
               <Printer className="mr-2 h-4 w-4" />
               Print Report
             </Button>
@@ -821,155 +981,6 @@ export default function OfficialProjectsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Print Preview Modal */}
-      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Project Report Preview</DialogTitle>
-          </DialogHeader>
-          {selectedProject && (
-            <ScrollArea className="max-h-[70vh]">
-              <div id="print-content" className="rounded-lg border bg-white p-6 md:p-8 text-black print:p-0 print:border-0 print-only">
-                {/* Document Title */}
-                <h2 className="text-center text-base md:text-lg font-bold mb-6 py-3 border-y-2 border-black print:text-black">
-                  PROJECT REPORT
-                </h2>
-                
-                {/* Project Reference */}
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm print:text-black"><strong>Reference No:</strong> {selectedProject.id}</p>
-                  <Badge className={`print:border print:border-black ${
-                    selectedProject.status === "Completed" ? "bg-emerald-100 text-emerald-700" :
-                    selectedProject.status === "Ongoing" ? "bg-blue-100 text-blue-700" :
-                    "bg-gray-100 text-gray-700"
-                  }`}>{selectedProject.status}</Badge>
-                </div>
-
-                {/* Main Content */}
-                <div className="space-y-5 text-sm">
-                  {/* Project Info Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg print:bg-white print:border print:border-gray-300">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide print:text-gray-600">Project Title</p>
-                      <p className="font-bold text-base print:text-black">{selectedProject.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide print:text-gray-600">Project Type</p>
-                      <p className="font-semibold print:text-black">{selectedProject.type}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide print:text-gray-600">Location</p>
-                      <p className="font-semibold print:text-black">{selectedProject.location}</p>
-                    </div>
-                  </div>
-
-                  {/* Timeline Section */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 border rounded-lg print:border-gray-300">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide print:text-gray-600">Start Date</p>
-                      <p className="font-semibold print:text-black">{selectedProject.startDate}</p>
-                    </div>
-                    <div className="p-3 border rounded-lg print:border-gray-300">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide print:text-gray-600">Target Completion</p>
-                      <p className="font-semibold print:text-black">{selectedProject.targetCompletion}</p>
-                    </div>
-                  </div>
-
-                  {/* Description Section */}
-                  <div className="border-t pt-4">
-                    <p className="font-bold text-sm uppercase tracking-wide mb-2 print:text-black">Project Description</p>
-                    <p className="leading-relaxed print:text-black">{selectedProject.description}</p>
-                  </div>
-
-                  {/* Budget Section */}
-                  <div className="border-t pt-4">
-                    <p className="font-bold text-sm uppercase tracking-wide mb-3 print:text-black">Budget Details</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-green-50 rounded-lg print:bg-white print:border print:border-gray-300">
-                        <p className="text-xs text-gray-500 print:text-gray-600">Total Budget</p>
-                        <p className="font-bold text-lg text-green-700 print:text-black">PHP {selectedProject.budget}</p>
-                      </div>
-                      <div className="p-3 bg-blue-50 rounded-lg print:bg-white print:border print:border-gray-300">
-                        <p className="text-xs text-gray-500 print:text-gray-600">Fund Source</p>
-                        <p className="font-semibold print:text-black">{selectedProject.source}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Section */}
-                  <div className="border-t pt-4">
-                    <p className="font-bold text-sm uppercase tracking-wide mb-3 print:text-black">Project Status</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500 print:text-gray-600">Current Status</p>
-                        <p className="font-semibold print:text-black">{selectedProject.status}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 print:text-gray-600">Progress</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden print:border print:border-gray-400">
-                            <div className="h-full bg-green-600 print:bg-gray-600" style={{ width: `${selectedProject.progress}%` }} />
-                          </div>
-                          <span className="font-bold print:text-black">{selectedProject.progress}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Project Head & Beneficiaries */}
-                  <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-bold text-sm uppercase tracking-wide mb-2 print:text-black">Project Head</p>
-                      <p className="font-semibold print:text-black">{selectedProject.projectHead}</p>
-                      <p className="text-gray-600 text-xs print:text-gray-600">{selectedProject.projectHeadPosition}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm uppercase tracking-wide mb-2 print:text-black">Beneficiaries</p>
-                      <p className="print:text-black">{selectedProject.beneficiaries}</p>
-                    </div>
-                  </div>
-
-                  {/* Remarks Section */}
-                  <div className="border-t pt-4">
-                    <p className="font-bold text-sm uppercase tracking-wide mb-2 print:text-black">Remarks</p>
-                    <p className="leading-relaxed print:text-black">{selectedProject.remarks || "No remarks"}</p>
-                  </div>
-
-                  {/* Signature Section */}
-                  <div className="mt-10 pt-8 border-t">
-                    <p className="text-xs text-gray-500 mb-6 text-center print:text-gray-600">Prepared and Certified Correct:</p>
-                    <div className="grid grid-cols-2 gap-8">
-                      <div className="text-center">
-                        <div className="border-b border-black mx-4 md:mx-8 mb-1 h-8" />
-                        <p className="font-semibold text-sm print:text-black">{selectedProject.projectHead}</p>
-                        <p className="text-xs text-gray-600 print:text-gray-600">{selectedProject.projectHeadPosition}</p>
-                      </div>
-                      <div className="text-center">
-                        <div className="border-b border-black mx-4 md:mx-8 mb-1 h-8" />
-                        <p className="font-semibold text-sm print:text-black">Rolando C. Borja</p>
-                        <p className="text-xs text-gray-600 print:text-gray-600">Barangay Captain</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500 print:text-gray-600">
-                    <p>This document is generated by the Barangay Santiago Management System</p>
-                    <p>Date Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          )}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>Close</Button>
-            <Button onClick={() => printElementById('print-content')}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
