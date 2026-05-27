@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { ComplaintStatusTimeline } from "@/components/complaint-status-timeline"
+import { deleteBlotter } from "@/lib/blotter-utils"
 
 const incidentTypes = [
   "Noise Complaint",
@@ -158,6 +159,22 @@ export default function BlotterPage() {
     setIsDialogOpen(false)
     setLocation("")
     setLocationCoords(null)
+  }
+
+  const handleDeleteBlotter = async (blotterId: string) => {
+    if (!confirm('Are you sure you want to delete this blotter report? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      await deleteBlotter(blotterId)
+      // Remove from mock data for now
+      setShowPreview(null)
+      // In a real app, you would refetch the list here
+    } catch (error) {
+      console.error('Failed to delete blotter:', error)
+      alert('Failed to delete blotter report')
+    }
   }
 
   return (
@@ -456,12 +473,13 @@ export default function BlotterPage() {
                       <Button variant="outline" onClick={() => setShowPreview(null)} className="flex-1">
                         Close
                       </Button>
-                      {showPreview.resolutionDocument && (
-                        <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" asChild>
-                          <a href={showPreview.resolutionDocument} download>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download Resolution
-                          </a>
+                      {showPreview.status === "pending-review" && (
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => handleDeleteBlotter(showPreview.id)}
+                          className="flex-1"
+                        >
+                          Delete Report
                         </Button>
                       )}
                     </div>

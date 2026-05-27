@@ -94,7 +94,17 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, status, scheduledHearingDate, notes } = body
+    const { 
+      id, 
+      status, 
+      investigationDate, 
+      mediationScheduledDate, 
+      hearingDate,
+      actionTaken, 
+      resolution,
+      resolutionDate,
+      notes 
+    } = body
 
     const report = blotterReports.get(id)
     if (!report) {
@@ -104,15 +114,16 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    if (status) {
-      report.status = status
-    }
-    if (scheduledHearingDate) {
-      report.scheduledHearingDate = new Date(scheduledHearingDate)
-    }
-    if (notes !== undefined) {
-      report.notes = notes
-    }
+    // Update all provided fields
+    if (status) report.status = status
+    if (investigationDate) report.investigationDate = new Date(investigationDate)
+    if (mediationScheduledDate) report.mediationScheduledDate = new Date(mediationScheduledDate)
+    if (hearingDate) report.hearingDate = new Date(hearingDate)
+    if (actionTaken !== undefined) report.actionTaken = actionTaken
+    if (resolution !== undefined) report.resolution = resolution
+    if (resolutionDate) report.resolutionDate = new Date(resolutionDate)
+    if (notes !== undefined) report.notes = notes
+    
     report.updatedAt = new Date()
 
     blotterReports.set(id, report)
@@ -120,11 +131,47 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       report,
+      message: 'Blotter updated successfully',
     })
   } catch (error) {
     console.error('Error updating blotter report:', error)
     return NextResponse.json(
       { error: 'Failed to update blotter report' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Blotter ID required' },
+        { status: 400 }
+      )
+    }
+
+    const report = blotterReports.get(id)
+    if (!report) {
+      return NextResponse.json(
+        { error: 'Blotter report not found' },
+        { status: 404 }
+      )
+    }
+
+    blotterReports.delete(id)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Blotter deleted successfully',
+    })
+  } catch (error) {
+    console.error('Error deleting blotter report:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete blotter report' },
       { status: 500 }
     )
   }

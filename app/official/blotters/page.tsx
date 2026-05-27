@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { printElementById } from "@/lib/utils"
+import { deleteBlotter, markUnderInvestigation, resolveBlotter } from "@/lib/blotter-utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -220,31 +221,59 @@ export default function OfficialBlottersPage() {
     })
   }
 
-  const handleSaveUpdate = () => {
+  const handleSaveUpdate = async () => {
     if (!selectedBlotter) return
 
-    const updatedBlotters = blotters.map((blotter) => {
-      if (blotter.id !== selectedBlotter.id) return blotter
+    try {
+      if (resolution) {
+        // Resolve the blotter
+        await resolveBlotter(selectedBlotter.id, resolution, actionTaken)
+      } else if (actionTaken) {
+        // Mark as under investigation with action taken
+        await markUnderInvestigation(selectedBlotter.id)
+      }
 
       const updatedResolutionDate = resolution ?
         new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) :
-        blotter.resolutionDate
+        selectedBlotter.resolutionDate
 
-      return {
-        ...blotter,
-        actionTaken: actionTaken || blotter.actionTaken,
-        resolution: resolution || blotter.resolution,
-        resolutionDate: updatedResolutionDate,
-        status: resolution ? "resolved" : "processing",
-        resolutionDocument: resolution ? blotter.resolutionDocument ?? `/documents/resolution-${blotter.id}.pdf` : blotter.resolutionDocument,
-      }
-    })
+      const updatedBlotters = blotters.map((blotter) => {
+        if (blotter.id !== selectedBlotter.id) return blotter
 
-    setBlotters(updatedBlotters)
-    setSelectedBlotter(updatedBlotters.find((b) => b.id === selectedBlotter.id) ?? null)
-    setActionTaken("")
-    setResolution("")
-    setShowUpdateDialog(false)
+        return {
+          ...blotter,
+          actionTaken: actionTaken || blotter.actionTaken,
+          resolution: resolution || blotter.resolution,
+          resolutionDate: updatedResolutionDate,
+          status: resolution ? "resolved" : "under-investigation",
+          resolutionDocument: resolution ? blotter.resolutionDocument ?? `/documents/resolution-${blotter.id}.pdf` : blotter.resolutionDocument,
+        }
+      })
+
+      setBlotters(updatedBlotters)
+      setSelectedBlotter(updatedBlotters.find((b) => b.id === selectedBlotter.id) ?? null)
+      setActionTaken("")
+      setResolution("")
+      setShowUpdateDialog(false)
+    } catch (error) {
+      console.error('Failed to update blotter:', error)
+      alert('Failed to update blotter')
+    }
+  }
+
+  const handleDeleteBlotter = async (blotterId: string) => {
+    if (!confirm('Are you sure you want to delete this blotter? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await deleteBlotter(blotterId)
+      setBlotters(blotters.filter(b => b.id !== blotterId))
+      setSelectedBlotter(null)
+    } catch (error) {
+      console.error('Failed to delete blotter:', error)
+      alert('Failed to delete blotter')
+    }
   }
 
   return (
@@ -270,8 +299,8 @@ export default function OfficialBlottersPage() {
                 <FileText className="h-4 w-4 md:h-5 md:w-5 text-blue-700" />
               </div>
               <div className="text-center md:text-left">
-                <p className="text-lg md:text-2xl font-bold">{filedCount}</p>
-                <p className="text-[10px] md:text-sm text-muted-foreground">New</p>
+                <p className="text-lg md:text-2xl font-bold">{pendingCount}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
           </CardContent>
@@ -600,10 +629,20 @@ export default function OfficialBlottersPage() {
             </div>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button size="sm" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700" onClick={handleSaveUpdate}>
-              Save & Notify
+            <Button 
+              size="sm" 
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={() => selectedBlotter && handleDeleteBlotter(selectedBlotter.id)}
+            >
+              Delete
             </Button>
-            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setShowUpdateDialog(false)}>Cancel</Button>
+            <div className="flex gap-2 flex-1 sm:flex-initial">
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-initial" onClick={() => setShowUpdateDialog(false)}>Cancel</Button>
+              <Button size="sm" className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700" onClick={handleSaveUpdate}>
+                Save & Notify
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
