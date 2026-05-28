@@ -24,8 +24,7 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Download,
-  Printer
+  Download
 } from "lucide-react"
 
 // Available document types with requirements that have upload status
@@ -70,17 +69,6 @@ const documentTypes = [
 
 // Mock requests data
 const mockRequests = [
-  {
-    id: "REQ-2026-001",
-    type: "Barangay Clearance",
-    purpose: "Employment",
-    status: "approved",
-    date: "April 25, 2026",
-    fee: "50",
-    pickupTime: "April 28, 2026, 2:00 PM",
-    residentName: "Juan Dela Cruz",
-    address: "Purok 3, Barangay Santiago, San Antonio, Zambales",
-  },
   {
     id: "REQ-2026-002",
     type: "Certificate of Residency",
@@ -803,43 +791,6 @@ export default function DocumentsPage() {
                       <Download className="mr-1 h-3 w-3" />
                       Download QR
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        const canvas = document.getElementById('document-qr-code') as HTMLCanvasElement
-                        if (canvas) {
-                          const printWindow = window.open('', '_blank')
-                          if (printWindow) {
-                            printWindow.document.write(`
-                              <html>
-                                <head>
-                                  <title>QR Code - ${selectedRequest.id}</title>
-                                  <style>
-                                    body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
-                                    h2 { margin-bottom: 10px; }
-                                    p { margin: 5px 0; color: #666; }
-                                  </style>
-                                </head>
-                                <body>
-                                  <h2>${selectedRequest.type}</h2>
-                                  <p><strong>Request #:</strong> ${selectedRequest.id}</p>
-                                  <p><strong>Resident:</strong> ${selectedRequest.residentName}</p>
-                                  <img src="${canvas.toDataURL('image/png')}" />
-                                  <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
-                                </body>
-                              </html>
-                            `)
-                            printWindow.document.close()
-                            printWindow.print()
-                          }
-                        }
-                      }}
-                    >
-                      <Printer className="mr-1 h-3 w-3" />
-                      Print QR
-                    </Button>
                   </div>
                 </div>
                 <div className="space-y-2 text-sm flex-1">
@@ -870,19 +821,6 @@ export default function DocumentsPage() {
         </div>
       )}
       <DialogFooter className="flex-col sm:flex-row gap-2">
-        {selectedRequest?.status === 'approved' && (
-          <Button 
-            variant="outline"
-            onClick={() => {
-              // Simulate PDF download
-              alert('Document PDF download will be available when document is released.')
-            }}
-            className="w-full sm:w-auto"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
-          </Button>
-        )}
         <Button onClick={() => setSelectedRequest(null)} className="w-full sm:w-auto">
           Close
         </Button>
