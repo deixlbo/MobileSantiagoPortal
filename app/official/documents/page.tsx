@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
-import * as XLSX from "xlsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,10 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { exportToCSV, exportToXLSX, prepareDataForExport } from "@/lib/export-utils"
 import { printElementById } from "@/lib/utils"
 
-import { DocumentStatusTimeline } from "@/components/document-status-timeline"
 import { 
   Search, 
   Eye,
@@ -25,7 +22,6 @@ import {
   XCircle,
   Clock,
   FileText,
-  Download,
   Printer,
   Settings,
   Plus,
@@ -182,15 +178,12 @@ export default function OfficialDocumentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRequest, setSelectedRequest] = useState<typeof mockRequests[0] | null>(null)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
-  const [showExportDialog, setShowExportDialog] = useState(false)
   const [showManageTypes, setShowManageTypes] = useState(false)
   const [documentTypes, setDocumentTypes] = useState(defaultDocumentTypes)
   const [editingType, setEditingType] = useState<typeof defaultDocumentTypes[0] | null>(null)
   const [newTypeName, setNewTypeName] = useState("")
   const [newTypeRequirements, setNewTypeRequirements] = useState<string[]>([""])
   const [newTypeFee, setNewTypeFee] = useState("")
-  const [exportDateFrom, setExportDateFrom] = useState("")
-  const [exportDateTo, setExportDateTo] = useState("")
   const [showNotifyDialog, setShowNotifyDialog] = useState(false)
   const [notifyRequest, setNotifyRequest] = useState<typeof mockRequests[0] | null>(null)
   const [notifyMessage, setNotifyMessage] = useState("")
@@ -212,103 +205,6 @@ export default function OfficialDocumentsPage() {
   const approvedCount = mockRequests.filter(r => r.status === "approved").length
   const releasedCount = mockRequests.filter(r => r.status === "released").length
 
-  const handleExportToExcel = () => {
-    if (!exportDateFrom || !exportDateTo) {
-      alert("Please select both from and to dates")
-      return
-    }
-
-    const wb = XLSX.utils.book_new()
-    const documentTypes = ["Barangay Clearance", "Certificate of Residency", "Business Clearance", "Certificate of Indigency"]
-
-    // Filter requests by date range
-    const filteredByDate = mockRequests.filter(req => {
-      const reqDate = new Date(req.date.split(',')[0].trim() + ', 2026')
-      const fromDate = new Date(exportDateFrom)
-      const toDate = new Date(exportDateTo)
-      return reqDate >= fromDate && reqDate <= toDate
-    })
-
-    // Group by document type and create sheets
-    documentTypes.forEach(docType => {
-      const typeRequests = filteredByDate.filter(req => req.type === docType)
-      
-      if (typeRequests.length > 0) {
-        const sheetData = prepareDataForExport(typeRequests, {
-          id: "Request ID",
-          type: "Type",
-          requester: "Requester",
-          email: "Email",
-          purok: "Purok",
-          purpose: "Purpose",
-          status: "Status",
-          date: "Date",
-          fee: "Fee",
-          documentsUploaded: "Documents",
-        })
-
-        const ws = XLSX.utils.json_to_sheet(sheetData)
-        
-        // Set column widths
-        ws['!cols'] = [
-          { wch: 12 }, // Request ID
-          { wch: 20 }, // Type
-          { wch: 15 }, // Requester
-          { wch: 20 }, // Email
-          { wch: 10 }, // Purok
-          { wch: 15 }, // Purpose
-          { wch: 12 }, // Status
-          { wch: 15 }, // Date
-          { wch: 10 }, // Fee
-          { wch: 12 }, // Documents
-        ]
-
-        const sheetName = docType.substring(0, 31) // Excel sheet name limit
-        XLSX.utils.book_append_sheet(wb, ws, sheetName)
-      }
-    })
-
-    // Generate Excel file
-    const fileName = `DocumentRequests_${new Date(exportDateFrom).toLocaleDateString()}_to_${new Date(exportDateTo).toLocaleDateString()}.xlsx`
-    XLSX.writeFile(wb, fileName)
-    toast.success('Excel export complete')
-    setShowExportDialog(false)
-  }
-
-  const handleExportToCSV = () => {
-    const filteredRequests = mockRequests
-      .filter(req => req.date && (!exportDateFrom || !exportDateTo || (new Date(req.date.split(',')[0].trim() + ', 2026') >= new Date(exportDateFrom) && new Date(req.date.split(',')[0].trim() + ', 2026') <= new Date(exportDateTo))))
-      .map(req => ({
-        id: req.id,
-        type: req.type,
-        requester: req.requester,
-        email: req.email,
-        purok: req.purok,
-        purpose: req.purpose,
-        status: req.status,
-        date: req.date,
-        fee: `₱${req.fee}`,
-        documentsUploaded: req.documentsUploaded ? 'Yes' : 'No',
-      }))
-
-    const csvData = prepareDataForExport(filteredRequests, {
-      id: 'Request ID',
-      type: 'Type',
-      requester: 'Requester',
-      email: 'Email',
-      purok: 'Purok',
-      purpose: 'Purpose',
-      status: 'Status',
-      date: 'Date',
-      fee: 'Fee',
-      documentsUploaded: 'Documents'
-    })
-
-    exportToCSV(csvData, `DocumentRequests_${new Date().toISOString().slice(0,10)}.csv`)
-    toast.success('CSV export complete')
-    setShowExportDialog(false)
-  }
-
   return (
     <motion.div
       variants={containerVariants}
@@ -322,10 +218,6 @@ export default function OfficialDocumentsPage() {
           <p className="text-xs md:text-sm text-muted-foreground">Process and manage document requests</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowExportDialog(true)}>
-            <Download className="h-3 w-3 md:mr-2" />
-            <span className="hidden md:inline">Export Excel</span>
-          </Button>
           <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowManageTypes(true)}>
             <Settings className="h-3 w-3 md:mr-2" />
             <span className="hidden md:inline">Manage Types</span>
@@ -597,19 +489,6 @@ export default function OfficialDocumentsPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-2 mt-4">
-                <div className="rounded-lg border border-muted/60 bg-muted/40 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">Status Timeline</p>
-                  <DocumentStatusTimeline
-                    currentStatus={selectedRequest.status === 'pending' ? 'processing' : selectedRequest.status === 'released' ? 'ready' : selectedRequest.status as any}
-                    submittedDate={new Date(selectedRequest.date.split(',')[0].trim() + ', 2026')}
-                    processingDate={selectedRequest.status !== 'pending' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
-                    approvedDate={selectedRequest.status === 'approved' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
-                    readyDate={selectedRequest.status === 'released' ? new Date(selectedRequest.date.split(',')[0].trim() + ', 2026') : undefined}
-                  />
-                </div>
-
-              </div>
 
               {/* Uploaded Files Section */}
               <div className="border-t pt-3 mt-3">
@@ -737,60 +616,6 @@ export default function OfficialDocumentsPage() {
             }}>
               Approve & Notify
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Export to Excel Dialog */}
-      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="max-w-md mx-4 md:mx-auto bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-base md:text-lg">Export Document Requests</DialogTitle>
-            <DialogDescription className="text-xs md:text-sm">
-              Download all document requests as Excel file with separate sheets for each document type
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label className="text-xs md:text-sm">From Date</Label>
-              <Input 
-                type="date" 
-                value={exportDateFrom}
-                onChange={(e) => setExportDateFrom(e.target.value)}
-                className="h-8 md:h-10 text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-xs md:text-sm">To Date</Label>
-              <Input 
-                type="date" 
-                value={exportDateTo}
-                onChange={(e) => setExportDateTo(e.target.value)}
-                className="h-8 md:h-10 text-sm"
-              />
-            </div>
-            <div className="rounded-lg bg-muted p-3">
-              <p className="text-xs md:text-sm font-semibold mb-2">Excel sheets included:</p>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Barangay Clearance</li>
-                <li>• Certificate of Residency</li>
-                <li>• Business Clearance</li>
-                <li>• Certificate of Indigency</li>
-              </ul>
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowExportDialog(false)}>Cancel</Button>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button size="sm" className="w-full sm:w-auto" onClick={handleExportToCSV}>
-                <FileText className="h-3 w-3 mr-1" />
-                Export CSV
-              </Button>
-              <Button size="sm" className="w-full sm:w-auto" onClick={handleExportToExcel}>
-                <Download className="h-3 w-3 mr-1" />
-                Export Excel
-              </Button>
-            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -735,80 +735,97 @@ export default function OfficialBlottersPage() {
       {selectedPrintBlotter && (
         <div id="print-content" className="print-only hidden">
           <div className="rounded-lg border bg-white p-8 text-black">
+            {/* Header */}
             <div className="text-center mb-6">
-              <h2 className="text-lg md:text-xl font-bold border-y-2 border-black py-3">BLOTTER REPORT</h2>
+              <p className="text-xs">REPUBLIC OF THE PHILIPPINES</p>
+              <p className="text-xs font-semibold">Province of Zambales</p>
+              <p className="text-xs font-semibold">Municipality of San Antonio</p>
+              <p className="text-lg font-bold mt-2">BARANGAY SANTIAGO</p>
+              <div className="border-b-2 border-black mt-4 mb-4"></div>
+              <h2 className="text-lg font-bold mt-4">BARANGAY BLOTTER REPORT</h2>
             </div>
-            <div className="grid gap-4 text-sm md:text-base">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg print:bg-white print:border print:border-gray-300">
+
+            {/* Blotter Number & Status */}
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs uppercase text-gray-600">Reference</p>
-                  <p className="font-semibold">{selectedPrintBlotter.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Status</p>
-                  <p className="font-semibold">{selectedPrintBlotter.status}</p>
+                  <p className="text-xs text-gray-600 font-semibold">Blotter Number</p>
+                  <p className="font-bold">{selectedPrintBlotter.id}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-gray-600">Date Filed</p>
-                  <p className="font-semibold">{selectedPrintBlotter.date}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-gray-600">Incident Type</p>
-                  <p className="font-semibold">{selectedPrintBlotter.type}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 text-xs md:text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Complainant</p>
-                    <p className="font-semibold">{selectedPrintBlotter.complainant}</p>
-                    <p className="text-xs text-gray-500">{selectedPrintBlotter.complainantAddress}</p>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Respondent</p>
-                    <p className="font-semibold">{selectedPrintBlotter.respondent}</p>
-                    <p className="text-xs text-gray-500">{selectedPrintBlotter.respondentAddress}</p>
-                  </div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="text-xs uppercase text-gray-600">Location</p>
-                  <p className="font-semibold">{selectedPrintBlotter.location}</p>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="text-xs uppercase text-gray-600">Description</p>
-                  <p className="leading-relaxed">{selectedPrintBlotter.description}</p>
-                </div>
-                {selectedPrintBlotter.actionTaken && (
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs uppercase text-gray-600">Action Taken</p>
-                    <p>{selectedPrintBlotter.actionTaken}</p>
-                  </div>
-                )}
-                {selectedPrintBlotter.resolution && (
-                  <div className="p-3 border rounded-lg bg-emerald-50 print:bg-white print:border-gray-300">
-                    <p className="text-xs uppercase text-gray-600">Resolution</p>
-                    <p>{selectedPrintBlotter.resolution}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t text-xs text-gray-600">
-              <p className="mb-1">Certified Correct:</p>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <div className="border-b border-black h-6 mb-1" />
-                  <p className="font-semibold">ROLANDO C. BORJA</p>
-                  <p>Barangay Captain</p>
-                </div>
-                <div>
-                  <div className="border-b border-black h-6 mb-1" />
-                  <p className="font-semibold">Date</p>
-                  <p>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p className="text-xs text-gray-600 font-semibold">Status</p>
+                  <p className="font-bold">{selectedPrintBlotter.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
                 </div>
               </div>
             </div>
-            <div className="mt-4 border-t pt-2 text-center text-[10px] text-gray-500">
-              <p>This document is generated by the Barangay Santiago Management System</p>
+
+            <div className="border-b border-gray-400 my-4"></div>
+
+            {/* Incident Details Table */}
+            <div className="mb-6">
+              <h3 className="font-bold text-sm mb-3 border-b border-gray-300 pb-1">INCIDENT DETAILS</h3>
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-2 font-semibold w-1/3">Incident Type</td>
+                    <td className="py-2">{selectedPrintBlotter.type}</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-2 font-semibold">Date Reported</td>
+                    <td className="py-2">{selectedPrintBlotter.filedDate}</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-2 font-semibold">Complainant</td>
+                    <td className="py-2">{selectedPrintBlotter.complainant}</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-2 font-semibold">Respondent</td>
+                    <td className="py-2">{selectedPrintBlotter.respondent}</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-2 font-semibold">Location</td>
+                    <td className="py-2">{selectedPrintBlotter.location}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="border-b border-gray-400 my-4"></div>
+
+            {/* Incident Description */}
+            <div className="mb-6">
+              <h3 className="font-bold text-sm mb-2">INCIDENT DESCRIPTION</h3>
+              <p className="text-sm leading-relaxed">{selectedPrintBlotter.description}</p>
+            </div>
+
+            <div className="border-b border-gray-400 my-4"></div>
+
+            {/* Initial Action Taken */}
+            <div className="mb-6">
+              <h3 className="font-bold text-sm mb-2">INITIAL ACTION TAKEN</h3>
+              <p className="text-sm">{selectedPrintBlotter.actionTaken || "Pending initial assessment and action."}</p>
+            </div>
+
+            <div className="border-b border-gray-400 my-4"></div>
+
+            {/* Resolution / Remarks */}
+            <div className="mb-8">
+              <h3 className="font-bold text-sm mb-2">RESOLUTION / REMARKS</h3>
+              <p className="text-sm">{selectedPrintBlotter.resolution || "Pending review and settlement conference between the complainant and respondent."}</p>
+            </div>
+
+            <div className="border-b border-gray-400 my-4"></div>
+
+            {/* Signatures */}
+            <div className="mt-10">
+              <p className="text-xs mb-4">Prepared by:</p>
+              <div className="border-b border-black w-48 mb-1 h-6"></div>
+              <p className="font-bold text-sm">Barangay Secretary</p>
+              
+              <p className="text-xs mb-4 mt-8">Noted by:</p>
+              <div className="border-b border-black w-48 mb-1 h-6"></div>
+              <p className="font-bold text-sm">Punong Barangay</p>
+              <p className="text-xs text-gray-600">Barangay Santiago</p>
             </div>
           </div>
         </div>
