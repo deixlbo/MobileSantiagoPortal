@@ -47,7 +47,9 @@ export default function ResidentLoginPage() {
           style={{
             backgroundImage: "url('/images/bg.jpg')",
           }}
-        />
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-green-700/60 via-green-600/40 to-green-500/20" />
+        </div>
 
 
         {/* Bottom Half - Form */}
@@ -158,7 +160,22 @@ export default function ResidentLoginPage() {
           style={{
             backgroundImage: "url('/images/bg.jpg')",
           }}
-        />
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-green-800/80 via-green-700/60 to-transparent" />
+        </div>
+
+        {/* Welcome Text */}
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="absolute left-16 top-1/2 -translate-y-1/2 text-white lg:left-24"
+        >
+          <h1 className="text-5xl font-bold lg:text-6xl">Welcome Back</h1>
+          <p className="mt-4 max-w-xs text-lg text-white/90">
+            Barangay Santiago Resident Portal
+          </p>
+        </motion.div>
 
         {/* Login Card */}
         <motion.div

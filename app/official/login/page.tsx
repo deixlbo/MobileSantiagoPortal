@@ -48,7 +48,7 @@ export default function OfficialLoginPage() {
             backgroundImage: "url('/images/bg.jpg')",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/60 via-primary/40 to-primary/20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-green-700/60 via-green-600/40 to-green-500/20" />
         </div>
 
         {/* Bottom Half - Form */}
@@ -153,7 +153,7 @@ export default function OfficialLoginPage() {
             backgroundImage: "url('/images/bg.jpg')",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-green-800/80 via-green-700/60 to-transparent" />
         </div>
 
         {/* Welcome Text */}

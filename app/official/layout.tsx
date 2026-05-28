@@ -54,27 +54,22 @@ export default function OfficialLayout({
 
   const SidebarContent = () => (
     <>
-      {/* Header with Santiago Logo */}
-      <div className="px-4 py-4 border-b border-white/20">
-        <div className="flex flex-col items-center gap-2 mb-3">
+      {/* Header with Logo */}
+      <div className="relative flex items-center gap-3 px-4 py-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 overflow-hidden">
           <Image
             src="/images/santiagologo.jpg"
             alt="Barangay Santiago"
-            width={70}
-            height={70}
-            className="rounded-full object-cover w-16 h-16 shrink-0"
+            width={40}
+            height={40}
+            className="h-full w-full rounded-full object-cover"
           />
-          <div className="text-center">
-            <p className="text-[10px] text-white/80 leading-tight">Republic of the Philippines</p>
-            <p className="text-[10px] text-white/80 leading-tight">Province of Zambales</p>
-            <p className="text-[10px] text-white/80 leading-tight">Municipality of San Antonio</p>
-            <p className="text-sm font-bold text-white leading-tight mt-1">BARANGAY SANTIAGO</p>
-          </div>
+        </div>
+        <div>
+          <h1 className="font-semibold text-white">Barangay Santiago</h1>
+          <p className="text-xs text-white/70">Official Portal</p>
         </div>
       </div>
-
-      {/* Divider line */}
-      <div className="mx-4 h-0.5 bg-gradient-to-r from-white/20 via-white/20 to-transparent" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4">
