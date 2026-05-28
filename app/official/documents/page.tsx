@@ -920,14 +920,14 @@ export default function OfficialDocumentsPage() {
         {selectedPrintRequest && (
           <div className="document-container">
             <div className="document-header">
-              <div className="logo-placeholder">LOGO</div>
+              <img src="/images/santiagologo.jpg" alt="Barangay Santiago" className="logo-img" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
               <div className="header-text">
                 <p className="gov-info">Republic of the Philippines</p>
                 <p className="gov-info">Province of Zambales</p>
                 <p className="gov-info">Municipality of San Antonio</p>
                 <p className="main-title">Barangay Santiago</p>
               </div>
-              <div className="logo-placeholder">SEAL</div>
+              <img src="/images/saz.jpg" alt="Municipality Seal" className="logo-img" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
             </div>
 
             <div className="document-title">

@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { printElementById } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +16,6 @@ import {
   Eye,
   Plus,
   Scroll,
-  Printer,
   Edit,
   Calendar
 } from "lucide-react"
@@ -69,28 +66,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 }
 
-// Document Header Component with Logos - Only visible when printing
-function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between mb-4 p-4 border-b ${printOnly ? 'hidden print:flex' : ''}`}>
-      <Image src="/images/santiagologo.jpg" alt="Barangay Santiago" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
-      <div className="text-center flex-1 px-2">
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
-      </div>
-      <Image src="/images/saz.jpg" alt="Municipality" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
-    </div>
-  )
-}
-
 export default function OfficialOrdinancesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [ordinances, setOrdinances] = useState(mockOrdinances)
   const [selectedOrdinance, setSelectedOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [editingOrdinance, setEditingOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
@@ -405,11 +385,6 @@ export default function OfficialOrdinancesPage() {
                         <Edit className="h-3 w-3 md:mr-1" />
                         <span className="hidden md:inline">Edit</span>
                       </Button>
-                      {ordinance.status === "Published" && (
-                        <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
-                          <Printer className="h-3 w-3" />
-                        </Button>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -431,9 +406,6 @@ export default function OfficialOrdinancesPage() {
                     <div className="flex gap-1 md:gap-2">
                       <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => setSelectedOrdinance(ordinance)}>
                         <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => { setSelectedOrdinance(ordinance); setShowPreview(true) }}>
-                        <Printer className="h-3 w-3" />
                       </Button>
                     </div>
                   </CardContent>
@@ -517,83 +489,10 @@ export default function OfficialOrdinancesPage() {
               setSelectedOrdinance(null)
               setTimeout(() => handleEditOrdinance(selectedOrdinance!), 100)
             }}>Edit</Button>
-            {selectedOrdinance?.status === "Published" && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowPreview(true)}>
-                <Printer className="mr-1 h-3 w-3" />
-                Print
-              </Button>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Print Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-2xl mx-4 md:mx-auto max-h-[90vh] bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-base md:text-lg text-foreground">Ordinance Document Preview</DialogTitle>
-          </DialogHeader>
-          {selectedOrdinance && (
-            <ScrollArea className="max-h-[60vh]">
-              <div id="print-preview" className="rounded-lg border border-gray-200 bg-white p-4 md:p-8 text-gray-900">
-                {/* Header - Only visible when printing */}
-                <div className="hidden print:flex items-center justify-between mb-4 pb-4 border-b">
-                  <Image src="/images/santiagologo.jpg" alt="Barangay Santiago" width={60} height={60} className="w-16 h-16 rounded-full object-cover" />
-                  <div className="text-center flex-1 px-2">
-                    <p className="text-xs">Republic of the Philippines</p>
-                    <p className="text-xs">Province of Zambales</p>
-                    <p className="text-xs">Municipality of San Antonio</p>
-                    <p className="text-sm font-semibold">Barangay Santiago</p>
-                  </div>
-                  <Image src="/images/saz.jpg" alt="Municipality" width={60} height={60} className="w-16 h-16 rounded-full object-cover" />
-                </div>
-                <div className="border-t border-b border-black py-2 md:py-4 my-4 md:my-6">
-                  <h2 className="text-center font-bold text-sm md:text-base">
-                    BARANGAY ORDINANCE NO. {selectedOrdinance.number} SERIES OF {selectedOrdinance.year}
-                  </h2>
-                </div>
-                <h3 className="text-center font-bold text-xs md:text-sm mb-4 md:mb-6">{selectedOrdinance.fullTitle}</h3>
-                <div className="mb-4 md:mb-6 text-xs md:text-sm">
-                  <p className="font-bold mb-2">WHEREAS:</p>
-                  {selectedOrdinance.whereas.map((clause, i) => (
-                    <p key={i} className="mb-1 text-justify">{clause}</p>
-                  ))}
-                </div>
-                {selectedOrdinance.sections.map((section, i) => (
-                  <div key={i} className="mb-3 text-xs md:text-sm">
-                    <p className="font-bold">SECTION {i + 1}. {section.title}</p>
-                    <p className="text-justify whitespace-pre-line">{section.content}</p>
-                  </div>
-                ))}
-                <div className="mt-6 md:mt-8 pt-4 border-t text-xs md:text-sm">
-                  <p className="mb-6 md:mb-8">ENACTED this {selectedOrdinance.date} at Barangay Santiago.</p>
-                  <div className="flex justify-between mt-8 md:mt-12">
-                    <div className="text-center">
-                      <div className="w-28 md:w-40 border-t border-black pt-1">
-                        <p className="font-semibold text-xs md:text-sm">APRIL JOY C. CANO</p>
-                        <p className="text-[10px] md:text-xs">Barangay Secretary</p>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-28 md:w-40 border-t border-black pt-1">
-                        <p className="font-semibold text-xs md:text-sm">ROLANDO C. BORJA</p>
-                        <p className="text-[10px] md:text-xs">Punong Barangay</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          )}
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => printElementById('print-preview')}>
-              <Printer className="mr-2 h-3 w-3" />
-              Print
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl mx-4 md:mx-auto max-h-[90vh] bg-white">

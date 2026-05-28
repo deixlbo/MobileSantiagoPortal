@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { printElementById } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -18,7 +16,6 @@ import {
   Eye,
   Plus,
   FolderKanban,
-  Printer,
   Edit,
   MapPin,
   Calendar,
@@ -83,22 +80,6 @@ const mockProjects = [
 
 const projectTypes = ["Infrastructure", "Health", "Education", "Environment", "Peace and Order", "Social Welfare"]
 
-// Document Header Component with Logos - Only visible when printing
-function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between mb-4 p-4 border-b ${printOnly ? 'hidden print:flex' : ''}`}>
-      <Image src="/images/santiagologo.jpg" alt="Barangay Santiago" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
-      <div className="text-center flex-1 px-2">
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
-      </div>
-      <Image src="/images/saz.jpg" alt="Municipality" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
-    </div>
-  )
-}
-
 function getStatusBadge(status: string) {
   switch (status) {
     case "Completed":
@@ -117,7 +98,6 @@ export default function OfficialProjectsPage() {
   const [projects, setProjects] = useState(mockProjects)
   const [selectedProject, setSelectedProject] = useState<typeof mockProjects[0] | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [printProject, setPrintProject] = useState<typeof mockProjects[0] | null>(null)
   const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<typeof mockProjects[0] | null>(null)
@@ -139,16 +119,6 @@ export default function OfficialProjectsPage() {
     beneficiaries: "",
     remarks: "",
   })
-
-  const handlePrintProject = (project: typeof mockProjects[0]) => {
-    setPrintProject(project)
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        printElementById("print-project-content")
-        setPrintProject(null)
-      })
-    })
-  }
 
   const requestDeleteProject = (id: string) => {
     setConfirmDeleteProjectId(id)
@@ -542,13 +512,6 @@ export default function OfficialProjectsPage() {
                     <Trash2 className="mr-1 h-3 w-3" />
                     Delete
                   </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handlePrintProject(project)}
-                >
-                  <Printer className="h-3 w-3" />
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -627,10 +590,6 @@ export default function OfficialProjectsPage() {
               setNewProgress(selectedProject?.progress || 0)
               setShowProgressDialog(true)
             }}>Update Progress</Button>
-            <Button onClick={() => selectedProject && handlePrintProject(selectedProject)}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print Report
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -827,123 +786,6 @@ export default function OfficialProjectsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Hidden Print Content */}
-      {printProject && (
-        <div id="print-project-content" className="print-only hidden">
-          <div className="rounded-lg border bg-white p-8 text-black">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <p className="text-xs">REPUBLIC OF THE PHILIPPINES</p>
-              <p className="text-xs font-semibold">Province of Zambales</p>
-              <p className="text-xs font-semibold">Municipality of San Antonio</p>
-              <p className="text-lg font-bold mt-2">BARANGAY SANTIAGO</p>
-              <div className="border-b-2 border-black mt-4 mb-4"></div>
-              <h2 className="text-lg font-bold mt-4">PROJECT DETAILS REPORT</h2>
-            </div>
-
-            {/* Project Title & Code */}
-            <div className="mb-6">
-              <div className="mb-2">
-                <p className="text-xs text-gray-600 font-semibold">Project Title</p>
-                <p className="font-bold text-lg">{printProject.title}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Project Code</p>
-                  <p className="font-semibold">{printProject.id}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Category</p>
-                  <p className="font-semibold">{printProject.type}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Status</p>
-                  <p className="font-semibold">{printProject.status}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Project Information Table */}
-            <div className="mb-6">
-              <h3 className="font-bold text-sm mb-3 border-b border-gray-300 pb-1">PROJECT INFORMATION</h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold w-1/3">Location</td>
-                    <td className="py-2">{printProject.location}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Project Head</td>
-                    <td className="py-2">{printProject.projectHead}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Designation</td>
-                    <td className="py-2">{printProject.projectHeadPosition}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Start Date</td>
-                    <td className="py-2">{printProject.startDate}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Target Completion</td>
-                    <td className="py-2">{printProject.targetCompletion}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Budget</td>
-                    <td className="py-2">PHP {printProject.budget}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Fund Source</td>
-                    <td className="py-2">{printProject.source}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Beneficiaries</td>
-                    <td className="py-2">{printProject.beneficiaries}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Progress</td>
-                    <td className="py-2">{printProject.progress}%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Project Description */}
-            <div className="mb-6">
-              <h3 className="font-bold text-sm mb-2">PROJECT DESCRIPTION</h3>
-              <p className="text-sm leading-relaxed">{printProject.description}</p>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Remarks */}
-            <div className="mb-8">
-              <h3 className="font-bold text-sm mb-2">REMARKS</h3>
-              <p className="text-sm">{printProject.remarks || "No remarks"}</p>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Signatures */}
-            <div className="mt-10">
-              <p className="text-xs mb-4">Prepared by:</p>
-              <div className="border-b border-black w-48 mb-1 h-6"></div>
-              <p className="font-bold text-sm">{printProject.projectHead}</p>
-              <p className="text-xs text-gray-600">{printProject.projectHeadPosition} / Project Head</p>
-              
-              <p className="text-xs mb-4 mt-8">Approved by:</p>
-              <div className="border-b border-black w-48 mb-1 h-6"></div>
-              <p className="font-bold text-sm">Punong Barangay</p>
-              <p className="text-xs text-gray-600">Barangay Santiago</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

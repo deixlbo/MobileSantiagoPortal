@@ -798,17 +798,21 @@ export default function OfficialBlottersPage() {
       </Dialog>
 
       {selectedPrintBlotter && (
-        <div id="print-content" className="print-only hidden">
-          <div className="rounded-lg border bg-white p-8 text-black">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <p className="text-xs">REPUBLIC OF THE PHILIPPINES</p>
-              <p className="text-xs font-semibold">Province of Zambales</p>
-              <p className="text-xs font-semibold">Municipality of San Antonio</p>
-              <p className="text-lg font-bold mt-2">BARANGAY SANTIAGO</p>
-              <div className="border-b-2 border-black mt-4 mb-4"></div>
-              <h2 className="text-lg font-bold mt-4">BARANGAY BLOTTER REPORT</h2>
+      <div id="print-content" className="print-only hidden">
+        <div className="rounded-lg border bg-white p-8 text-black">
+          {/* Header with Logos */}
+          <div className="flex items-center justify-between mb-4">
+            <img src="/images/santiagologo.jpg" alt="Barangay Santiago" className="w-16 h-16 rounded-full object-cover" />
+            <div className="text-center flex-1 px-4">
+              <p className="text-xs">Republic of the Philippines</p>
+              <p className="text-xs">Province of Zambales</p>
+              <p className="text-xs">Municipality of San Antonio</p>
+              <p className="text-sm font-bold mt-1">BARANGAY SANTIAGO</p>
             </div>
+            <img src="/images/saz.jpg" alt="Municipality Seal" className="w-16 h-16 rounded-full object-cover" />
+          </div>
+          <div className="border-b-2 border-black mb-4"></div>
+          <h2 className="text-lg font-bold text-center mb-6">BARANGAY BLOTTER REPORT</h2>
 
             {/* Blotter Number & Status */}
             <div className="mb-6">
