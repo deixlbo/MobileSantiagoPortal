@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { printElementById } from "@/lib/utils"
 import { deleteBlotter, markUnderInvestigation, resolveBlotter, updateBlotter } from "@/lib/blotter-utils"
+import { exportBlotterToExcel, exportSingleBlotterToExcel } from "@/lib/export-utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -26,7 +27,8 @@ import {
   AlertTriangle,
   Printer,
   FileText,
-  RefreshCw
+  RefreshCw,
+  Download
 } from "lucide-react"
 
 const LocationMap = dynamic(() => import("@/components/location-map"), {
@@ -320,6 +322,53 @@ export default function OfficialBlottersPage() {
     }
   }
 
+  // Export all blotters to Excel
+  const handleExportAllBlotters = () => {
+    const blotterData = blotters.map(b => ({
+      id: b.id,
+      type: b.type,
+      description: b.description,
+      location: b.location,
+      complainant: b.complainant,
+      complainantAddress: b.complainantAddress,
+      respondent: b.respondent,
+      respondentAddress: b.respondentAddress,
+      status: b.status,
+      filedDate: b.filedDate,
+      investigationDate: b.investigationDate,
+      mediationScheduledDate: b.mediationScheduledDate,
+      hearingDate: b.hearingDate,
+      actionTaken: b.actionTaken,
+      resolution: b.resolution,
+      resolutionDate: b.resolutionDate
+    }))
+    
+    const today = new Date().toISOString().split('T')[0]
+    exportBlotterToExcel(blotterData, `Blotter_Records_${today}.xlsx`)
+  }
+
+  // Export single blotter to Excel
+  const handleExportSingleBlotter = (blotter: typeof mockBlotters[0]) => {
+    exportSingleBlotterToExcel({
+      id: blotter.id,
+      type: blotter.type,
+      description: blotter.description,
+      location: blotter.location,
+      complainant: blotter.complainant,
+      complainantAddress: blotter.complainantAddress,
+      respondent: blotter.respondent,
+      respondentAddress: blotter.respondentAddress,
+      status: blotter.status,
+      filedDate: blotter.filedDate,
+      investigationDate: blotter.investigationDate,
+      mediationScheduledDate: blotter.mediationScheduledDate,
+      hearingDate: blotter.hearingDate,
+      actionTaken: blotter.actionTaken,
+      resolution: blotter.resolution,
+      resolutionDate: blotter.resolutionDate
+    })
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -332,6 +381,10 @@ export default function OfficialBlottersPage() {
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">Blotter Records</h1>
           <p className="text-xs md:text-sm text-muted-foreground">Manage and process incident reports</p>
         </div>
+        <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm" onClick={handleExportAllBlotters}>
+          <Download className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+          <span className="hidden md:inline">Export</span>
+        </Button>
       </motion.div>
 
       {/* Stats */}
@@ -545,6 +598,14 @@ export default function OfficialBlottersPage() {
                                 variant="outline" 
                                 size="sm"
                                 className="h-7 md:h-8 px-2 text-xs"
+                                onClick={() => handleExportSingleBlotter(blotter)}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="h-7 md:h-8 px-2 text-xs"
                                 onClick={() => handlePrintBlotter(blotter)}
                               >
                                 <Printer className="h-3 w-3" />
@@ -645,6 +706,10 @@ export default function OfficialBlottersPage() {
                 Update
               </Button>
             )}
+            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => selectedBlotter && handleExportSingleBlotter(selectedBlotter)}>
+              <Download className="mr-1 h-3 w-3" />
+              Export
+            </Button>
             <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => selectedBlotter && handlePrintBlotter(selectedBlotter)}>
               <Printer className="mr-1 h-3 w-3" />
               Print

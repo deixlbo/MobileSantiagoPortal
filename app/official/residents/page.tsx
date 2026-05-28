@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { exportCensusToExcel } from "@/lib/export-utils"
 import { 
   Search, 
   Eye,
@@ -377,6 +378,39 @@ export default function ResidentsPage() {
     setShowAddFamilyMember(false)
   }
 
+  // Export census data to Excel
+  const handleExportCensus = () => {
+    // Transform residents to export format
+    const residentsData = residents.map(r => ({
+      name: r.name,
+      purok: r.purok,
+      age: r.age,
+      gender: r.gender,
+      familyMembers: (r.familyMembers?.length || 0) + 1,
+      status: r.status,
+      occupation: r.occupation || ''
+    }))
+
+    // Transform households to export format
+    const householdsData = households.map(hh => ({
+      householdNumber: hh.householdNumber,
+      headOfFamily: hh.headOfFamily,
+      address: hh.address,
+      purok: hh.purok,
+      totalMembers: hh.totalMembers,
+      members: hh.members.map(m => ({
+        name: m.name,
+        relationship: m.relationship,
+        age: m.age,
+        gender: m.gender,
+        occupation: m.occupation || ''
+      }))
+    }))
+
+    const today = new Date().toISOString().split('T')[0]
+    exportCensusToExcel(residentsData, householdsData, `Census_Report_${today}.xlsx`)
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -389,9 +423,9 @@ export default function ResidentsPage() {
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">Residents Management</h1>
           <p className="text-xs md:text-sm text-muted-foreground">Manage residents, households, and census data</p>
         </div>
-        <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm">
+        <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm" onClick={handleExportCensus}>
           <Download className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-          <span className="hidden md:inline">Export Census</span>
+          <span className="hidden md:inline">Export</span>
         </Button>
       </motion.div>
 

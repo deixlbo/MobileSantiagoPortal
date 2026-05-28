@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { exportToXLSXMultiSheet } from "@/lib/export-utils"
 import {
   BarChart3,
   Download,
@@ -81,6 +82,50 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 }
 
+// Export function for reports
+const handleExportReport = () => {
+  const sheets = [
+    {
+      name: 'Population Summary',
+      data: populationData.map(p => ({
+        'Purok': p.purok,
+        'Verified Residents': p.verified,
+        'Unverified Residents': p.unverified,
+        'Total': p.verified + p.unverified
+      }))
+    },
+    {
+      name: 'Weekly Requests',
+      data: requestsTrendData.map(r => ({
+        'Week': r.week,
+        'Barangay Clearance': r.clearance,
+        'Certificate of Residency': r.residency,
+        'Certificate of Indigency': r.indigency,
+        'Business Clearance': r.business
+      }))
+    },
+    {
+      name: 'Monthly Requests',
+      data: monthlyRequestsData.map(m => ({
+        'Month': m.month,
+        'Approved': m.approved,
+        'Declined': m.declined,
+        'Pending': m.pending
+      }))
+    },
+    {
+      name: 'Blotter Status',
+      data: blotterStatusData.map(b => ({
+        'Status': b.name,
+        'Count': b.value
+      }))
+    }
+  ]
+
+  const today = new Date().toISOString().split('T')[0]
+  exportToXLSXMultiSheet(sheets, `Reports_Analytics_${today}.xlsx`)
+}
+
 export default function ReportsPage() {
   return (
     <motion.div
@@ -95,9 +140,9 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-bold">Reports & Analytics</h1>
           <p className="text-muted-foreground mt-1">System-wide insights and statistics</p>
         </div>
-        <Button className="w-full md:w-auto gap-2">
+        <Button className="w-full md:w-auto gap-2" onClick={handleExportReport}>
           <Download className="h-4 w-4" />
-          Export Report
+          Export
         </Button>
       </motion.div>
 
