@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,9 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Bell,
+  X,
+  FileText,
 } from "lucide-react"
 
 const mockAnnouncements = [
@@ -103,9 +107,46 @@ const barangayInfo = {
   officeHours: "Monday - Friday, 8:00 AM - 5:00 PM",
 }
 
+// Mock notifications for resident
+const initialResidentNotifications = [
+  { id: 1, type: "announcement", message: "New announcement: Community Health Drive", targetId: "a-1", time: "10 mins ago", read: false, route: "/resident/announcements" },
+  { id: 2, type: "project", message: "Project update: Road Improvement at 65%", targetId: "p-1", time: "30 mins ago", read: false, route: "/resident/projects" },
+  { id: 3, type: "document", message: "Your clearance request has been approved", targetId: "doc-1", time: "1 hour ago", read: false, route: "/resident/documents" },
+  { id: 4, type: "announcement", message: "New announcement: Barangay Assembly Meeting", targetId: "a-3", time: "2 hours ago", read: false, route: "/resident/announcements" },
+  { id: 5, type: "document", message: "Your residency certificate is ready for pickup", targetId: "doc-2", time: "3 hours ago", read: false, route: "/resident/documents" },
+]
+
 export default function ResidentDashboard() {
+  const router = useRouter()
   const [currentSlide, setCurrentSlide] = useState(0)
   const slideInterval = useRef<NodeJS.Timeout | null>(null)
+  const [notifications, setNotifications] = useState(initialResidentNotifications)
+  const [showNotifications, setShowNotifications] = useState(false)
+  
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const handleNotificationClick = (notification: typeof initialResidentNotifications[0]) => {
+    // Mark as read
+    setNotifications(prev => 
+      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+    )
+    setShowNotifications(false)
+    // Navigate to the relevant page
+    router.push(notification.route)
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "announcement":
+        return <Megaphone className={`h-4 w-4 mt-0.5 text-orange-500`} />
+      case "project":
+        return <FolderKanban className={`h-4 w-4 mt-0.5 text-blue-500`} />
+      case "document":
+        return <FileText className={`h-4 w-4 mt-0.5 text-green-500`} />
+      default:
+        return <Bell className={`h-4 w-4 mt-0.5 text-slate-500`} />
+    }
+  }
 
   const slides = [
     { type: "announcements", data: mockAnnouncements },
@@ -247,6 +288,64 @@ export default function ResidentDashboard() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Welcome, Juan</h1>
           <p className="text-sm text-muted-foreground mt-1">Barangay Santiago Resident Dashboard</p>
+        </div>
+        
+        {/* Notification Bell */}
+        <div className="relative">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="relative"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </Button>
+          
+          {/* Notification Dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
+              <div className="p-3 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Notifications</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <p className="p-4 text-sm text-slate-500 text-center">No notifications</p>
+                ) : (
+                  notifications.map((notif) => (
+                    <button
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`w-full text-left p-3 hover:bg-slate-50 border-b last:border-b-0 transition-colors ${
+                        !notif.read ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {getNotificationIcon(notif.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${!notif.read ? "font-medium" : ""}`}>{notif.message}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-[10px] capitalize">{notif.type}</Badge>
+                            <span className="text-xs text-slate-500">{notif.time}</span>
+                          </div>
+                        </div>
+                        {!notif.read && (
+                          <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

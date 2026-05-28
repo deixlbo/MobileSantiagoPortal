@@ -18,7 +18,19 @@ import {
   CheckCircle2,
   Activity,
   ArrowUp,
+  Bell,
+  X,
 } from "lucide-react"
+
+import { useRouter } from "next/navigation"
+
+// Mock data for notifications - document requests
+const initialNotifications = [
+  { id: 1, type: "document", message: "New clearance request from Maria Santos", requestId: "req-001", time: "5 mins ago", read: false },
+  { id: 2, type: "document", message: "New residency certificate request from Pedro Reyes", requestId: "req-002", time: "15 mins ago", read: false },
+  { id: 3, type: "document", message: "New indigency certificate request from Ana Cruz", requestId: "req-003", time: "1 hour ago", read: false },
+  { id: 4, type: "document", message: "New business permit request from Elena Store", requestId: "req-004", time: "2 hours ago", read: false },
+]
 
 // Mock data for charts
 const trendsData = [
@@ -45,6 +57,22 @@ const recentActivities = [
 ]
 
 export default function AdminDashboard() {
+  const router = useRouter()
+  const [notifications, setNotifications] = useState(initialNotifications)
+  const [showNotifications, setShowNotifications] = useState(false)
+  
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const handleNotificationClick = (notification: typeof initialNotifications[0]) => {
+    // Mark as read
+    setNotifications(prev => 
+      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+    )
+    setShowNotifications(false)
+    // Navigate to documents page
+    router.push("/official/documents")
+  }
+
   const [stats, setStats] = useState([
     { name: "Total Residents", value: "1,245", change: "+12%", icon: Users, color: "bg-emerald-100 text-emerald-600" },
     { name: "Pending Documents", value: "23", change: "-5%", icon: FileText, color: "bg-blue-100 text-blue-600" },
@@ -56,9 +84,66 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Welcome, Juan</h1>
-          <p className="text-sm sm:text-base text-slate-600">Barangay Santiago OFFICIAL Dashboard</p>
+        <div className="mb-6 sm:mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Welcome, Juan</h1>
+            <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Official Dashboard</p>
+          </div>
+          
+          {/* Notification Bell */}
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="relative"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+            
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
+                <div className="p-3 border-b flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Document Requests</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-500 text-center">No notifications</p>
+                  ) : (
+                    notifications.map((notif) => (
+                      <button
+                        key={notif.id}
+                        onClick={() => handleNotificationClick(notif)}
+                        className={`w-full text-left p-3 hover:bg-slate-50 border-b last:border-b-0 transition-colors ${
+                          !notif.read ? "bg-blue-50" : ""
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <FileText className={`h-4 w-4 mt-0.5 ${!notif.read ? "text-blue-600" : "text-slate-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${!notif.read ? "font-medium" : ""}`}>{notif.message}</p>
+                            <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                          </div>
+                          {!notif.read && (
+                            <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+                          )}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Key Stats */}
