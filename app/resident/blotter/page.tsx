@@ -17,9 +17,7 @@ import {
   Clock, 
   CheckCircle2, 
   MapPin,
-  FileText,
-  Download,
-  Printer
+  FileText
 } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { ComplaintStatusTimeline } from "@/components/complaint-status-timeline"
@@ -464,61 +462,6 @@ export default function BlotterPage() {
                               includeMargin={true}
                             />
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const canvas = document.getElementById(`blotter-qr-${showPreview.id}`) as HTMLCanvasElement
-                                if (canvas) {
-                                  const link = document.createElement('a')
-                                  link.download = `Blotter-QR-${showPreview.id}.png`
-                                  link.href = canvas.toDataURL('image/png')
-                                  link.click()
-                                }
-                              }}
-                            >
-                              <Download className="mr-1 h-3 w-3" />
-                              Download
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const canvas = document.getElementById(`blotter-qr-${showPreview.id}`) as HTMLCanvasElement
-                                if (canvas) {
-                                  const printWindow = window.open('', '_blank')
-                                  if (printWindow) {
-                                    printWindow.document.write(`
-                                      <html>
-                                        <head>
-                                          <title>Blotter QR - ${showPreview.id}</title>
-                                          <style>
-                                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
-                                            h2 { margin-bottom: 10px; }
-                                            p { margin: 5px 0; color: #666; }
-                                          </style>
-                                        </head>
-                                        <body>
-                                          <h2>Blotter Report</h2>
-                                          <p><strong>Complaint #:</strong> ${showPreview.id}</p>
-                                          <p><strong>Complainant:</strong> ${showPreview.complainant}</p>
-                                          <p><strong>Type:</strong> ${showPreview.type}</p>
-                                          <img src="${canvas.toDataURL('image/png')}" />
-                                          <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
-                                        </body>
-                                      </html>
-                                    `)
-                                    printWindow.document.close()
-                                    printWindow.print()
-                                  }
-                                }
-                              }}
-                            >
-                              <Printer className="mr-1 h-3 w-3" />
-                              Print
-                            </Button>
-                          </div>
                         </div>
                         <div className="text-sm space-y-1 flex-1">
                           <div className="rounded border bg-slate-50 p-2">
@@ -662,61 +605,6 @@ export default function BlotterPage() {
                             level="H"
                             includeMargin={true}
                           />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const canvas = document.getElementById(`blotter-qr-pending-${showPreview.id}`) as HTMLCanvasElement
-                              if (canvas) {
-                                const link = document.createElement('a')
-                                link.download = `Blotter-QR-${showPreview.id}.png`
-                                link.href = canvas.toDataURL('image/png')
-                                link.click()
-                              }
-                            }}
-                          >
-                            <Download className="mr-1 h-3 w-3" />
-                            Download
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const canvas = document.getElementById(`blotter-qr-pending-${showPreview.id}`) as HTMLCanvasElement
-                              if (canvas) {
-                                const printWindow = window.open('', '_blank')
-                                if (printWindow) {
-                                  printWindow.document.write(`
-                                    <html>
-                                      <head>
-                                        <title>Blotter QR - ${showPreview.id}</title>
-                                        <style>
-                                          body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif; }
-                                          h2 { margin-bottom: 10px; }
-                                          p { margin: 5px 0; color: #666; }
-                                        </style>
-                                      </head>
-                                      <body>
-                                        <h2>Blotter Report</h2>
-                                        <p><strong>Complaint #:</strong> ${showPreview.id}</p>
-                                        <p><strong>Complainant:</strong> ${showPreview.complainant}</p>
-                                        <p><strong>Type:</strong> ${showPreview.type}</p>
-                                        <img src="${canvas.toDataURL('image/png')}" />
-                                        <p style="margin-top: 15px; font-size: 12px;">Barangay Santiago Official Document</p>
-                                      </body>
-                                    </html>
-                                  `)
-                                  printWindow.document.close()
-                                  printWindow.print()
-                                }
-                              }
-                            }}
-                          >
-                            <Printer className="mr-1 h-3 w-3" />
-                            Print
-                          </Button>
                         </div>
                       </div>
                       <div className="text-sm space-y-1 flex-1">
