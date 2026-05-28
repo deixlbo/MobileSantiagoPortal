@@ -889,6 +889,5 @@ export default function DocumentsPage() {
       </DialogFooter>
     </DialogContent>
   </Dialog>
-    </main>
   )
 }
