@@ -703,100 +703,43 @@ export default function DocumentsPage() {
       </Card>
 
   <Dialog open={Boolean(selectedRequest)} onOpenChange={(open) => { if (!open) setSelectedRequest(null) }}>
-    <DialogContent className="max-w-xl">
+    <DialogContent className="max-w-sm sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Request Status & QR</DialogTitle>
-        <DialogDescription>
-          View the document request status and QR code for verification.
-        </DialogDescription>
+        <DialogTitle className="text-center">Document QR Code</DialogTitle>
       </DialogHeader>
       {selectedRequest && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border p-4 bg-muted/60">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">{selectedRequest.type}</p>
-                <p className="text-xs text-muted-foreground">Request ID: {selectedRequest.id}</p>
-              </div>
-              <div>{getStatusBadge(selectedRequest.status)}</div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 text-sm">
-                <p className="text-muted-foreground">Resident</p>
-                <p className="font-medium">{selectedRequest.residentName}</p>
-              </div>
-              <div className="space-y-1 text-sm">
-                <p className="text-muted-foreground">Requested</p>
-                <p className="font-medium">{selectedRequest.date}</p>
-              </div>
-              <div className="space-y-1 text-sm">
-                <p className="text-muted-foreground">Purpose</p>
-                <p className="font-medium">{selectedRequest.purpose}</p>
-              </div>
-              {selectedRequest.pickupTime && (
-                <div className="space-y-1 text-sm">
-                  <p className="text-muted-foreground">Pickup</p>
-                  <p className="font-medium">{selectedRequest.pickupTime}</p>
-                </div>
-              )}
-            </div>
+        <div className="flex flex-col items-center gap-4">
+          {/* Status Badge */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Status:</span>
+            {getStatusBadge(selectedRequest.status)}
           </div>
-
-          <div className="space-y-4">
-            <DocumentStatusTimeline
-              currentStatus={selectedRequest.status === 'pending' ? 'processing' : selectedRequest.status === 'approved' ? 'approved' : 'rejected'}
-              submittedDate={new Date(selectedRequest.date)}
-              processingDate={new Date(selectedRequest.date)}
-              approvedDate={selectedRequest.status === 'approved' ? new Date(selectedRequest.date) : undefined}
-              rejectionReason={selectedRequest.status === 'rejected' ? selectedRequest.remarks : undefined}
+          
+          {/* QR Code */}
+          <div className="rounded-lg border bg-white p-4">
+            <QRCodeCanvas
+              id="document-qr-code"
+              value={`Name: ${selectedRequest.residentName}\nRequest Number: ${selectedRequest.id}\nDocument: ${selectedRequest.type}\nStatus: ${selectedRequest.status === 'approved' ? 'Approved' : selectedRequest.status === 'pending' ? 'Pending' : 'Rejected'}\nPaid: ${selectedRequest.status === 'approved' ? 'Yes' : 'No'}`}
+              size={200}
+              level="H"
+              includeMargin={true}
             />
-
-            <div className="rounded-xl border border-border p-4 bg-white">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="rounded-full bg-emerald-100 p-2 text-emerald-700">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Document QR Code</p>
-                  <p className="text-xs text-muted-foreground">Contains resident name, document type, paid status, and document number.</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                <div className="flex flex-col items-center gap-3">
-                  <div id="qr-code-container" className="rounded-lg border border-border/50 bg-muted/30 p-4">
-                    <QRCodeCanvas
-                      id="document-qr-code"
-                      value={`Name: ${selectedRequest.residentName}\nRequest Number: ${selectedRequest.id}\nDocument: ${selectedRequest.type}\nStatus: ${selectedRequest.status === 'approved' ? 'Approved' : selectedRequest.status === 'pending' ? 'Pending' : 'Rejected'}\nPaid: ${selectedRequest.status === 'approved' ? 'Yes' : 'No'}`}
-                      size={180}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
-                  {/* QR Action Buttons */}
-                  <div className="flex gap-2 w-full">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        const canvas = document.getElementById('document-qr-code') as HTMLCanvasElement
-                        if (canvas) {
-                          const link = document.createElement('a')
-                          link.download = `QR-${selectedRequest.id}.png`
-                          link.href = canvas.toDataURL('image/png')
-                          link.click()
-                        }
-                      }}
-                    >
-                      <Download className="mr-1 h-3 w-3" />
-                      Download QR
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm flex-1">
-                  <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
-                    <p className="text-muted-foreground text-xs">Resident Name</p>
-                    <p className="font-medium">{selectedRequest.residentName}</p>
+          </div>
+          
+          {/* Request Info */}
+          <div className="text-center text-sm">
+            <p className="font-medium">{selectedRequest.type}</p>
+            <p className="text-muted-foreground">{selectedRequest.id}</p>
+          </div>
+        </div>
+      )}
+      <DialogFooter>
+        <Button onClick={() => setSelectedRequest(null)} className="w-full">
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
                   </div>
                   <div className="rounded-lg border border-border/50 bg-slate-50 p-3">
                     <p className="text-muted-foreground text-xs">Request Number</p>
