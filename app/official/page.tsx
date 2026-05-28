@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +16,8 @@ import {
   TrendingUp,
   Clock,
   Eye,
+  Bell,
+  X,
 } from "lucide-react"
 
 // Stats data
@@ -45,6 +49,14 @@ const ongoingProjects = [
   { id: 2, title: "Community Watch", progress: 45, location: "All Puroks" },
 ]
 
+// Mock notifications for document requests
+const initialNotifications = [
+  { id: 1, type: "document", message: "New clearance request from Maria Santos", time: "5 mins ago", read: false },
+  { id: 2, type: "document", message: "New residency certificate request from Pedro Reyes", time: "15 mins ago", read: false },
+  { id: 3, type: "document", message: "New indigency certificate request from Ana Cruz", time: "1 hour ago", read: false },
+  { id: 4, type: "document", message: "New business permit request from Elena Store", time: "2 hours ago", read: false },
+]
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -59,6 +71,20 @@ const itemVariants = {
 }
 
 export default function OfficialDashboard() {
+  const router = useRouter()
+  const [notifications, setNotifications] = useState(initialNotifications)
+  const [showNotifications, setShowNotifications] = useState(false)
+  
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const handleNotificationClick = (notification: typeof initialNotifications[0]) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+    )
+    setShowNotifications(false)
+    router.push("/official/documents")
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -67,9 +93,66 @@ export default function OfficialDashboard() {
       className="space-y-4 md:space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="mb-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Welcome, Juan</h1>
-        <p className="text-sm text-slate-600">Barangay Santiago OFFICIAL Dashboard</p>
+      <motion.div variants={itemVariants} className="mb-2 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Welcome, Juan</h1>
+          <p className="text-sm text-slate-600">Barangay Santiago Official Dashboard</p>
+        </div>
+        
+        {/* Notification Bell */}
+        <div className="relative">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="relative"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </Button>
+          
+          {/* Notification Dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
+              <div className="p-3 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Document Requests</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <p className="p-4 text-sm text-slate-500 text-center">No notifications</p>
+                ) : (
+                  notifications.map((notif) => (
+                    <button
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`w-full text-left p-3 hover:bg-slate-50 border-b last:border-b-0 transition-colors ${
+                        !notif.read ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <FileText className={`h-4 w-4 mt-0.5 ${!notif.read ? "text-blue-600" : "text-slate-400"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${!notif.read ? "font-medium" : ""}`}>{notif.message}</p>
+                          <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                        </div>
+                        {!notif.read && (
+                          <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Stats Grid */}
