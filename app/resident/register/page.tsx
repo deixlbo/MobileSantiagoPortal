@@ -34,6 +34,7 @@ export default function ResidentRegisterPage() {
   const [password, setPassword] = useState("")
   const [purok, setPurok] = useState("")
   const [gender, setGender] = useState("")
+  const [occupation, setOccupation] = useState("")
   const [docType, setDocType] = useState("")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,6 +191,17 @@ export default function ResidentRegisterPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mobile-occupation">Occupation</Label>
+              <Input 
+                id="mobile-occupation" 
+                placeholder="Enter your occupation" 
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                required 
+              />
             </div>
 
             <div className="space-y-2">
@@ -417,6 +429,17 @@ export default function ResidentRegisterPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="occupation">Occupation</Label>
+                  <Input 
+                    id="occupation" 
+                    placeholder="Enter your occupation" 
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    required 
+                  />
                 </div>
 
                 <div className="space-y-2">

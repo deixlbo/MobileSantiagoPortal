@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,8 +49,10 @@ type Resident = {
   purok: string
   gender: string
   age: number
+  occupation?: string
   status: string
   documentType: string
+  documentImage?: string
   registeredDate: string
   remarks?: string
   householdId?: string
@@ -78,8 +81,10 @@ const mockResidents: Resident[] = [
     purok: "Purok 3",
     gender: "Male",
     age: 45,
+    occupation: "Farmer",
     status: "verified",
     documentType: "Valid ID",
+    documentImage: "/images/sample-id-1.png",
     registeredDate: "April 15, 2026",
     householdId: "HH-001",
     isHouseholdHead: true,
@@ -96,8 +101,10 @@ const mockResidents: Resident[] = [
     purok: "Purok 1",
     gender: "Female",
     age: 19,
+    occupation: "Student",
     status: "pending",
     documentType: "Birth Certificate",
+    documentImage: "/images/sample-id-2.png",
     registeredDate: "April 25, 2026"
   },
   {
@@ -107,8 +114,10 @@ const mockResidents: Resident[] = [
     purok: "Purok 2",
     gender: "Male",
     age: 35,
+    occupation: "Carpenter",
     status: "verified",
     documentType: "Voter's ID",
+    documentImage: "/images/sample-id-3.png",
     registeredDate: "April 27, 2026",
     householdId: "HH-002",
     isHouseholdHead: true,
@@ -124,8 +133,10 @@ const mockResidents: Resident[] = [
     purok: "Purok 4",
     gender: "Female",
     age: 52,
+    occupation: "Vendor",
     status: "verified",
     documentType: "Valid ID",
+    documentImage: "/images/sample-id-4.png",
     registeredDate: "March 10, 2026",
     householdId: "HH-003",
     isHouseholdHead: true,
@@ -140,8 +151,10 @@ const mockResidents: Resident[] = [
     purok: "Purok 5",
     gender: "Male",
     age: 28,
+    occupation: "Driver",
     status: "declined",
     documentType: "Birth Certificate",
+    documentImage: "/images/sample-id-5.png",
     remarks: "Invalid document uploaded",
     registeredDate: "April 20, 2026"
   },
@@ -697,6 +710,58 @@ export default function ResidentsPage() {
                     <p className="text-xs text-muted-foreground">Gender</p>
                     <p className="font-medium text-sm">{selectedResident.gender}</p>
                   </div>
+                  {selectedResident.occupation && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Occupation</p>
+                      <p className="font-medium text-sm">{selectedResident.occupation}</p>
+                    </div>
+                  )}
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Registered</p>
+                    <p className="font-medium text-sm">{selectedResident.registeredDate}</p>
+                  </div>
+                </div>
+
+                {/* Uploaded Document Section */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-semibold text-sm">Uploaded Document</p>
+                    <Badge variant="outline" className="text-xs">{selectedResident.documentType}</Badge>
+                  </div>
+                  
+                  {selectedResident.documentImage ? (
+                    <div className="space-y-3">
+                      <div className="relative aspect-[4/3] w-full max-w-sm mx-auto rounded-lg overflow-hidden border bg-muted">
+                        <Image
+                          src={selectedResident.documentImage}
+                          alt={`${selectedResident.documentType} - ${selectedResident.name}`}
+                          fill
+                          className="object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = "/images/placeholder-document.png"
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <FileText className="h-3 w-3" />
+                        <span>{selectedResident.documentType} - {selectedResident.documentImage.split('/').pop()}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No document uploaded</p>
+                    </div>
+                  )}
+                  
+                  {selectedResident.remarks && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-xs font-medium text-red-800">Note:</p>
+                      <p className="text-sm text-red-700">{selectedResident.remarks}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Family Members Section */}
