@@ -47,21 +47,28 @@ export default function ResidentLayout({
   const SidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="relative flex items-center gap-3 px-4 py-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 overflow-hidden">
-          <Image
-            src="/images/santiagologo.jpg"
-            alt="Barangay Santiago"
-            width={40}
-            height={40}
-            className="h-full w-full rounded-full object-cover"
-          />
-        </div>
-        <div>
-          <h1 className="font-semibold text-white">Barangay Santiago</h1>
-          <p className="text-xs text-white/70">Resident Portal</p>
+      <div className="px-4 py-5">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 overflow-hidden">
+            <Image
+              src="/images/santiagologo.jpg"
+              alt="Barangay Santiago"
+              width={72}
+              height={72}
+              className="h-full w-full rounded-full object-cover"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] text-white/80 leading-tight">Republic of the Philippines</p>
+            <p className="text-[11px] text-white/80 leading-tight">Province of Zambales</p>
+            <p className="text-[11px] text-white/80 leading-tight">Municipality of San Antonio</p>
+            <p className="text-base font-bold text-white mt-1">BARANGAY SANTIAGO</p>
+          </div>
         </div>
       </div>
+      
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/20" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
@@ -109,21 +116,28 @@ export default function ResidentLayout({
   const MobileSidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="flex items-center gap-3 px-4 py-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 overflow-hidden">
-          <Image
-            src="/images/santiagologo.jpg"
-            alt="Barangay Santiago"
-            width={40}
-            height={40}
-            className="h-full w-full rounded-full object-cover"
-          />
-        </div>
-        <div>
-          <h1 className="font-semibold text-white">Barangay Santiago</h1>
-          <p className="text-xs text-white/70">Resident Portal</p>
+      <div className="px-4 py-5">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 overflow-hidden">
+            <Image
+              src="/images/santiagologo.jpg"
+              alt="Barangay Santiago"
+              width={72}
+              height={72}
+              className="h-full w-full rounded-full object-cover"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] text-white/80 leading-tight">Republic of the Philippines</p>
+            <p className="text-[11px] text-white/80 leading-tight">Province of Zambales</p>
+            <p className="text-[11px] text-white/80 leading-tight">Municipality of San Antonio</p>
+            <p className="text-base font-bold text-white mt-1">BARANGAY SANTIAGO</p>
+          </div>
         </div>
       </div>
+      
+      {/* Divider */}
+      <div className="mx-4 h-px bg-white/20" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
