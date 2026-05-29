@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import { signIn } from "@/lib/auth"
 import { toast } from "sonner"
 
@@ -49,16 +48,6 @@ export default function OfficialLoginFormPage() {
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-green-700/60 via-green-600/40 to-green-500/20" />
-          
-          {/* Back Button - Goes to Home */}
-          <Link 
-            href="/"
-            className="absolute top-4 left-4 z-20"
-          >
-            <Button size="icon" variant="ghost" className="text-white hover:bg-white/20">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
         </div>
 
         {/* Bottom Half - Form */}
@@ -164,17 +153,6 @@ export default function OfficialLoginFormPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-r from-green-800/80 via-green-700/60 to-transparent" />
         </div>
-
-        {/* Back Button - Goes to Home */}
-        <Link 
-          href="/"
-          className="absolute top-6 left-6 z-20"
-        >
-          <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </Link>
 
         {/* Welcome Text */}
         <motion.div 
