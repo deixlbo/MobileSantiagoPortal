@@ -48,7 +48,7 @@ export default function OfficialLayout({
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    if (pathname === "/official/login") {
+    if (pathname === "/official/login" || pathname === "/official/login-form") {
       setCheckedAuth(true)
       return
     }
@@ -58,11 +58,11 @@ export default function OfficialLayout({
           setUser(currentUser)
           setIsAuthorized(true)
         } else {
-          router.push('/official/login')
+          router.push('/official/login-form')
         }
       })
       .catch(() => {
-        router.push('/official/login')
+        router.push('/official/login-form')
       })
       .finally(() => setCheckedAuth(true))
   }, [pathname, router])
@@ -71,8 +71,8 @@ export default function OfficialLayout({
     return null
   }
 
-  // Skip layout for login page
-  if (pathname === "/official/login") {
+  // Skip layout for login pages
+  if (pathname === "/official/login" || pathname === "/official/login-form") {
     return <>{children}</>
   }
 
@@ -82,7 +82,7 @@ export default function OfficialLayout({
 
   const handleLogout = async () => {
     await signOut()
-    router.push("/official/login")
+    router.push("/official/login-form")
   }
 
   const SidebarContent = () => (

@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
             <Link href="/admin/register">Create Admin Account</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link href="/official/login">Official Portal</Link>
+            <Link href="/official/login-form">Official Portal</Link>
           </Button>
         </div>
       </div>

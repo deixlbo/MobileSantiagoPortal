@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
           
           {/* Back Button */}
           <Link 
-            href="/official/login"
+            href="/"
             className="absolute top-4 left-4 z-20"
           >
             <Button size="icon" variant="ghost" className="text-white hover:bg-white/20">
@@ -167,7 +167,7 @@ export default function AdminLoginPage() {
 
         {/* Back Button */}
         <Link 
-          href="/official/login"
+          href="/"
           className="absolute top-6 left-6 z-20"
         >
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">

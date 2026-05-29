@@ -172,7 +172,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-primary">
               <Image 
-                src="/images/santiago.jpg" 
+                src="/images/santiagologo.jpg" 
                 alt="Barangay Santiago Logo" 
                 fill
                 className="object-cover"
@@ -241,7 +241,7 @@ export default function LandingPage() {
                   Resident Login
                 </Button>
               </Link>
-              <Link href="/official/login" className="w-full">
+              <Link href="/official/login-form" className="w-full">
                 <Button size="lg" variant="outline" className="w-full rounded-2xl px-10 h-14 text-base font-semibold border-2 border-primary/70 hover:bg-primary/10 transition-colors">
                   Official Login
                 </Button>
@@ -592,7 +592,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2">
               <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border border-primary">
                 <Image 
-                  src="/images/santiago.jpg" 
+                  src="/images/santiagologo.jpg" 
                   alt="Barangay Santiago Logo" 
                   fill
                   className="object-cover"

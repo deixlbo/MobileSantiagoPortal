@@ -1,4 +1,3 @@
-CLICK OFFICIAL LOGIN DIR
 "use client"
 
 import { useState } from "react"
@@ -51,9 +50,9 @@ export default function OfficialLoginFormPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-b from-green-700/60 via-green-600/40 to-green-500/20" />
           
-          {/* Back Button */}
+          {/* Back Button - Goes to Home */}
           <Link 
-            href="/official/login"
+            href="/"
             className="absolute top-4 left-4 z-20"
           >
             <Button size="icon" variant="ghost" className="text-white hover:bg-white/20">
@@ -166,9 +165,9 @@ export default function OfficialLoginFormPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-green-800/80 via-green-700/60 to-transparent" />
         </div>
 
-        {/* Back Button */}
+        {/* Back Button - Goes to Home */}
         <Link 
-          href="/official/login"
+          href="/"
           className="absolute top-6 left-6 z-20"
         >
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/20">
