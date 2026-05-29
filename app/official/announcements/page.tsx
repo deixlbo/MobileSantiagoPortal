@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, MoreHorizontal, Megaphone, Edit, Trash2, Eye, Send, Calendar, AlertCircle, Info, CheckCircle2, Printer, Loader2 } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Megaphone, Edit, Trash2, Eye, Send, Calendar, AlertCircle, Info, CheckCircle2, Printer, Loader2, Database } from "lucide-react"
 
 type AnnouncementPriority = "urgent" | "important" | "normal"
 type AnnouncementStatus = "draft" | "published" | "archived"
@@ -81,6 +81,7 @@ export default function AnnouncementsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [showPrintPreview, setShowPrintPreview] = useState(false)
+  const [seeding, setSeeding] = useState(false)
 
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
@@ -109,6 +110,37 @@ export default function AnnouncementsPage() {
       toast.error('Failed to load announcements')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function seedMockData() {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to seed data')
+      toast.success(`Seeded ${data.counts.announcements} announcements`)
+      fetchAnnouncements()
+    } catch (error) {
+      console.error('Error seeding data:', error)
+      toast.error('Failed to seed mock data')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  async function clearMockData() {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/seed', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to clear data')
+      toast.success('All data cleared')
+      fetchAnnouncements()
+    } catch (error) {
+      console.error('Error clearing data:', error)
+      toast.error('Failed to clear data')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -270,13 +302,33 @@ export default function AnnouncementsPage() {
           <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
           <p className="text-muted-foreground">Create and manage barangay announcements</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Announcement
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={seedMockData}
+            disabled={seeding}
+          >
+            {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
+            Seed Data
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={clearMockData}
+            disabled={seeding}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Announcement
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create Announcement</DialogTitle>
@@ -375,6 +427,7 @@ export default function AnnouncementsPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}

@@ -23,25 +23,32 @@ import {
   FileText,
   Printer,
   Settings,
-  Loader2
+  Loader2,
+  Database,
+  Trash2
 } from "lucide-react"
 
 type DocumentRequest = {
   id: string
-  request_number: string
-  type: string
-  purpose: string
-  requester_id: string | null
-  requester_name: string
-  requester_email: string
-  purok: string
+  document_type: string
   status: string
-  fee: string
-  pickup_time: string | null
-  release_date: string | null
-  documents_uploaded: boolean
-  missing_documents: string[] | null
+  control_number: string | null
+  purpose: string | null
+  resident_id: string | null
+  approved_at: string | null
+  approved_by: string | null
+  rejection_reason: string | null
+  document_path: string | null
+  downloaded_at: string | null
   created_at: string
+  updated_at: string | null
+  created_by: string | null
+  profiles?: {
+    first_name: string
+    last_name: string
+    purok: string
+    email: string
+  }
 }
 
 const defaultDocumentTypes = [
@@ -124,6 +131,7 @@ export default function OfficialDocumentsPage() {
   const [documentTypes] = useState(defaultDocumentTypes)
   const [loading, setLoading] = useState(true)
   const [selectedPrintRequest, setSelectedPrintRequest] = useState<DocumentRequest | null>(null)
+  const [seeding, setSeeding] = useState(false)
 
   useEffect(() => {
     fetchRequests()
@@ -134,7 +142,15 @@ export default function OfficialDocumentsPage() {
     try {
       const { data, error } = await supabase
         .from('document_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles:resident_id (
+            first_name,
+            last_name,
+            purok,
+            email
+          )
+        `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -144,6 +160,37 @@ export default function OfficialDocumentsPage() {
       toast.error('Failed to load document requests')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function seedMockData() {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to seed data')
+      toast.success(`Seeded ${data.counts.documentRequests} document requests`)
+      fetchRequests()
+    } catch (error) {
+      console.error('Error seeding data:', error)
+      toast.error('Failed to seed mock data')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  async function clearMockData() {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/seed', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to clear data')
+      toast.success('All data cleared')
+      fetchRequests()
+    } catch (error) {
+      console.error('Error clearing data:', error)
+      toast.error('Failed to clear data')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -173,7 +220,7 @@ export default function OfficialDocumentsPage() {
       if (error) throw error
 
       setRequests(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'approved', pickup_time: pickupDate.toISOString() } : r
+        r.id === requestId ? { ...r, status: 'approved', approved_at: pickupDate.toISOString() } : r
       ))
       setShowApproveDialog(false)
       toast.success('Request approved successfully')
@@ -188,15 +235,14 @@ export default function OfficialDocumentsPage() {
       const { error } = await supabase
         .from('document_requests')
         .update({ 
-          status: 'released',
-          release_date: new Date().toISOString()
+          status: 'released'
         })
         .eq('id', requestId)
 
       if (error) throw error
 
       setRequests(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'released', release_date: new Date().toISOString() } : r
+        r.id === requestId ? { ...r, status: 'released' } : r
       ))
       toast.success('Document marked as released')
     } catch (error) {
@@ -206,9 +252,10 @@ export default function OfficialDocumentsPage() {
   }
 
   const filteredRequests = requests.filter(r =>
-    r.request_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.requester_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.type?.toLowerCase().includes(searchTerm.toLowerCase())
+    r.control_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.document_type?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const pendingCount = requests.filter(r => r.status === "pending").length
@@ -245,6 +292,26 @@ export default function OfficialDocumentsPage() {
           <p className="text-xs md:text-sm text-muted-foreground">Process and manage document requests</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 text-xs" 
+            onClick={seedMockData}
+            disabled={seeding}
+          >
+            {seeding ? <Loader2 className="h-3 w-3 animate-spin md:mr-2" /> : <Database className="h-3 w-3 md:mr-2" />}
+            <span className="hidden md:inline">Seed Data</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 text-xs text-destructive hover:text-destructive" 
+            onClick={clearMockData}
+            disabled={seeding}
+          >
+            <Trash2 className="h-3 w-3 md:mr-2" />
+            <span className="hidden md:inline">Clear</span>
+          </Button>
           <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowManageTypes(true)}>
             <Settings className="h-3 w-3 md:mr-2" />
             <span className="hidden md:inline">Manage Types</span>
