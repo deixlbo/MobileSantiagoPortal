@@ -8,6 +8,9 @@ function sanitizeFileName(fileName: string) {
 }
 
 async function uploadResidentIdFile(file: File, userId: string) {
+  if (!supabase) {
+    throw new Error('Supabase is not configured')
+  }
   const sanitizedFileName = sanitizeFileName(file.name)
   const filePath = `${userId}/${Date.now()}-${sanitizedFileName}`
   const { data, error } = await supabase.storage
@@ -26,18 +29,30 @@ async function uploadResidentIdFile(file: File, userId: string) {
 }
 
 export async function signIn(email: string, password: string) {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   return supabase.auth.signInWithPassword({ email, password })
 }
 
 export async function sendPasswordResetEmail(email: string, redirectTo?: string) {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   return supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined)
 }
 
 export async function getSessionFromUrl() {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   return supabase.auth.getSessionFromUrl()
 }
 
 export async function updatePassword(password: string) {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   return supabase.auth.updateUser({ password })
 }
 
@@ -52,6 +67,9 @@ export async function signUpResident(data: {
   documentType?: string
   documentFile?: File
 }) {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   const { email, password, firstName, lastName, purok, gender, occupation, documentFile } = data
   const result = await supabase.auth.signUp({
     email,
@@ -106,10 +124,15 @@ export async function signUpResident(data: {
 }
 
 export async function signOut() {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured') }
+  }
   return supabase.auth.signOut()
 }
 
 export async function getUserRole(user: any) {
+  if (!user) return null
+  
   const metadataRole =
     user?.user_metadata?.role ??
     user?.app_metadata?.role ??
@@ -120,7 +143,7 @@ export async function getUserRole(user: any) {
     return metadataRole.toLowerCase()
   }
 
-  if (!user?.id) {
+  if (!user?.id || !supabase) {
     return null
   }
 
@@ -134,6 +157,9 @@ export async function getUserRole(user: any) {
 
 export async function getCurrentUser() {
   try {
+    if (!supabase) {
+      return null
+    }
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
     if (sessionError) {
       const { data, error } = await supabase.auth.getUser()
@@ -167,6 +193,9 @@ export type ProfileRow = {
 }
 
 export async function getProfile(userId?: string) {
+  if (!supabase) {
+    return { profile: null, error: new Error('Supabase is not configured') }
+  }
   const id = userId ?? (await getCurrentUser())?.id
   if (!id) {
     return { profile: null, error: new Error('No authenticated user found') }
@@ -182,6 +211,9 @@ export async function getProfile(userId?: string) {
 }
 
 export async function getSession() {
+  if (!supabase) {
+    return null
+  }
   const { data } = await supabase.auth.getSession()
   return data.session
 }
