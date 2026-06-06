@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
 import {
   Users,
   FileText,
@@ -20,42 +21,14 @@ import {
   X,
 } from "lucide-react"
 
-// Stats data
-const stats = [
-  { name: "Total Residents", value: "1,245", change: "+12", icon: Users, href: "/official/residents", color: "bg-emerald-100 text-emerald-600" },
-  { name: "Pending Documents", value: "23", change: "-5", icon: FileText, href: "/official/documents", color: "bg-blue-100 text-blue-600" },
-  { name: "Active Blotters", value: "8", change: "+2", icon: AlertTriangle, href: "/official/blotters", color: "bg-amber-100 text-amber-600" },
-  { name: "Business Permits", value: "45", change: "+3", icon: Building2, href: "/official/business", color: "bg-purple-100 text-purple-600" },
+const initialStats = [
+  { name: "Total Residents", value: "0", change: "+0", icon: Users, href: "/official/residents", color: "bg-emerald-100 text-emerald-600" },
+  { name: "Pending Documents", value: "0", change: "+0", icon: FileText, href: "/official/documents", color: "bg-blue-100 text-blue-600" },
+  { name: "Active Blotters", value: "0", change: "+0", icon: AlertTriangle, href: "/official/blotters", color: "bg-amber-100 text-amber-600" },
+  { name: "Business Permits", value: "0", change: "+0", icon: Building2, href: "/official/business", color: "bg-purple-100 text-purple-600" },
 ]
 
-// Recent activities
-const recentActivities = [
-  { id: 1, type: "document", action: "New document request", name: "Juan Dela Cruz", time: "5 minutes ago" },
-  { id: 2, type: "blotter", action: "Blotter filed", name: "Maria Santos", time: "15 minutes ago" },
-  { id: 3, type: "business", action: "Business permit approved", name: "Pedro Store", time: "1 hour ago" },
-  { id: 4, type: "resident", action: "New resident registered", name: "Ana Reyes", time: "2 hours ago" },
-]
-
-// Pending approvals
-const pendingApprovals = [
-  { id: 1, type: "Document Request", name: "Certificate of Residency", requester: "Juan Dela Cruz", date: "April 28, 2026" },
-  { id: 2, type: "Business Permit", name: "Sari-sari Store", requester: "Maria Santos", date: "April 27, 2026" },
-  { id: 3, type: "Verification", name: "Account Verification", requester: "Pedro Reyes", date: "April 26, 2026" },
-]
-
-// Ongoing projects
-const ongoingProjects = [
-  { id: 1, title: "Road Improvement", progress: 65, location: "Purok 3" },
-  { id: 2, title: "Community Watch", progress: 45, location: "All Puroks" },
-]
-
-// Mock notifications for document requests
-const initialNotifications = [
-  { id: 1, type: "document", message: "New clearance request from Maria Santos", time: "5 mins ago", read: false },
-  { id: 2, type: "document", message: "New residency certificate request from Pedro Reyes", time: "15 mins ago", read: false },
-  { id: 3, type: "document", message: "New indigency certificate request from Ana Cruz", time: "1 hour ago", read: false },
-  { id: 4, type: "document", message: "New business permit request from Elena Store", time: "2 hours ago", read: false },
-]
+const initialNotifications: any[] = []
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -72,12 +45,84 @@ const itemVariants = {
 
 export default function OfficialDashboard() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
-  
+  const [stats, setStats] = useState(initialStats)
+  const [recentActivities, setRecentActivities] = useState<any[]>([])
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
+  const [ongoingProjects, setOngoingProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setLoading(true)
+
+      try {
+        const [{ count: residentCount }, { count: pendingDocsCount, data: pendingDocs }, { data: recentDocs }, { data: projectsData }, { count: blotterCount }] = await Promise.all([
+          supabase.from('profiles').select('id', { count: 'exact', head: false }).eq('role', 'resident'),
+          supabase.from('document_requests').select('id', { count: 'exact', head: false }).eq('status', 'pending'),
+          supabase.from('document_requests').select('id,document_type,resident_id,created_at,status').order('created_at', { ascending: false }).limit(4),
+          supabase.from('projects').select('id,title,status,location').order('created_at', { ascending: false }).limit(3),
+          supabase.from('blotters').select('id', { count: 'exact', head: false }),
+        ])
+
+        setStats([
+          { name: 'Total Residents', value: String(residentCount ?? 0), change: '+0', icon: Users, href: '/official/residents', color: 'bg-emerald-100 text-emerald-600' },
+          { name: 'Pending Documents', value: String(pendingDocsCount ?? 0), change: '+0', icon: FileText, href: '/official/documents', color: 'bg-blue-100 text-blue-600' },
+          { name: 'Active Blotters', value: String(blotterCount ?? 0), change: '+0', icon: AlertTriangle, href: '/official/blotters', color: 'bg-amber-100 text-amber-600' },
+          { name: 'Business Permits', value: String((projectsData || []).filter((project: any) => project.status === 'Ongoing').length), change: '+0', icon: Building2, href: '/official/business', color: 'bg-purple-100 text-purple-600' },
+        ])
+
+        setPendingApprovals(
+          (pendingDocs || []).map((request: any) => ({
+            id: request.id,
+            type: 'Document Request',
+            name: request.document_type || 'Request',
+            requester: request.resident_id || 'Unknown',
+            date: request.created_at ? new Date(request.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A',
+          }))
+        )
+
+        setRecentActivities(
+          (recentDocs || []).map((request: any) => ({
+            id: request.id,
+            type: 'document',
+            action: `${request.document_type || 'Document'} request`,
+            name: request.resident_id || 'Resident',
+            time: request.created_at ? new Date(request.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Just now',
+          }))
+        )
+
+        setOngoingProjects(
+          (projectsData || []).map((project: any) => ({
+            id: project.id,
+            title: project.title,
+            progress: project.status === 'completed' ? 100 : project.status === 'ongoing' ? 60 : 10,
+            location: project.location || 'Unknown',
+          }))
+        )
+
+        setNotifications(
+          (pendingDocs || []).slice(0, 3).map((request: any) => ({
+            id: request.id,
+            message: `Pending request: ${request.document_type || 'Document'}`,
+            time: request.created_at ? new Date(request.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Just now',
+            read: false,
+          }))
+        )
+      } catch (error) {
+        console.error('Failed to load official dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+  }, [])
+
   const unreadCount = notifications.filter(n => !n.read).length
 
-  const handleNotificationClick = (notification: typeof initialNotifications[0]) => {
+  const handleNotificationClick = (notification: any) => {
     setNotifications(prev => 
       prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
     )

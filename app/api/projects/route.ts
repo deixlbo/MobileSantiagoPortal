@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
           progress: progress || 0,
           budget: budget || undefined,
           spent: spent || undefined,
-          location: location || 'Barangay Santiago',
+          location: location || 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation',
           status: status || 'planning',
           created_at: new Date(),
           updated_at: new Date(),
@@ -149,6 +149,40 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating project:', error)
     return NextResponse.json(
       { error: 'Failed to update project' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const projectId = searchParams.get('id')
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project id is required' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabaseServer
+      .from('projects')
+      .delete()
+      .eq('id', projectId)
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || 'Failed to delete project' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete project' },
       { status: 500 }
     )
   }

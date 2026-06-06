@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -69,33 +69,6 @@ const documentTypes = [
   },
 ]
 
-// Mock requests data
-const mockRequests = [
-  {
-    id: "REQ-2026-002",
-    type: "Certificate of Residency",
-    purpose: "School Enrollment",
-    status: "pending",
-    date: "April 28, 2026",
-    fee: "30",
-    pickupTime: null,
-    residentName: "Juan Dela Cruz",
-    address: "Purok 3, Barangay Santiago, San Antonio, Zambales",
-  },
-  {
-    id: "REQ-2026-003",
-    type: "Business Clearance",
-    purpose: "Business Permit Application",
-    status: "rejected",
-    date: "April 20, 2026",
-    fee: "200",
-    remarks: "Missing DTI Registration document",
-    missingDocs: ["DTI Registration"],
-    residentName: "Juan Dela Cruz",
-    address: "Purok 3, Barangay Santiago, San Antonio, Zambales",
-  },
-]
-
 type RequirementStatus = "empty" | "uploaded" | "reviewing"
 
 interface Requirement {
@@ -146,8 +119,25 @@ function getStatusCircle(status: RequirementStatus) {
 export default function DocumentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<string>("")
-  const [showResubmit, setShowResubmit] = useState<typeof mockRequests[0] | null>(null)
-  const [selectedRequest, setSelectedRequest] = useState<typeof mockRequests[0] | null>(null)
+  type DocumentRequestItem = {
+    id: string
+    document_type: string
+    status: string
+    purpose?: string | null
+    remarks?: string | null
+    created_at?: string | null
+    resident_name?: string | null
+    resident_id?: string | null
+    pickup_time?: string | null
+    fee?: number | null
+    document_path?: any
+  }
+
+  const [requests, setRequests] = useState<DocumentRequestItem[]>([])
+  const [isLoadingRequests, setIsLoadingRequests] = useState(true)
+  const [isMockRequestData, setIsMockRequestData] = useState(false)
+  const [showResubmit, setShowResubmit] = useState<any | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
   const [requirements, setRequirements] = useState<Requirement[]>([])
   const [expandedRequirement, setExpandedRequirement] = useState<string | null>(null)
   const [resubmitFiles, setResubmitFiles] = useState<{ [key: string]: File }>({})
@@ -155,6 +145,96 @@ export default function DocumentsPage() {
   const [purpose, setPurpose] = useState("")
   const [notes, setNotes] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const sampleResidentRequests: DocumentRequestItem[] = [
+    {
+      id: 'DEMO-REQ-001',
+      document_type: 'Barangay Clearance',
+      status: 'pending',
+      purpose: 'Employment application',
+      remarks: null,
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      resident_name: 'Juan Dela Cruz',
+      resident_id: 'demo-resident-1',
+      pickup_time: null,
+      fee: 50,
+      document_path: null,
+    },
+    {
+      id: 'DEMO-REQ-002',
+      document_type: 'Certificate of Residency',
+      status: 'approved',
+      purpose: 'School enrollment',
+      remarks: null,
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      resident_name: 'Juan Dela Cruz',
+      resident_id: 'demo-resident-1',
+      pickup_time: 'Tomorrow 10:00 AM',
+      fee: 30,
+      document_path: null,
+    },
+    {
+      id: 'DEMO-REQ-003',
+      document_type: 'Certificate of Indigency',
+      status: 'rejected',
+      purpose: 'Medical assistance',
+      remarks: 'Missing proof of residency and latest barangay clearance.',
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+      resident_name: 'Juan Dela Cruz',
+      resident_id: 'demo-resident-1',
+      pickup_time: null,
+      fee: 0,
+      document_path: null,
+    },
+  ]
+
+  const formatRequest = (request: DocumentRequestItem) => ({
+    ...request,
+    type: request.document_type || 'Unknown',
+    status: request.status || 'pending',
+    date: request.created_at ? new Date(request.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
+    residentName: request.resident_name ?? 'Resident',
+    pickupTime: request.pickup_time ?? null,
+    fee: request.fee ?? 0,
+  })
+
+  const fetchRequests = async () => {
+    setIsLoadingRequests(true)
+    try {
+      const user = await getCurrentUser()
+      if (!user?.id) {
+        setRequests(sampleResidentRequests.map(formatRequest))
+        setIsMockRequestData(true)
+        return
+      }
+
+      const response = await fetch(`/api/documents?residentId=${user.id}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData?.error || errorData?.details || 'Failed to load your document requests.'
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      if (!Array.isArray(data) || data.length === 0) {
+        setRequests(sampleResidentRequests.map(formatRequest))
+        setIsMockRequestData(true)
+        return
+      }
+
+      setRequests(data.map((request: DocumentRequestItem) => formatRequest(request)))
+      setIsMockRequestData(false)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Error fetching document requests:', errorMessage)
+      toast.error(errorMessage)
+      setRequests(sampleResidentRequests.map(formatRequest))
+      setIsMockRequestData(true)
+
+  useEffect(() => {
+    fetchRequests()
+  }, [])
 
   const handleDownloadQRCode = () => {
     const canvas = document.getElementById('document-qr-code') as HTMLCanvasElement | null
@@ -259,6 +339,7 @@ export default function DocumentsPage() {
       setExpandedRequirement(null)
       setPurpose('')
       setNotes('')
+      fetchRequests()
     } catch (error) {
       console.error('Request submit error:', error)
       toast.error('Failed to submit document request.')
@@ -269,6 +350,7 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <DocumentHeader title={selectedRequest ? selectedRequest.type.toUpperCase() : "DOCUMENT REQUEST"} printOnly />
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Document Requests</h1>
         <p className="text-sm text-muted-foreground">Request and track your document applications</p>
@@ -640,6 +722,11 @@ export default function DocumentsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {isMockRequestData && (
+            <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-slate-700">
+              Demo request data is shown here so you can preview the document request process. Real requests will appear after a resident submits their application.
+            </div>
+          )}
           <Tabs defaultValue="all">
             <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
               <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
@@ -649,7 +736,11 @@ export default function DocumentsPage() {
             </TabsList>
             <TabsContent value="all" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockRequests.map((request) => (
+                {isLoadingRequests ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Loading requests...</div>
+                ) : requests.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No document requests yet.</div>
+                ) : requests.map((request) => (
                   <div 
                     key={request.id}
                     className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -700,7 +791,7 @@ export default function DocumentsPage() {
             </TabsContent>
             <TabsContent value="pending" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockRequests.filter(r => r.status === "pending").map((request) => (
+                {requests.filter(r => r.status === "pending").map((request) => (
                   <div 
                     key={request.id}
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -719,7 +810,7 @@ export default function DocumentsPage() {
             </TabsContent>
             <TabsContent value="approved" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockRequests.filter(r => r.status === "approved").map((request) => (
+                {requests.filter(r => r.status === "approved").map((request) => (
                   <div 
                     key={request.id}
                     className="rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -741,7 +832,7 @@ export default function DocumentsPage() {
             </TabsContent>
             <TabsContent value="rejected" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockRequests.filter(r => r.status === "rejected").map((request) => (
+                {requests.filter(r => r.status === "rejected").map((request) => (
                   <div 
                     key={request.id}
                     className="flex flex-col gap-3 rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer"

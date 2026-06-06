@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { LogOut } from "lucide-react"
 import { ResidentChatbot } from "./resident-chatbot"
-import { getCurrentUser, signOut } from "@/lib/auth"
+import { getCurrentUser, getUserRole, signOut } from "@/lib/auth"
 
 const navigation = [
   { name: "Dashboard", href: "/resident/dashboard", icon: LayoutDashboard },
@@ -43,25 +43,39 @@ export default function ResidentLayout({
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [checkedAuth, setCheckedAuth] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (pathname === "/resident/login" || pathname === "/resident/register") {
-      setCheckedAuth(true)
-      return
-    }
-    getCurrentUser()
-      .then((currentUser) => {
-        if (currentUser && currentUser.user_metadata?.role === 'resident') {
+    const verifyAuth = async () => {
+      try {
+        if (pathname === "/resident/login" || pathname === "/resident/register") {
+          const currentUser = await getCurrentUser()
+          const role = await getUserRole(currentUser)
+          if (currentUser && role === 'resident') {
+            router.push('/resident')
+            return
+          }
+          setCheckedAuth(true)
+          return
+        }
+
+        const currentUser = await getCurrentUser()
+        const role = await getUserRole(currentUser)
+        if (currentUser && role === 'resident') {
           setUser(currentUser)
           setIsAuthorized(true)
         } else {
           router.push('/resident/login')
         }
-      })
-      .catch(() => {
+      } catch (error: any) {
+        setAuthError('Unable to verify session. Please check your network or Supabase connection.')
         router.push('/resident/login')
-      })
-      .finally(() => setCheckedAuth(true))
+      } finally {
+        setCheckedAuth(true)
+      }
+    }
+
+    verifyAuth()
   }, [pathname, router])
 
   if (!checkedAuth) {
@@ -71,6 +85,17 @@ export default function ResidentLayout({
   // Skip layout for login and register pages
   if (pathname === "/resident/login" || pathname === "/resident/register") {
     return <>{children}</>
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 shadow-sm">
+          <p className="font-semibold">Authentication error</p>
+          <p className="mt-2 text-sm">{authError}</p>
+        </div>
+      </div>
+    )
   }
 
   if (!isAuthorized) {
@@ -85,28 +110,26 @@ export default function ResidentLayout({
   const SidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="px-4 py-5">
+      <div className="px-4 py-5 bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 overflow-hidden">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm overflow-hidden">
             <Image
               src="/images/santiagologo.jpg"
-              alt="Barangay Santiago"
+              alt="Santiago Portal Logo"
               width={72}
               height={72}
               className="h-full w-full rounded-full object-cover"
             />
           </div>
-          <div className="text-center">
-            <p className="text-[11px] text-white/80 leading-tight">Republic of the Philippines</p>
-            <p className="text-[11px] text-white/80 leading-tight">Province of Zambales</p>
-            <p className="text-[11px] text-white/80 leading-tight">Municipality of San Antonio</p>
-            <p className="text-base font-bold text-white mt-1">BARANGAY SANTIAGO</p>
+          <div className="space-y-1 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">SANTIAGO PORTAL</p>
+            <p className="text-sm font-semibold text-slate-900">Resident Portal</p>
           </div>
         </div>
       </div>
       
       {/* Divider */}
-      <div className="mx-4 h-px bg-white/20" />
+      <div className="mx-4 h-px bg-slate-200" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
@@ -126,11 +149,11 @@ export default function ResidentLayout({
                 className={cn(
                   "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-white/90 text-green-800 shadow-lg"
-                    : "text-white/90 hover:bg-white/10"
+                    ? "bg-emerald-100 text-emerald-900 shadow-sm"
+                    : "text-slate-700 hover:bg-slate-100"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive ? "text-green-700" : "text-white/80")} />
+                <item.icon className={cn("h-5 w-5", isActive ? "text-emerald-700" : "text-slate-500")} />
                 {item.name}
               </Link>
             </motion.div>
@@ -139,12 +162,12 @@ export default function ResidentLayout({
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-white/20">
+      <div className="p-4 border-t border-slate-200 bg-slate-50">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 transition-all duration-200"
+          className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-200"
         >
-          <LogOut className="h-5 w-5 text-white/80" />
+          <LogOut className="h-5 w-5 text-white" />
           Logout
         </button>
       </div>
@@ -154,28 +177,26 @@ export default function ResidentLayout({
   const MobileSidebarContent = () => (
     <>
       {/* Header with Logo */}
-      <div className="px-4 py-5">
+      <div className="px-4 py-5 bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 overflow-hidden">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm overflow-hidden">
             <Image
               src="/images/santiagologo.jpg"
-              alt="Barangay Santiago"
+              alt="Santiago Portal Logo"
               width={72}
               height={72}
               className="h-full w-full rounded-full object-cover"
             />
           </div>
-          <div className="text-center">
-            <p className="text-[11px] text-white/80 leading-tight">Republic of the Philippines</p>
-            <p className="text-[11px] text-white/80 leading-tight">Province of Zambales</p>
-            <p className="text-[11px] text-white/80 leading-tight">Municipality of San Antonio</p>
-            <p className="text-base font-bold text-white mt-1">BARANGAY SANTIAGO</p>
+          <div className="space-y-1 text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">SANTIAGO PORTAL</p>
+            <p className="text-sm font-semibold text-slate-900">Resident Portal</p>
           </div>
         </div>
       </div>
       
       {/* Divider */}
-      <div className="mx-4 h-px bg-white/20" />
+      <div className="mx-4 h-px bg-slate-200" />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 p-4 pt-2">
@@ -195,11 +216,11 @@ export default function ResidentLayout({
                 className={cn(
                   "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-white/90 text-green-800 shadow-lg"
-                    : "text-white/90 hover:bg-white/10"
+                    ? "bg-emerald-100 text-emerald-900 shadow-sm"
+                    : "text-slate-700 hover:bg-slate-100"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive ? "text-green-700" : "text-white/80")} />
+                <item.icon className={cn("h-5 w-5", isActive ? "text-emerald-700" : "text-slate-500")} />
                 {item.name}
               </Link>
             </motion.div>
@@ -208,8 +229,8 @@ export default function ResidentLayout({
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-white/20 space-y-2">
-        <div className="text-xs text-white/60 px-2">
+      <div className="p-4 border-t border-slate-200 space-y-2 bg-slate-50">
+        <div className="text-xs text-slate-500 px-2">
           Logged in as Resident
         </div>
         <button
@@ -217,7 +238,7 @@ export default function ResidentLayout({
             setSidebarOpen(false)
             handleLogout()
           }}
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-white/90 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 transition-all duration-200 active:scale-95"
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-all duration-200 active:scale-95"
         >
           <LogOut className="h-4 w-4" />
           Logout
@@ -227,16 +248,13 @@ export default function ResidentLayout({
   )
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar */}
       <motion.aside 
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.3 }}
-        className="hidden md:flex w-72 flex-col fixed inset-y-0 left-0 z-20"
-        style={{
-          background: "linear-gradient(180deg, #166534 0%, #14532d 50%, #0f3d1f 100%)"
-        }}
+        className="hidden md:flex w-72 flex-col fixed inset-y-0 left-0 z-20 bg-white/95 border-r border-slate-200 shadow-lg"
       >
         <SidebarContent />
       </motion.aside>
@@ -262,8 +280,7 @@ export default function ResidentLayout({
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[75vw] flex-col md:hidden"
-            style={{ background: "linear-gradient(180deg, #166534 0%, #14532d 50%, #0f3d1f 100%)" }}
+            className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[75vw] flex-col md:hidden bg-white/95 border-r border-slate-200 shadow-lg"
           >
             <MobileSidebarContent />
           </motion.aside>

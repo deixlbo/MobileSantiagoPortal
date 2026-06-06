@@ -10,70 +10,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { DocumentHeader } from "@/components/document-header"
 import { Search, Scroll, Calendar } from "lucide-react"
 
-const mockOrdinances = [
-  {
-    id: "ORD-2026-001",
-    number: "001",
-    year: "2026",
-    title: "Noise Regulation Ordinance of Barangay Santiago",
-    fullTitle: "AN ORDINANCE REGULATING NOISE DISTURBANCE IN BARANGAY SANTIAGO",
-    date: "March 15, 2026",
-    status: "Published",
-    author: "Rolando C. Borja",
-    whereas: [
-      "WHEREAS, excessive noise has caused disturbances among residents;",
-      "WHEREAS, maintaining peace and order is essential for community welfare;",
-      "WHEREAS, the barangay aims to promote a safe and harmonious environment;"
-    ],
-    sections: [
-      { title: "TITLE", content: "This Ordinance shall be known as the \"Noise Regulation Ordinance of Barangay Santiago.\"" },
-      { title: "DEFINITION OF TERMS", content: "Noise Disturbance - Any excessive or disruptive sound affecting residents\nCurfew Hours - Time period between 10:00 PM to 5:00 AM" },
-      { title: "COVERAGE", content: "This Ordinance applies to all residents and establishments within Barangay Santiago." },
-      { title: "PROHIBITED ACTS", content: "Playing loud music beyond allowed hours\nCausing unnecessary disturbances during curfew hours" },
-      { title: "PENALTIES", content: "First Offense: Warning\nSecond Offense: PHP 500 Fine\nSubsequent Offenses: PHP 1,000 Fine or community service" },
-    ]
-  },
-  {
-    id: "ORD-2026-002",
-    number: "002",
-    year: "2026",
-    title: "Waste Management Ordinance",
-    fullTitle: "AN ORDINANCE IMPLEMENTING PROPER WASTE MANAGEMENT IN BARANGAY SANTIAGO",
-    date: "February 20, 2026",
-    status: "Published",
-    author: "Rolando C. Borja",
-    whereas: [
-      "WHEREAS, proper waste management is essential for community health;",
-      "WHEREAS, the barangay aims to maintain cleanliness and sanitation;",
-    ],
-    sections: [
-      { title: "TITLE", content: "This Ordinance shall be known as the \"Waste Management Ordinance of Barangay Santiago.\"" },
-      { title: "COVERAGE", content: "This Ordinance applies to all residents within Barangay Santiago." },
-      { title: "PENALTIES", content: "First Offense: Warning\nSecond Offense: PHP 200 Fine" },
-    ]
-  },
-  {
-    id: "ORD-2025-003",
-    number: "003",
-    year: "2025",
-    title: "Business Permit Guidelines",
-    fullTitle: "AN ORDINANCE ESTABLISHING GUIDELINES FOR BUSINESS PERMITS IN BARANGAY SANTIAGO",
-    date: "December 10, 2025",
-    status: "Published",
-    author: "April Joy C. Cano",
-    whereas: [
-      "WHEREAS, proper business regulation is essential for community development;",
-    ],
-    sections: [
-      { title: "TITLE", content: "This Ordinance shall be known as the \"Business Permit Guidelines of Barangay Santiago.\"" },
-    ]
-  },
-]
-
 export default function OrdinancesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedOrdinance, setSelectedOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
-  const filteredOrdinances = mockOrdinances.filter(ord => 
+  const [ordinances, setOrdinances] = useState<any[]>([])
+  const [selectedOrdinance, setSelectedOrdinance] = useState<any | null>(null)
+  const filteredOrdinances = ordinances.filter(ord => 
     ord.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ord.number.includes(searchTerm)
   )

@@ -29,7 +29,7 @@ async function fetchResidentDocuments(residentId: string) {
 }
 
 function createSystemPrompt(portalType: string, documentContext: any[]) {
-  const baseInstructions = `You are the Barangay Santiago AI assistant. Respond in fluent Filipino with a respectful, helpful tone. Keep answers concise and clear for residents and officials.`
+  const baseInstructions = `You are the AI-Assisted Barangay Santiago Portal assistant. Respond in fluent Filipino with a respectful, helpful tone. Keep answers concise and clear for residents and officials.`
   const residentInstructions = `If the user is a resident, help them with document requests, status tracking, appointment scheduling, QR verification, and community services. Use the resident's document history to mention their existing requests and statuses when relevant.`
   const officialInstructions = `If the user is an official, answer with administrative insights, status summaries, report generation guidance, and next steps for document processing and emergency notifications.`
 

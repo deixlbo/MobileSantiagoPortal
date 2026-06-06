@@ -29,6 +29,18 @@ export async function signIn(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password })
 }
 
+export async function sendPasswordResetEmail(email: string, redirectTo?: string) {
+  return supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined)
+}
+
+export async function getSessionFromUrl() {
+  return supabase.auth.getSessionFromUrl()
+}
+
+export async function updatePassword(password: string) {
+  return supabase.auth.updateUser({ password })
+}
+
 export async function signUpResident(data: {
   email: string
   password: string
@@ -97,9 +109,76 @@ export async function signOut() {
   return supabase.auth.signOut()
 }
 
+export async function getUserRole(user: any) {
+  const metadataRole =
+    user?.user_metadata?.role ??
+    user?.app_metadata?.role ??
+    user?.role ??
+    null
+
+  if (typeof metadataRole === 'string' && metadataRole.trim()) {
+    return metadataRole.toLowerCase()
+  }
+
+  if (!user?.id) {
+    return null
+  }
+
+  const { profile } = await getProfile(user.id)
+  if (profile?.role && typeof profile.role === 'string') {
+    return profile.role.toLowerCase()
+  }
+
+  return null
+}
+
 export async function getCurrentUser() {
-  const { data } = await supabase.auth.getUser()
-  return data.user
+  try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) {
+      const { data, error } = await supabase.auth.getUser()
+      if (error) return null
+      return data.user ?? null
+    }
+    return sessionData?.session?.user ?? null
+  } catch (error) {
+    return null
+  }
+}
+
+export type ProfileRow = {
+  id: string
+  email: string
+  role: string
+  first_name: string
+  last_name: string
+  purok?: string | null
+  gender?: string | null
+  address?: string | null
+  date_of_birth?: string | null
+  contact_number?: string | null
+  occupation?: string | null
+  position?: string | null
+  verification_status?: string | null
+  id_path?: string | null
+  household_id?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export async function getProfile(userId?: string) {
+  const id = userId ?? (await getCurrentUser())?.id
+  if (!id) {
+    return { profile: null, error: new Error('No authenticated user found') }
+  }
+
+  const { data, error } = await supabase
+    .from<ProfileRow>('profiles')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  return { profile: data, error }
 }
 
 export async function getSession() {
@@ -113,10 +192,50 @@ export async function createAdmin(data: {
   firstName: string
   lastName: string
 }) {
+  const session = await getSession()
+  const token = session?.access_token
   const response = await fetch('/api/admin/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ ...data, role: 'admin' }),
+  })
+  return response.json()
+}
+
+export async function createOfficial(data: {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  position: string
+}) {
+  const session = await getSession()
+  const token = session?.access_token
+  const response = await fetch('/api/admin/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ ...data, role: 'official' }),
+  })
+  return response.json()
+}
+
+export async function createResident(data: {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  purok?: string
+  gender?: string
+  occupation?: string
+  contactNumber?: string
+  address?: string
+}) {
+  const session = await getSession()
+  const token = session?.access_token
+  const response = await fetch('/api/admin/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ ...data, role: 'resident' }),
   })
   return response.json()
 }

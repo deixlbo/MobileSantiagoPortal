@@ -14,7 +14,7 @@ export function DocumentHeader({ title, printOnly = false }: DocumentHeaderProps
         <div className="flex-shrink-0">
           <Image
             src="/images/santiagologo.jpg"
-            alt="Barangay Santiago"
+            alt="AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation"
             width={60}
             height={60}
             className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover border-2 border-gray-200"
@@ -26,7 +26,7 @@ export function DocumentHeader({ title, printOnly = false }: DocumentHeaderProps
           <p className="text-xs sm:text-sm">Republic of the Philippines</p>
           <p className="text-xs sm:text-sm">Province of Zambales</p>
           <p className="text-xs sm:text-sm">Municipality of San Antonio</p>
-          <p className="text-xs sm:text-sm font-semibold">Barangay Santiago</p>
+          <p className="text-xs sm:text-sm font-semibold">AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation</p>
         </div>
         
         {/* Right Logo - Municipal Mayor Seal */}

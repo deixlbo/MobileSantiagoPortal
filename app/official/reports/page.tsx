@@ -16,58 +16,11 @@ import {
   AlertTriangle,
 } from "lucide-react"
 
-// Mock data for reports
-const populationData = [
-  { purok: "Purok 1", verified: 240, unverified: 35 },
-  { purok: "Purok 2", verified: 215, unverified: 28 },
-  { purok: "Purok 3", verified: 190, unverified: 22 },
-  { purok: "Purok 4", verified: 180, unverified: 18 },
-  { purok: "Purok 5", verified: 220, unverified: 32 },
-]
-
-const requestsTrendData = [
-  { week: "Week 1", clearance: 12, residency: 8, indigency: 5, business: 3 },
-  { week: "Week 2", clearance: 15, residency: 10, indigency: 6, business: 4 },
-  { week: "Week 3", clearance: 18, residency: 12, indigency: 8, business: 5 },
-  { week: "Week 4", clearance: 21, residency: 14, indigency: 9, business: 6 },
-]
-
-const blotterStatusData = [
-  { name: "Resolved", value: 34, fill: "#10b981" },
-  { name: "Processing", value: 12, fill: "#f59e0b" },
-  { name: "Pending", value: 8, fill: "#ef4444" },
-]
-
-const monthlyRequestsData = [
-  { month: "Jan", approved: 45, declined: 8, pending: 12 },
-  { month: "Feb", approved: 52, declined: 6, pending: 15 },
-  { month: "Mar", approved: 58, declined: 5, pending: 18 },
-  { month: "Apr", approved: 62, declined: 7, pending: 23 },
-]
-
-const reportSummary = [
-  {
-    title: "Total Population",
-    value: "1,245",
-    subtitle: "Verified: 1,045 | Unverified: 200",
-    icon: Users,
-    color: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    title: "Total Requests",
-    value: "287",
-    subtitle: "This month: 62 | Approved: 56%",
-    icon: FileText,
-    color: "bg-blue-100 text-blue-600",
-  },
-  {
-    title: "Blotter Cases",
-    value: "54",
-    subtitle: "Resolved: 63% | Processing: 22%",
-    icon: AlertTriangle,
-    color: "bg-amber-100 text-amber-600",
-  },
-]
+const populationData: any[] = []
+const requestsTrendData: any[] = []
+const blotterStatusData: any[] = []
+const monthlyRequestsData: any[] = []
+const reportSummary: any[] = []
 
 const containerVariants = {
   hidden: { opacity: 0 },

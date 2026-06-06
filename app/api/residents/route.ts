@@ -24,13 +24,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: resident, error } = await supabaseServer
-      .from('residents')
+      .from('profiles')
       .insert([
         {
           email,
+          role: 'resident',
           first_name: firstName,
           last_name: lastName,
-          role: 'resident',
           purok: purok || 'Unknown',
           gender: gender || 'other',
           address: address || '',
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     if (residentId) {
       const { data: resident, error } = await supabaseServer
-        .from('residents')
+        .from('profiles')
         .select('*')
         .eq('id', residentId)
         .single()
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     if (email) {
       const { data: resident, error } = await supabaseServer
-        .from('residents')
+        .from('profiles')
         .select('*')
         .eq('email', email)
         .single()
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(resident)
     }
 
-    let query = supabaseServer.from('residents').select('*')
+    let query = supabaseServer.from('profiles').select('*')
     if (status) {
       query = query.eq('verification_status', status)
     }
@@ -121,7 +121,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const { data: resident, error } = await supabaseServer
-      .from('residents')
+      .from('profiles')
       .update(updateBody)
       .eq('id', id)
       .select()

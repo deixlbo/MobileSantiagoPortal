@@ -39,7 +39,7 @@ export function LocationPicker({ value, onChange, placeholder = "e.g., Purok 3, 
   const [tempLocation, setTempLocation] = useState(value)
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null)
 
-  // Barangay Santiago approximate center (San Antonio, Zambales)
+  // AI-Assisted Barangay Santiago Portal approximate center (San Antonio, Zambales)
   const defaultCenter = { lat: 15.1345, lng: 120.0456 }
 
   const getCurrentLocation = useCallback(() => {
@@ -86,10 +86,10 @@ export function LocationPicker({ value, onChange, placeholder = "e.g., Purok 3, 
             
             setTempLocation(locationText || `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`)
           } else {
-            setTempLocation(`Barangay Santiago - Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`)
+            setTempLocation(`AI-Assisted Barangay Santiago Portal - Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`)
           }
         } catch {
-          setTempLocation(`Barangay Santiago - Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`)
+          setTempLocation(`AI-Assisted Barangay Santiago Portal - Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`)
         }
         
         setIsLoadingLocation(false)
@@ -149,11 +149,11 @@ export function LocationPicker({ value, onChange, placeholder = "e.g., Purok 3, 
           
           setTempLocation(locationText || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`)
         } else {
-          setTempLocation(`Barangay Santiago - Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`)
+          setTempLocation(`AI-Assisted Barangay Santiago Portal - Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`)
         }
       })
       .catch(() => {
-        setTempLocation(`Barangay Santiago - Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`)
+        setTempLocation(`AI-Assisted Barangay Santiago Portal - Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`)
       })
   }, [])
 

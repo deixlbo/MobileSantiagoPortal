@@ -8,14 +8,14 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Barangay Santiago Management System',
-  description: 'Digital services portal for Barangay Santiago residents - Request documents, track status, and access government services',
+  title: 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation',
+  description: 'AI-Assisted Barangay Santiago Portal — Digital services portal: request documents, track status, and access resident services with smart document processing and automation',
   generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Brgy Santiago',
+    title: 'Santiago Portal',
   },
   formatDetection: {
     telephone: true,

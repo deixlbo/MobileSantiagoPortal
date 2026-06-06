@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
+function parseDate(value?: string) {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
       residentId,
-      complainantName,
-      respondentName,
-      natureOfCase,
-      dateOfIncident,
-      notes,
+      type,
+      description,
+      location,
+      complainant,
+      respondent,
+      filedDate,
       createdBy,
     } = body
 
-    if (!residentId || !complainantName || !natureOfCase) {
+    if (!type || !description || !complainant || !respondent) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -22,19 +29,18 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: report, error } = await supabaseServer
-      .from('blotter_reports')
+      .from('blotters')
       .insert([
         {
-          resident_id: residentId,
-          complainant_name: complainantName,
-          respondent_name: respondentName || '',
-          nature_of_case: natureOfCase,
-          date_of_incident: new Date(dateOfIncident),
-          status: 'pending',
-          notes: notes || '',
-          created_at: new Date(),
-          updated_at: new Date(),
-          created_by: createdBy || residentId,
+          resident_id: residentId || null,
+          type,
+          description,
+          location: location || null,
+          complainant,
+          respondent,
+          filed_date: parseDate(filedDate) || new Date(),
+          status: 'pending-review',
+          created_by: createdBy || residentId || null,
         },
       ])
       .select()
@@ -64,10 +70,11 @@ export async function GET(request: NextRequest) {
 
     if (reportId) {
       const { data: report, error } = await supabaseServer
-        .from('blotter_reports')
+        .from('blotters')
         .select('*')
         .eq('id', reportId)
         .single()
+
       if (error) {
         return NextResponse.json(
           { error: error.message || 'Blotter report not found' },
@@ -77,7 +84,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(report)
     }
 
-    let query = supabaseServer.from('blotter_reports').select('*')
+    let query = supabaseServer.from('blotters').select('*')
 
     if (residentId) {
       query = query.eq('resident_id', residentId)
@@ -86,6 +93,7 @@ export async function GET(request: NextRequest) {
     if (status) {
       query = query.eq('status', status)
     }
+
     const { data: allReports, error } = await query
     if (error) throw error
     return NextResponse.json(allReports)
@@ -101,23 +109,56 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      id, 
-      status, 
-      investigationDate, 
-      mediationScheduledDate, 
+    const {
+      id,
+      type,
+      description,
+      location,
+      complainant,
+      respondent,
+      status,
+      filedDate,
+      investigationDate,
+      mediationScheduledDate,
       hearingDate,
-      actionTaken, 
+      actionTaken,
       resolution,
       resolutionDate,
-      notes 
     } = body
 
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Blotter report id required' },
+        { status: 400 }
+      )
+    }
+
+    const updateBody: any = {}
+    if (type !== undefined) updateBody.type = type
+    if (description !== undefined) updateBody.description = description
+    if (location !== undefined) updateBody.location = location
+    if (complainant !== undefined) updateBody.complainant = complainant
+    if (respondent !== undefined) updateBody.respondent = respondent
+    if (status !== undefined) updateBody.status = status
+    if (filedDate !== undefined) updateBody.filed_date = parseDate(filedDate)
+    if (investigationDate !== undefined)
+      updateBody.investigation_date = parseDate(investigationDate)
+    if (mediationScheduledDate !== undefined)
+      updateBody.mediation_scheduled_date = parseDate(mediationScheduledDate)
+    if (hearingDate !== undefined)
+      updateBody.hearing_date = parseDate(hearingDate)
+    if (actionTaken !== undefined) updateBody.action_taken = actionTaken
+    if (resolution !== undefined) updateBody.resolution = resolution
+    if (resolutionDate !== undefined)
+      updateBody.resolution_date = parseDate(resolutionDate)
+
     const { data: report, error } = await supabaseServer
-      .from('blotter_reports')
-      .select('*')
+      .from('blotters')
+      .update(updateBody)
       .eq('id', id)
+      .select()
       .single()
+
     if (error) {
       return NextResponse.json(
         { error: error.message || 'Blotter report not found' },
@@ -125,24 +166,9 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update all provided fields
-    if (status) report.status = status
-    if (investigationDate) report.investigationDate = new Date(investigationDate)
-    if (mediationScheduledDate) report.mediationScheduledDate = new Date(mediationScheduledDate)
-    if (hearingDate) report.hearingDate = new Date(hearingDate)
-    if (actionTaken !== undefined) report.actionTaken = actionTaken
-    if (resolution !== undefined) report.resolution = resolution
-    if (resolutionDate) report.resolutionDate = new Date(resolutionDate)
-    if (notes !== undefined) report.notes = notes
-    
-    report.updatedAt = new Date()
-
-    blotterReports.set(id, report)
-
     return NextResponse.json({
       success: true,
       report,
-      message: 'Blotter updated successfully',
     })
   } catch (error) {
     console.error('Error updating blotter report:', error)
@@ -165,19 +191,19 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const report = blotterReports.get(id)
-    if (!report) {
+    const { data: deletedRows, error } = await supabaseServer
+      .from('blotters')
+      .delete()
+      .eq('id', id)
+      .select()
+
+    if (error) throw error
+    if (!deletedRows || deletedRows.length === 0) {
       return NextResponse.json(
         { error: 'Blotter report not found' },
         { status: 404 }
       )
     }
-
-    const { error: deleteError } = await supabaseServer
-      .from('blotter_reports')
-      .delete()
-      .eq('id', id)
-    if (deleteError) throw deleteError
 
     return NextResponse.json({
       success: true,

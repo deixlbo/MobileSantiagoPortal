@@ -22,39 +22,6 @@ import {
 import { Trash2 } from "lucide-react"
 import { updateOrdinance, deleteOrdinance, publishOrdinance, draftOrdinance } from "@/lib/ordinance-utils"
 
-const mockOrdinances = [
-  {
-    id: "ORD-2026-001",
-    number: "001",
-    year: "2026",
-    title: "Noise Regulation Ordinance of Barangay Santiago",
-    fullTitle: "AN ORDINANCE REGULATING NOISE DISTURBANCE IN BARANGAY SANTIAGO",
-    status: "Published",
-    date: "March 15, 2026",
-    author: "Rolando C. Borja",
-    whereas: [
-      "WHEREAS, excessive noise has caused disturbances among residents;",
-      "WHEREAS, maintaining peace and order is essential for community welfare;",
-    ],
-    sections: [
-      { title: "TITLE", content: "This Ordinance shall be known as the \"Noise Regulation Ordinance of Barangay Santiago.\"" },
-      { title: "COVERAGE", content: "This Ordinance applies to all residents and establishments within Barangay Santiago." },
-      { title: "PENALTIES", content: "First Offense: Warning\nSecond Offense: PHP 500 Fine\nSubsequent Offenses: PHP 1,000 Fine" },
-    ]
-  },
-  {
-    id: "ORD-2026-002",
-    number: "002",
-    year: "2026",
-    title: "Waste Management Ordinance",
-    fullTitle: "AN ORDINANCE IMPLEMENTING PROPER WASTE MANAGEMENT IN BARANGAY SANTIAGO",
-    status: "Draft",
-    date: "April 10, 2026",
-    author: "Rolando C. Borja",
-    whereas: ["WHEREAS, proper waste management is essential for community health;"],
-    sections: [{ title: "TITLE", content: "This Ordinance shall be known as the \"Waste Management Ordinance of Barangay Santiago.\"" }]
-  },
-]
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -68,12 +35,12 @@ const itemVariants = {
 
 export default function OfficialOrdinancesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [ordinances, setOrdinances] = useState(mockOrdinances)
-  const [selectedOrdinance, setSelectedOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
+  const [ordinances, setOrdinances] = useState<any[]>([])
+  const [selectedOrdinance, setSelectedOrdinance] = useState<any | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [editingOrdinance, setEditingOrdinance] = useState<typeof mockOrdinances[0] | null>(null)
+  const [editingOrdinance, setEditingOrdinance] = useState<any | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [formData, setFormData] = useState({
     number: "",
@@ -152,7 +119,7 @@ export default function OfficialOrdinancesPage() {
     setFormData({ number: "", year: "2026", title: "", fullTitle: "", whereas: "", sections: "" })
   }
 
-  const handleEditOrdinance = (ordinance: typeof mockOrdinances[0]) => {
+  const handleEditOrdinance = (ordinance: any) => {
     setEditingOrdinance(ordinance)
     setFormData({
       number: ordinance.number,
@@ -329,7 +296,7 @@ export default function OfficialOrdinancesPage() {
                 <Scroll className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <div className="text-center md:text-left">
-                <p className="text-lg md:text-2xl font-bold">{mockOrdinances.length}</p>
+                <p className="text-lg md:text-2xl font-bold">{ordinances.length}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Total</p>
               </div>
             </div>
@@ -352,7 +319,7 @@ export default function OfficialOrdinancesPage() {
       <motion.div variants={itemVariants}>
         <Tabs defaultValue="all">
           <TabsList className="h-8 md:h-9 w-full justify-start overflow-x-auto">
-            <TabsTrigger value="all" className="text-xs md:text-sm px-2 md:px-3">All ({mockOrdinances.length})</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs md:text-sm px-2 md:px-3">All ({ordinances.length})</TabsTrigger>
             <TabsTrigger value="published" className="text-xs md:text-sm px-2 md:px-3">Published ({publishedCount})</TabsTrigger>
             <TabsTrigger value="drafts" className="text-xs md:text-sm px-2 md:px-3">Drafts ({draftCount})</TabsTrigger>
           </TabsList>

@@ -61,7 +61,7 @@ export function BiometricAuth({
       const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge,
         rp: {
-          name: 'Barangay Santiago Portal',
+          name: 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation',
           id: window.location.hostname,
         },
         user: {

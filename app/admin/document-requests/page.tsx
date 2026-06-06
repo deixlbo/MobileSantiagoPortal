@@ -16,11 +16,57 @@ interface DocumentRequest {
   created_at: string
   purpose: string
   control_number: string
+  isMock?: boolean
   profiles?: {
     first_name: string
     last_name: string
   }
 }
+
+const sampleAdminRequests: DocumentRequest[] = [
+  {
+    id: 'DEMO-ADMIN-001',
+    resident_id: 'demo-resident-1',
+    document_type: 'barangay_clearance',
+    status: 'pending',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+    purpose: 'Employment clearance',
+    control_number: 'CTRL-2026-001',
+    isMock: true,
+    profiles: {
+      first_name: 'Maria',
+      last_name: 'Santos',
+    },
+  },
+  {
+    id: 'DEMO-ADMIN-002',
+    resident_id: 'demo-resident-2',
+    document_type: 'certificate_of_residency',
+    status: 'approved',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+    purpose: 'School enrollment',
+    control_number: 'CTRL-2026-002',
+    isMock: true,
+    profiles: {
+      first_name: 'Jose',
+      last_name: 'Ramos',
+    },
+  },
+  {
+    id: 'DEMO-ADMIN-003',
+    resident_id: 'demo-resident-3',
+    document_type: 'certificate_of_indigency',
+    status: 'ready_to_print',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(),
+    purpose: 'Medical assistance',
+    control_number: 'CTRL-2026-003',
+    isMock: true,
+    profiles: {
+      first_name: 'Ana',
+      last_name: 'Dela Cruz',
+    },
+  },
+]
 
 const statusStyles: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -39,6 +85,7 @@ const formatDocType = (type: string) => {
 
 export default function AdminDocumentRequestsPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([])
+  const [isMockRequestData, setIsMockRequestData] = useState(false)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -60,10 +107,21 @@ export default function AdminDocumentRequestsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
+      if (!data || data.length === 0) {
+        setRequests(sampleAdminRequests)
+        setIsMockRequestData(true)
+        return
+      }
+
       setRequests(data || [])
+      setIsMockRequestData(false)
     } catch (error) {
-      console.error('Error fetching requests:', error)
-      toast.error('Failed to load document requests')
+      const errorMessage = error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error))
+      console.error('Error fetching requests:', errorMessage)
+      toast.error('Failed to load document requests. Showing demo data.')
+      setRequests(sampleAdminRequests)
+      setIsMockRequestData(true)
     } finally {
       setLoading(false)
     }
@@ -71,6 +129,16 @@ export default function AdminDocumentRequestsPage() {
 
   const updateStatus = async (id: string, status: string) => {
     setActionLoading(id)
+    const current = requests.find((request) => request.id === id)
+    if (current?.isMock) {
+      setRequests((prev) => prev.map((request) =>
+        request.id === id ? { ...request, status } : request
+      ))
+      toast.success(`Demo request ${status}`)
+      setActionLoading(null)
+      return
+    }
+
     try {
       const { error } = await supabase
         .from('document_requests')
@@ -123,8 +191,11 @@ export default function AdminDocumentRequestsPage() {
           <p className="text-sm font-medium text-slate-500">Document Requests</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Manage requested documents</h1>
           <p className="max-w-2xl text-sm text-slate-600 mt-2">
-            Approve or reject requests, change status, print documents, and manage timelines.
+            Approve or decline requests, change status, print documents, and manage timelines.
           </p>
+          {isMockRequestData && (
+            <p className="mt-2 text-sm text-amber-700">Demo request data is displayed because no live requests were available.</p>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-600">
           <FileText className="h-4 w-4 text-slate-500" /> {requests.length} total requests

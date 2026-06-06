@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       if (householdError) throw householdError;
 
       const { data: members, error: membersError } = await supabase
-        .from('residents')
+        .from('profiles')
         .select('*')
         .eq('household_id', householdId)
         .order('created_at');

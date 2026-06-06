@@ -128,7 +128,7 @@ export function PushNotificationManager() {
   const sendTestNotification = async () => {
     if (permission !== 'granted') return
 
-    new Notification('Barangay Santiago', {
+    new Notification('AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation', {
       body: 'Ito ay test notification. Gumagana ang notifications!',
       icon: '/icons/icon-192x192.png',
       badge: '/icons/badge-72x72.png',

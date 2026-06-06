@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       }
 
       residentName = `${profile.first_name} ${profile.last_name}`
-      address = address || profile.address || 'Barangay Santiago'
+      address = address || profile.address || 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation'
     }
 
     const controlNumber = generateControlNumber()
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const documentData: DocumentData = {
       residentName,
-      address: address || 'Barangay Santiago',
+      address: address || 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation',
       controlNumber,
       issuedDate: now,
       barangayCaptan: barangayCaptan || 'Rolando C. Borja',
@@ -177,6 +177,7 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (error) {
+        console.error('Error fetching single document request:', error.message || error)
         return NextResponse.json(
           { error: error.message || 'Document request not found' },
           { status: 404 }
@@ -194,7 +195,11 @@ export async function GET(request: NextRequest) {
         .from('document_requests')
         .select('*')
         .eq('resident_id', residentId)
-      if (error) throw error
+      
+      if (error) {
+        console.error('Error fetching resident document requests:', error.message || error)
+        throw error
+      }
 
       return NextResponse.json(
         requests.map((request) => ({
@@ -207,7 +212,11 @@ export async function GET(request: NextRequest) {
     const { data: allRequests, error } = await supabaseServer
       .from('document_requests')
       .select('*')
-    if (error) throw error
+    
+    if (error) {
+      console.error('Error fetching all document requests:', error.message || error)
+      throw error
+    }
 
     return NextResponse.json(
       allRequests.map((request) => ({
@@ -216,9 +225,10 @@ export async function GET(request: NextRequest) {
       }))
     )
   } catch (error) {
-    console.error('Error fetching document requests:', error)
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+    console.error('Error fetching document requests:', errorMessage)
     return NextResponse.json(
-      { error: 'Failed to fetch document requests' },
+      { error: 'Failed to fetch document requests', details: errorMessage },
       { status: 500 }
     )
   }

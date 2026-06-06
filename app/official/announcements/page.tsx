@@ -105,8 +105,11 @@ export default function AnnouncementsPage() {
       if (error) throw error
       setAnnouncements(data || [])
     } catch (error) {
-      console.error('Error fetching announcements:', error)
-      toast.error('Failed to load announcements')
+      const dumpError = (e: any) => {
+        try { return JSON.stringify(e, Object.getOwnPropertyNames(e), 2) } catch { return String(e) }
+      }
+      console.error('Error fetching announcements:', error, dumpError(error))
+      toast.error(`Failed to load announcements: ${dumpError(error)}`)
     } finally {
       setLoading(false)
     }

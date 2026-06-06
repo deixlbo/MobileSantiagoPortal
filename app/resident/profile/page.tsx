@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
+import { getProfile } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,96 +30,134 @@ import {
   Eye
 } from "lucide-react"
 
-// Mock user data
-const mockUser = {
-  id: "resident-001",
-  firstName: "Juan",
-  middleName: "Santos",
-  lastName: "Dela Cruz",
-  suffix: "",
-  birthDate: "1990-05-15",
-  gender: "Male",
-  civilStatus: "Married",
-  email: "juan.delacruz@email.com",
-  phone: "09123456789",
-  address: "Purok 3, Barangay Santiago",
-  municipality: "San Antonio",
-  province: "Zambales",
-  zipCode: "2206",
-  occupation: "Teacher",
-  employer: "San Antonio National High School",
-  registrationDate: "January 15, 2024",
-  verificationStatus: "verified",
-  avatar: "/placeholder-avatar.jpg",
-  birthCertificate: "/documents/birth-certificate.pdf",
-  validId: "/documents/valid-id.pdf"
+type ResidentProfile = {
+  id: string
+  firstName: string
+  middleName: string
+  lastName: string
+  suffix: string
+  birthDate: string
+  gender: string
+  civilStatus: string
+  email: string
+  phone: string
+  address: string
+  municipality: string
+  province: string
+  zipCode: string
+  occupation: string
+  employer: string
+  registrationDate: string
+  verificationStatus: string
+  avatar: string
+  birthCertificate: string
+  validId: string
 }
 
-// Mock family members with personal info
-const mockFamilyMembers = [
-  {
-    id: "resident-002",
-    name: "Maria Dela Cruz",
-    relationship: "Spouse",
-    status: "accepted",
-    avatar: null,
-    firstName: "Maria",
-    middleName: "Santos",
-    lastName: "Dela Cruz",
-    suffix: "",
-    birthDate: "1992-08-20",
-    gender: "Female",
-    civilStatus: "Married"
-  },
-  {
-    id: "resident-003",
-    name: "Pedro Dela Cruz Jr.",
-    relationship: "Son",
-    status: "accepted",
-    avatar: null,
-    firstName: "Pedro",
-    middleName: "Santos",
-    lastName: "Dela Cruz",
-    suffix: "Jr.",
-    birthDate: "2015-03-10",
-    gender: "Male",
-    civilStatus: "Single"
-  }
-]
+interface FamilyMember {
+  id: string
+  name: string
+  relationship: string
+  status: string
+  avatar: string | null
+  firstName: string
+  middleName: string
+  lastName: string
+  suffix: string
+  birthDate: string
+  gender: string
+  civilStatus: string
+}
 
-// Mock pending family requests
-const mockPendingRequests = [
-  {
-    id: "resident-004",
-    name: "Ana Santos",
-    relationship: "Sister",
-    requestedBy: "Ana Santos",
-    status: "pending"
-  }
-]
+interface FamilyRequest {
+  id: string
+  name: string
+  relationship: string
+  requestedBy: string
+  status: string
+}
 
-// Mock search results
-const mockSearchResults = [
-  { id: "resident-005", name: "Jose Dela Cruz", address: "Purok 2, Barangay Santiago" },
-  { id: "resident-006", name: "Rosa Dela Cruz", address: "Purok 4, Barangay Santiago" },
-]
+interface ResidentSearchResult {
+  id: string
+  name: string
+  address: string
+}
 
 export default function ProfilePage() {
-  const [formData] = useState(mockUser)
+  const [formData, setFormData] = useState<ResidentProfile>({
+    id: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    suffix: "",
+    birthDate: "",
+    gender: "",
+    civilStatus: "",
+    email: "",
+    phone: "",
+    address: "",
+    municipality: "",
+    province: "",
+    zipCode: "",
+    occupation: "",
+    employer: "",
+    registrationDate: "",
+    verificationStatus: "",
+    avatar: "",
+    birthCertificate: "",
+    validId: "",
+  })
+  const [loadingProfile, setLoadingProfile] = useState(true)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false)
   const [showDocumentPreview, setShowDocumentPreview] = useState<string | null>(null)
   const [familySearch, setFamilySearch] = useState("")
-  const [searchResults, setSearchResults] = useState<typeof mockSearchResults>([])
+  const [searchResults, setSearchResults] = useState<ResidentSearchResult[]>([])
   const [selectedRelationship, setSelectedRelationship] = useState("")
-  const [selectedFamilyMember, setSelectedFamilyMember] = useState<typeof mockFamilyMembers[0] | null>(null)
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
+  const [pendingRequests, setPendingRequests] = useState<FamilyRequest[]>([])
+  const [selectedFamilyMember, setSelectedFamilyMember] = useState<FamilyMember | null>(null)
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { profile, error } = await getProfile()
+      if (error) {
+        console.error("Profile fetch error:", error)
+      }
+      if (profile) {
+        setFormData((prev) => ({
+          ...prev,
+          id: profile.id,
+          firstName: profile.first_name ?? prev.firstName,
+          lastName: profile.last_name ?? prev.lastName,
+          email: profile.email ?? prev.email,
+          phone: profile.contact_number ?? prev.phone,
+          address: profile.address ?? prev.address,
+          occupation: profile.occupation ?? prev.occupation,
+          gender: profile.gender
+            ? `${profile.gender.charAt(0).toUpperCase()}${profile.gender.slice(1)}`
+            : prev.gender,
+          birthDate: profile.date_of_birth ?? prev.birthDate,
+          verificationStatus: profile.verification_status ?? prev.verificationStatus,
+          registrationDate: profile.created_at
+            ? new Date(profile.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : prev.registrationDate,
+        }))
+      }
+      setLoadingProfile(false)
+    }
+
+    loadProfile()
+  }, [])
 
   const handleFamilySearch = () => {
     if (familySearch.trim()) {
-      // Mock search - in real app, this would query the database
-      setSearchResults(mockSearchResults.filter(r => 
-        r.name.toLowerCase().includes(familySearch.toLowerCase())
-      ))
+      // TODO: replace with real search / backend lookup
+      setSearchResults([])
     }
   }
 
@@ -355,7 +394,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Pending Requests */}
-          {mockPendingRequests.length > 0 && (
+          {pendingRequests.length > 0 && (
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -366,7 +405,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockPendingRequests.map((request) => (
+                  {pendingRequests.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border bg-amber-50">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -404,9 +443,9 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {mockFamilyMembers.length > 0 ? (
+              {familyMembers.length > 0 ? (
                 <div className="space-y-3">
-                  {mockFamilyMembers.map((member) => (
+                  {familyMembers.map((member) => (
                     <button
                       key={member.id} 
                       className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"

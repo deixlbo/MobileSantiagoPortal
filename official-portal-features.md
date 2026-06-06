@@ -3,9 +3,30 @@
 This document describes the official portal user experience, workflows, and key features.
 
 ## Official Portal Purpose
-- Designed for barangay officials to manage operations, approvals, and civic records.
-- Supports official responsibilities such as document approval, resident oversight, incident tracking, public announcements, and ordinance enforcement.
-- Provides a secure workspace behind official authentication.
+- Provides barangay officials with a secure workspace for managing civic operations, approvals, records, and resident communication.
+- Supports formal workflows for resident verification, document processing, asset tracking, incident management, and public announcements.
+- Keeps official functions isolated from the resident-facing portal via `/official/*` route guards.
+
+## Official Feature Set
+- **Dashboard**: displays real-time statistics for total residents, pending document requests, verified residents, active officials, announcements, and system activities.
+- **Resident Verification**: reviews uploaded documents, verifies registrations, and approves or rejects resident applications.
+- **Resident Management**: manages resident records, updates personal information, views household details, and monitors resident status.
+- **Document Requests**: processes Barangay Clearance, Certificate of Residency, Indigency, Business Clearance, and other submitted requests.
+- **Household Management**: organizes household records, family members, addresses, and household classifications.
+- **Official Accounts**: creates, updates, activates, deactivates official accounts, and assigns system permissions.
+- **Activity Logs**: tracks logins, approvals, document processing, account modifications, and other user actions for auditing.
+- **Settings**: configures barangay information, portal branding, official logo, document templates, and system preferences.
+- **Announcements Management**: creates and publishes announcements, advisories, events, and emergency notices for residents.
+- **Projects Management**: tracks barangay projects, budgets, progress updates, completion status, and project documentation.
+- **Ordinance Management**: stores and publishes barangay ordinances, resolutions, and local policies for public access.
+- **Asset Management**: monitors barangay-owned assets, equipment, facilities, maintenance schedules, and asset status.
+- **Blotter Management**: records complaints, incidents, disputes, and case resolutions for barangay peacekeeping operations.
+- **Reports & Analytics**: generates statistical charts, reports, and downloadable PDF/Excel exports for monitoring and decision-making.
+- **Notification Center**: sends notifications, reminders, approval updates, and document status alerts to residents.
+- **Appointment Management**: handles scheduling for document claiming, consultations, and barangay services.
+- **Complaint & Feedback Management**: receives, tracks, and resolves resident complaints, concerns, and suggestions.
+- **Backup & Recovery**: creates and restores system backups to protect barangay records and data.
+- **AI Assistant Panel**: assists officials with inquiries, report generation, trend analysis, and recommendations.
 
 ## Official Portal Entry Flow
 1. Official opens the portal at `/official/login`.
@@ -14,51 +35,26 @@ This document describes the official portal user experience, workflows, and key 
 4. From the dashboard, the official can navigate to core modules via visible cards and sidebar links.
 
 ## Official Dashboard
-- Displays high-level metrics for residents, pending documents, blotters, and business permits.
-- Shows recent activity items and pending approvals.
-- Includes a live notification bell for document requests and urgent updates.
-- Provides quick access to document review and resident management pages.
+- Shows live metrics, recent activity, and pending approval items.
+- Offers direct access to document review, resident verification, announcements, reports, and other key workflows.
+- Includes notification badges for urgent items and action-required requests.
 
 ## Core Workflow Pages
-- `/official/residents` — Resident directory and oversight.
-- `/official/documents` — Manage and approve document requests.
-- `/official/blotters` — Track active blotter reports.
-- `/official/announcements` — Publish barangay announcements.
-- `/official/ordinances` — Review and reference local ordinances.
-- `/official/projects` — Monitor barangay projects and progress.
-- `/official/reports` — View official reports and status summaries.
-- `/official/assets` — Manage barangay assets and inventory.
-- `/official/qr-scan` — Scan QR codes for verification and record access.
-- `/official/profile` — Update official user profile details.
-
-## Notifications & Alerts
-- Notification bell informs officials of new document requests and system events.
-- Unread counts show pending items that require action.
-- Notification items link directly into the document review workflow.
-
-## Document Approval & Request Flow
-- Document requests appear on the dashboard and in the documents module.
-- Officials can review request details, approve or reject submissions, and track processing status.
-- Request flow supports live updates and auditing through the official workspace.
-
-## Resident Oversight Flow
-- Officials may access resident records to verify identity, residency status, and household information.
-- Resident pages support filtering and quick view access for case review.
-
-## Public Communication Flow
-- Announcements are published to the resident portal via `/official/announcements`.
-- Meetings, advisories, and community updates are managed from the official announcement page.
+- `/official/residents` — resident directory and oversight.
+- `/official/documents` — manage and approve document requests.
+- `/official/blotters` — track blotter reports and incident records.
+- `/official/announcements` — publish public notices, advisories, and events.
+- `/official/ordinances` — reference local ordinances and resolutions.
+- `/official/projects` — monitor projects, budgets, and progress updates.
+- `/official/reports` — generate analytics and export reports.
+- `/official/assets` — manage barangay assets and maintenance schedules.
+- `/official/qr-scan` — scan QR codes for verification and record lookup.
+- `/official/profile` — update official user profile details.
 
 ## Security & Session Management
-- The official portal is isolated from the resident-facing portal.
-- Session state is maintained through the official route guard in `app/official/layout.tsx`.
-- Only authorized official accounts may access `/official/*` routes.
+- Enforces official access control through `app/official/layout.tsx`.
+- Keeps official workflows protected from resident-facing pages.
 
 ## Mobility & Responsiveness
-- Official pages adapt to mobile screens with sidebar and card-based layouts.
-- Dashboard and metrics use responsive grids for accessible monitoring on any device.
-
-## Implementation Notes
-- Use `app/official/layout.tsx` as the portal shell and route guard for official pages.
-- Build official workflows with API routes for document approval, resident lookup, announcements, and ordinance management.
-- Maintain a clean separation between official admin functionality and resident-facing pages.
+- Uses responsive layouts and mobile-friendly navigation for officials on any device.
+- Dashboard and key pages are optimized for usable monitoring and quick actions.

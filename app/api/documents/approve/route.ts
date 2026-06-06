@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error updating document request:', error)
+      console.error('Error updating document request:', error.message || error)
       return NextResponse.json(
         { error: error.message || 'Failed to update document request' },
         { status: 500 }
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
       documentRequest: updatedRequest,
     })
   } catch (error) {
-    console.error('Error processing approval:', error)
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+    console.error('Error processing approval:', errorMessage)
     return NextResponse.json(
       { error: 'Failed to process approval' },
       { status: 500 }
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching document requests:', error)
+      console.error('Error fetching document requests:', error.message || error)
       return NextResponse.json(
         { error: error.message || 'Failed to fetch document requests' },
         { status: 500 }
@@ -85,9 +86,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching approvals:', error)
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+    console.error('Error fetching approvals:', errorMessage)
     return NextResponse.json(
-      { error: 'Failed to fetch approvals' },
+      { error: 'Failed to fetch approvals', details: errorMessage },
       { status: 500 }
     )
   }

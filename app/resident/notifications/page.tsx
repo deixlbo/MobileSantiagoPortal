@@ -6,54 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Bell, CheckCircle2, AlertCircle, Info, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-const allNotifications = [
-  {
-    id: 1,
-    type: "approval",
-    message: "Your Barangay Clearance has been approved and is ready for release",
-    time: "2 hours ago",
-    read: false,
-    icon: CheckCircle2,
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: 2,
-    type: "announcement",
-    message: "New announcement: Community Health Drive scheduled for May 10",
-    time: "5 hours ago",
-    read: true,
-    icon: Info,
-    color: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: 3,
-    type: "decline",
-    message: "Your Certificate of Indigency request was declined. Please resubmit with updated documents.",
-    time: "1 day ago",
-    read: true,
-    icon: AlertCircle,
-    color: "bg-red-100 text-red-700",
-  },
-  {
-    id: 4,
-    type: "update",
-    message: "Your property dispute blotter case is now in processing status",
-    time: "2 days ago",
-    read: true,
-    icon: Bell,
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: 5,
-    type: "announcement",
-    message: "Free medical check-up available at the barangay health center",
-    time: "3 days ago",
-    read: true,
-    icon: Info,
-    color: "bg-blue-100 text-blue-700",
-  },
-]
-
 function getNotificationBadge(type: string) {
   switch (type) {
     case "approval":
@@ -70,7 +22,7 @@ function getNotificationBadge(type: string) {
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(allNotifications)
+  const [notifications, setNotifications] = useState<any[]>([])
   const [selectedFilter, setSelectedFilter] = useState("all")
 
   const filtered = selectedFilter === "all" 

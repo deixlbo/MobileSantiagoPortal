@@ -28,9 +28,9 @@ interface PaymentDetails {
 }
 
 const PAYMENT_DETAILS: PaymentDetails = {
-  gcash: { number: '09XX XXX XXXX', name: 'Barangay Santiago' },
-  maya: { number: '09XX XXX XXXX', name: 'Barangay Santiago' },
-  bank: { account: 'XXXX-XXXX-XXXX', name: 'Barangay Santiago', bank: 'BDO' },
+  gcash: { number: '09XX XXX XXXX', name: 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation' },
+  maya: { number: '09XX XXX XXXX', name: 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation' },
+  bank: { account: 'XXXX-XXXX-XXXX', name: 'AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation', bank: 'BDO' },
 }
 
 export function PaymentIntegration({

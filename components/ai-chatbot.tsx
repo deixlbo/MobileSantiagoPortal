@@ -14,9 +14,7 @@ import {
   User,
   Loader2,
   Minimize2,
-  Mic,
-  Volume2,
-  VolumeX
+  Mic
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -60,7 +58,6 @@ export function AIChatbot({
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [isListening, setIsListening] = useState(false)
-  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(true)
   const [speechSupported, setSpeechSupported] = useState(false)
   const [formSuggestion, setFormSuggestion] = useState<Record<string, string> | null>(null)
   const [localMessages, setLocalMessages] = useState<Message[]>([
@@ -94,9 +91,6 @@ export function AIChatbot({
       const { cleaned, suggestion } = parseFormSuggestion(message.content)
       if (suggestion && Object.keys(suggestion).length > 0) {
         setFormSuggestion(suggestion)
-      }
-      if (voiceOutputEnabled) {
-        speakText(cleaned)
       }
     }
   })
@@ -137,9 +131,6 @@ export function AIChatbot({
       const { cleaned, suggestion } = parseFormSuggestion(answerText)
       if (suggestion && Object.keys(suggestion).length > 0) {
         setFormSuggestion(suggestion)
-      }
-      if (voiceOutputEnabled) {
-        speakText(cleaned)
       }
       setLocalMessages((current) => [
         ...current,
@@ -224,17 +215,6 @@ export function AIChatbot({
     } catch (error) {
       return { cleaned: text.replace(marker, '').trim(), suggestion: null }
     }
-  }
-
-  const speakText = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis || !voiceOutputEnabled) return
-
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'tl-PH'
-    utterance.rate = 0.95
-    utterance.pitch = 1.05
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(utterance)
   }
 
   const handleVoiceToggle = () => {
@@ -488,18 +468,6 @@ export function AIChatbot({
                       )}
                     >
                       <Mic className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setVoiceOutputEnabled((prev) => !prev)}
-                      className={cn(
-                        "rounded-full shrink-0",
-                        voiceOutputEnabled ? 'bg-emerald-500 text-white' : 'bg-white text-slate-700'
-                      )}
-                    >
-                      {voiceOutputEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                     </Button>
                     <Input
                       ref={inputRef}

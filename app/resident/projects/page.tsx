@@ -44,10 +44,11 @@ function getStatusBadge(status: string | undefined) {
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedProject, setSelectedProject] = useState<typeof mockProjects[0] | null>(null)
+  const [projects, setProjects] = useState<ResidentProject[]>([])
+  const [selectedProject, setSelectedProject] = useState<ResidentProject | null>(null)
   const [filterStatus, setFilterStatus] = useState("all")
 
-  const filteredProjects = mockProjects.filter(proj => {
+  const filteredProjects = projects.filter(proj => {
     const matchesSearch = proj.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       proj.type.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === "all" || proj.status.toLowerCase() === filterStatus

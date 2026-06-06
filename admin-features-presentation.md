@@ -1,4 +1,4 @@
-# Barangay Santiago Admin Portal Features
+# AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation Admin Portal Features
 
 This presentation document summarizes the features available in the admin portal.
 

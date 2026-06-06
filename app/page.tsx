@@ -28,97 +28,91 @@ import {
   Briefcase
 } from "lucide-react"
 
-// Mock data for officials
-const officials = [
+interface Official {
+  id: string
+  name: string
+  position: string
+  image: string
+  contact: string
+  email: string
+  bio: string
+  ordinances: { id: string; title: string; status: string }[]
+  projects: { id: string; title: string; status: string; progress: number }[]
+}
+
+interface AnnouncementCard {
+  id: string
+  title: string
+  date: string
+  content: string
+}
+
+const officials: Official[] = [
   {
     id: "1",
-    name: "Rolando C. Borja",
-    position: "Barangay Captain",
-    image: "/placeholder.svg?height=200&width=200",
-    contact: "0917-123-4567",
-    email: "captain@barangaysantiago.gov.ph",
-    bio: "Serving Barangay Santiago since 2022. Committed to community development and public service.",
+    name: "Atty. Maria Santos",
+    position: "Punong Barangay",
+    image: "/images/official1.jpg",
+    contact: "(047) 555-0123",
+    email: "msantos@santiago.gov.ph",
+    bio: "Leads community governance and local development initiatives.",
     ordinances: [
-      { id: "1", title: "Noise Regulation Ordinance", status: "Published" },
-      { id: "2", title: "Waste Management Ordinance", status: "Published" }
+      { id: "o1", title: "Clean Barangay Ordinance", status: "Active" }
     ],
     projects: [
-      { id: "1", title: "Road Improvement Project", status: "Ongoing", progress: 65 },
-      { id: "2", title: "Health Center Renovation", status: "Completed", progress: 100 }
+      { id: "p1", title: "Community Health Drive", status: "Ongoing", progress: 80 }
     ]
   },
   {
     id: "2",
-    name: "April Joy C. Cano",
-    position: "Barangay Secretary",
-    image: "/placeholder.svg?height=200&width=200",
-    contact: "0918-234-5678",
-    email: "secretary@barangaysantiago.gov.ph",
-    bio: "Managing barangay records and documentation with efficiency and transparency.",
+    name: "Engr. Ramon Cruz",
+    position: "Kagawad - Infrastructure",
+    image: "/images/official2.jpg",
+    contact: "(047) 555-0145",
+    email: "rcruz@santiago.gov.ph",
+    bio: "Oversees barangay infrastructure and public works projects.",
     ordinances: [
-      { id: "3", title: "Business Permit Guidelines", status: "Published" }
+      { id: "o2", title: "Road Safety Ordinance", status: "Active" }
     ],
     projects: [
-      { id: "3", title: "Digital Records System", status: "Ongoing", progress: 80 }
+      { id: "p2", title: "Street Light Upgrade", status: "Planned", progress: 20 }
     ]
   },
   {
     id: "3",
-    name: "Juan Dela Cruz",
-    position: "Barangay Kagawad - Peace and Order",
-    image: "/placeholder.svg?height=200&width=200",
-    contact: "0919-345-6789",
-    email: "kagawad1@barangaysantiago.gov.ph",
-    bio: "Ensuring peace and order in the community through proactive measures.",
-    ordinances: [],
+    name: "Kum. Ana Reyes",
+    position: "Kagawad - Health",
+    image: "/images/official3.jpg",
+    contact: "(047) 555-0198",
+    email: "areyes@santiago.gov.ph",
+    bio: "Supports health programs, vaccination drives, and community wellness.",
+    ordinances: [
+      { id: "o3", title: "Health Awareness Ordinance", status: "Active" }
+    ],
     projects: [
-      { id: "4", title: "Community Watch Program", status: "Ongoing", progress: 45 }
+      { id: "p3", title: "Barangay Wellness Fair", status: "Completed", progress: 100 }
     ]
-  },
-  {
-    id: "4",
-    name: "Maria Santos",
-    position: "Barangay Kagawad - Health",
-    image: "/placeholder.svg?height=200&width=200",
-    contact: "0920-456-7890",
-    email: "kagawad2@barangaysantiago.gov.ph",
-    bio: "Promoting health and wellness programs for all residents.",
-    ordinances: [],
-    projects: [
-      { id: "5", title: "Medical Mission Program", status: "Planned", progress: 0 }
-    ]
-  },
-  {
-    id: "5",
-    name: "Pedro Reyes",
-    position: "Barangay Treasurer",
-    image: "/placeholder.svg?height=200&width=200",
-    contact: "0921-567-8901",
-    email: "treasurer@barangaysantiago.gov.ph",
-    bio: "Managing barangay funds with integrity and accountability.",
-    ordinances: [],
-    projects: []
   }
 ]
 
-const announcements = [
+const announcements: AnnouncementCard[] = [
   {
-    id: "1",
-    title: "Community Clean-up Drive",
-    date: "April 25, 2026",
-    content: "Join us for a community-wide clean-up drive this Saturday at 7:00 AM. Meet at the Barangay Hall."
+    id: "a1",
+    title: "Barangay Hall Open on Saturdays",
+    date: "June 1, 2026",
+    content: "Office hours are extended to serve residents with urgent concerns and document requests."
   },
   {
-    id: "2",
-    title: "Free Medical Check-up",
-    date: "April 28, 2026",
-    content: "Free medical check-up for all residents at the Barangay Health Center. Bring your Barangay ID."
+    id: "a2",
+    title: "Community Clean-Up Drive",
+    date: "May 28, 2026",
+    content: "Join the barangay-led clean-up initiative at the public plaza this weekend."
   },
   {
-    id: "3",
-    title: "Barangay Assembly Meeting",
-    date: "May 1, 2026",
-    content: "All residents are invited to attend the quarterly Barangay Assembly at 2:00 PM."
+    id: "a3",
+    title: "Health Consultation Camp",
+    date: "May 18, 2026",
+    content: "Free check-ups and medical advice are available for all residents."
   }
 ]
 
@@ -162,13 +156,16 @@ const services = [
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [selectedOfficial, setSelectedOfficial] = useState<typeof officials[0] | null>(null)
+  const [selectedOfficial, setSelectedOfficial] = useState<Official | null>(null)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-white text-slate-950">
+      <div className="pointer-events-none absolute -left-10 top-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_left,_rgba(159,230,163,0.28),transparent_55%)] blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_top_right,_rgba(120,187,113,0.20),transparent_55%)] blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-44 h-60 w-60 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(15,23,42,0.08),transparent_55%)] blur-3xl" />
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-primary">
               <Image 
@@ -214,52 +211,57 @@ export default function LandingPage() {
         )}
       </header>
 
+      <main className="mx-auto max-w-7xl px-4 sm:px-6">
+
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative overflow-hidden bg-background py-20 md:py-40"
+        className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white py-14 md:py-20 shadow-[0_24px_100px_-40px_rgba(15,23,42,0.16)]"
       >
-        <div className="pointer-events-none absolute -left-10 top-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-24 h-56 w-56 rounded-full bg-secondary/15 blur-3xl" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="space-y-10 text-center">
-            <div className="space-y-5 md:space-y-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-primary/90">Barangay Santiago Portal</p>
-              <h1 className="mx-auto max-w-4xl text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-tight">
-                Barangay Services <span className="text-primary">Made Easier</span>
-              </h1>
-              <p className="mx-auto max-w-3xl text-lg text-muted-foreground sm:text-xl md:text-2xl leading-relaxed">
-                Request clearances, file reports, track projects, and stay connected with your barangay—all from one polished and responsive portal.
-              </p>
+        <div className="pointer-events-none absolute -left-10 top-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_left,_rgba(159,230,163,0.28),transparent_55%)] blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_top_right,_rgba(120,187,113,0.20),transparent_55%)] blur-3xl" />
+        <div className="w-full px-4 sm:px-6">
+          <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr] items-start">
+            <div className="space-y-8">
+              <div className="space-y-5 max-w-3xl">
+                <h1 className="text-5xl font-semibold tracking-tight text-foreground sm:text-6xl">
+                  Barangay Services <span className="text-primary">Made Easier</span>
+                </h1>
+                <p className="text-lg leading-8 text-muted-foreground">
+                  AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+                <Link href="/resident/login" className="w-full">
+                  <Button size="lg" className="w-full rounded-2xl px-10 h-14 text-base font-semibold shadow-lg shadow-primary/10 hover:shadow-xl transition-shadow">
+                    Resident Login
+                  </Button>
+                </Link>
+                <Link href="/official/login-form" className="w-full">
+                  <Button size="lg" variant="outline" className="w-full rounded-2xl px-10 h-14 text-base font-semibold border-2 border-primary/70 hover:bg-primary/10 transition-colors">
+                    Official Login
+                  </Button>
+                </Link>
+              </div>
             </div>
 
-            <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
-              <Link href="/resident/login" className="w-full">
-                <Button size="lg" className="w-full rounded-2xl px-10 h-14 text-base font-semibold shadow-lg shadow-primary/10 hover:shadow-xl transition-shadow">
-                  Resident Login
-                </Button>
-              </Link>
-              <Link href="/official/login-form" className="w-full">
-                <Button size="lg" variant="outline" className="w-full rounded-2xl px-10 h-14 text-base font-semibold border-2 border-primary/70 hover:bg-primary/10 transition-colors">
-                  Official Login
-                </Button>
-              </Link>
-            </div>
-
-            <div className="mt-12 grid gap-4 sm:grid-cols-3">
-              {[
-                { label: "Fast Requests", value: "3 min", description: "Complete applications in one place." },
-                { label: "Secure Documents", value: "Verified", description: "QR-secure and printable official copies." },
-                { label: "Community Support", value: "24/7", description: "Help for residents and officials." },
-              ].map((item) => (
-                <div key={item.label} className="rounded-3xl border border-border/80 bg-card/75 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">{item.label}</p>
-                  <p className="mt-3 text-3xl font-bold text-foreground">{item.value}</p>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))}
+            <div className="rounded-[38px] border border-slate-200/70 bg-white/95 p-8 shadow-[0_40px_120px_-60px_rgba(15,23,42,0.18)]">
+              <div className="grid gap-4">
+                {[
+                  { label: "Fast Requests", value: "3 min", description: "Complete applications in one place." },
+                  { label: "Secure Documents", value: "Verified", description: "QR-secure official copies." },
+                  { label: "Community Support", value: "24/7", description: "Help for residents and officials." },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">{item.label}</p>
+                    <p className="mt-3 text-3xl font-bold text-foreground">{item.value}</p>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -272,12 +274,12 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="py-20 md:py-32 border-t"
+        className="py-12 md:py-16 border-t"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-16 space-y-3 text-center md:mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground">Popular Services</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Request important documents and access barangay services online.</p>
+        <div className="w-full px-4 sm:px-6">
+          <div className="mb-10 space-y-3 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Popular Services</h2>
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">Request important documents and access barangay services online.</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service, index) => (
@@ -290,15 +292,15 @@ export default function LandingPage() {
                 transition={{ duration: 0.4, delay: index * 0.08 }}
               >
                 <Link href="/resident/login">
-                  <Card className="h-full overflow-hidden border-0 bg-card/60 backdrop-blur transition-all duration-300 hover:shadow-xl hover:bg-card">
-                    <CardHeader>
+                  <Card className="h-full overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <CardHeader className="p-0">
                       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
                         <service.icon className="h-7 w-7 text-primary" />
                       </div>
                       <CardTitle className="text-xl">{service.title}</CardTitle>
                       <CardDescription className="text-base text-muted-foreground">{service.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0 pt-5">
                       <Button variant="ghost" className="p-0 h-auto font-semibold text-primary hover:text-primary/80">
                         Request Now →
                       </Button>
@@ -318,13 +320,13 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.25 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="py-20 md:py-32 bg-muted/30"
+        className="py-12 md:py-16 bg-muted/10"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:mb-20">
+        <div className="w-full px-4 sm:px-6">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground">Latest Updates</h2>
-              <p className="text-lg text-muted-foreground">Stay informed with community news and events</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Latest Updates</h2>
+              <p className="text-base text-muted-foreground">Stay informed with community news and events</p>
             </div>
             <Link href="/resident/login">
               <Button variant="outline" className="w-full sm:w-auto rounded-lg px-6 h-12 font-semibold border-2">View All</Button>
@@ -339,7 +341,7 @@ export default function LandingPage() {
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
               >
-                <Card className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer">
+                <Card className="overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2 mb-3">
                       <Megaphone className="h-5 w-5 text-primary" />
@@ -364,13 +366,13 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.25 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="py-20 md:py-32 border-t"
+        className="py-12 md:py-16 border-t"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:mb-20">
+        <div className="w-full px-4 sm:px-6">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground">Community Projects</h2>
-              <p className="text-lg text-muted-foreground">Track progress on barangay development initiatives</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Community Projects</h2>
+              <p className="text-base text-muted-foreground">Track progress on barangay development initiatives</p>
             </div>
             <Link href="/resident/login">
               <Button variant="outline" className="w-full sm:w-auto rounded-lg px-6 h-12 font-semibold border-2">View All</Button>
@@ -385,7 +387,7 @@ export default function LandingPage() {
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
               >
-                <Card className="overflow-hidden border-0 bg-card/60 backdrop-blur hover:shadow-lg transition-all hover:-translate-y-1">
+                <Card className="overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between mb-4">
                       <Badge variant={
@@ -425,11 +427,11 @@ export default function LandingPage() {
       </motion.section>
 
       {/* Officials Section */}
-      <section id="officials" className="py-20 md:py-32 bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-16 space-y-2 text-center md:mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground">Leadership Team</h2>
-            <p className="text-lg text-muted-foreground">Meet the officials serving Barangay Santiago</p>
+      <section id="officials" className="py-12 md:py-16 bg-muted/10">
+        <div className="w-full px-4 sm:px-6">
+          <div className="mb-10 space-y-2 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Leadership Team</h2>
+            <p className="text-base text-muted-foreground">Meet the officials serving Barangay Santiago</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {officials.map((official, index) => (
@@ -441,7 +443,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.45, delay: index * 0.06 }}
               >
                 <Card 
-                  className="cursor-pointer transition-all border-0 bg-card/60 backdrop-blur hover:shadow-lg hover:-translate-y-2 overflow-hidden group"
+                  className="cursor-pointer transition-all rounded-3xl border border-slate-200/70 bg-white/90 shadow-sm hover:shadow-lg hover:-translate-y-1 overflow-hidden group"
                   onClick={() => setSelectedOfficial(official)}
                 >
                   <CardContent className="p-6 text-center space-y-4">
@@ -553,56 +555,42 @@ export default function LandingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Contact Section */}
-      <section className="py-8 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="rounded-2xl bg-primary p-5 text-primary-foreground sm:p-6 md:p-8">
-            <div className="grid gap-4 md:gap-6 md:grid-cols-2">
-              <div>
-                <h2 className="text-xl font-bold sm:text-2xl md:text-3xl">Visit Barangay Hall</h2>
-                <p className="mt-2 text-sm opacity-90 sm:text-base">We are here to serve you. Visit us during office hours or contact us for inquiries.</p>
-              </div>
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                  <span className="text-sm sm:text-base">Barangay Santiago, San Antonio, Zambales</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                  <span className="text-sm sm:text-base">(047) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                  <span className="text-sm break-all sm:text-base">brgy.santiago.saz@gmail.com</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                  <span className="text-sm sm:text-base">Monday - Friday: 8:00 AM - 5:00 PM</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-4 sm:py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
-            <div className="flex items-center gap-2">
-              <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border border-primary">
-                <Image 
-                  src="/images/santiagologo.jpg" 
-                  alt="Barangay Santiago Logo" 
-                  fill
-                  className="object-cover"
-                />
+      <footer className="border-t bg-card py-5 sm:py-6">
+        <div className="w-full px-4 sm:px-6">
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_min-content] md:items-center">
+            <div className="flex flex-col justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-primary">
+                  <Image 
+                    src="/images/santiagologo.jpg" 
+                    alt="Barangay Santiago Logo" 
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-base font-semibold">Barangay Santiago</p>
+                  <p className="text-sm text-muted-foreground">San Antonio, Zambales</p>
+                </div>
               </div>
-              <span className="font-semibold">Barangay Santiago</span>
+              <p className="text-sm text-muted-foreground max-w-md">
+                2026 Barangay Santiago Management System. All rights reserved.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              2026 Barangay Santiago Management System. All rights reserved.
-            </p>
+
+            <div className="rounded-2xl border border-border/80 bg-muted/70 p-4 max-w-lg">
+              <h2 className="mb-2 text-base font-semibold">Visit Barangay Hall</h2>
+              <p className="text-sm text-muted-foreground">We are here to serve you. Visit us during office hours or contact us for inquiries.</p>
+              <div className="mt-4 space-y-1 text-sm text-foreground">
+                <div>Barangay Santiago, San Antonio, Zambales</div>
+                <div>(047) 123-4567</div>
+                <div>brgy.santiago.saz@gmail.com</div>
+                <div>Monday - Friday: 8:00 AM - 5:00 PM</div>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { UploadCloud, Settings2, Globe } from "lucide-react"
 
 export default function AdminSettingsPage() {
-  const [barangayName, setBarangayName] = useState("Barangay Santiago")
+  const [barangayName, setBarangayName] = useState("AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation")
   const [address, setAddress] = useState("123 Barangay Road, City")
   const [message, setMessage] = useState("Welcome to the official barangay portal. Use this space to keep residents updated.")
 

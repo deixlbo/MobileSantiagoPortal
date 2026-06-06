@@ -41,6 +41,7 @@ type DocumentRequest = {
   release_date: string | null
   documents_uploaded: boolean
   missing_documents: string[] | null
+  document_path?: Array<{ requirement?: string; name?: string; url?: string }>
   created_at: string
 }
 
@@ -118,6 +119,7 @@ function OfficialDocumentHeader({ printOnly = false }: { printOnly?: boolean }) 
 export default function OfficialDocumentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [requests, setRequests] = useState<DocumentRequest[]>([])
+  const [isMockRequestData, setIsMockRequestData] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showManageTypes, setShowManageTypes] = useState(false)
@@ -129,6 +131,18 @@ export default function OfficialDocumentsPage() {
     fetchRequests()
   }, [])
 
+  function parseDocumentPath(raw: any) {
+    if (!raw) return []
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return []
+      }
+    }
+    return Array.isArray(raw) ? raw : []
+  }
+
   async function fetchRequests() {
     setLoading(true)
     try {
@@ -138,10 +152,24 @@ export default function OfficialDocumentsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setRequests(data || [])
+
+      if (!data || data.length === 0) {
+        setRequests(sampleOfficialRequests)
+        setIsMockRequestData(true)
+        return
+      }
+
+      setRequests((data || []).map((request: any) => ({
+        ...request,
+        document_path: parseDocumentPath(request.document_path),
+      })))
+      setIsMockRequestData(false)
     } catch (error) {
-      console.error('Error fetching document requests:', error)
-      toast.error('Failed to load document requests')
+      const errorMessage = error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error))
+      console.error('Error fetching document requests:', errorMessage)
+      toast.error('Failed to load document requests. Showing demo data.')
+      setRequests(sampleOfficialRequests)
+      setIsMockRequestData(true)
     } finally {
       setLoading(false)
     }
@@ -158,6 +186,18 @@ export default function OfficialDocumentsPage() {
   }
 
   const handleApproveRequest = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId)
+    if (request?.isMock) {
+      const pickupDate = new Date()
+      pickupDate.setDate(pickupDate.getDate() + 2)
+      setRequests(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'approved', pickup_time: pickupDate.toISOString() } : r
+      ))
+      setShowApproveDialog(false)
+      toast.success('Demo request approved successfully')
+      return
+    }
+
     try {
       const pickupDate = new Date()
       pickupDate.setDate(pickupDate.getDate() + 2)
@@ -184,6 +224,16 @@ export default function OfficialDocumentsPage() {
   }
 
   const handleReleaseDocument = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId)
+    if (request?.isMock) {
+      const releaseDate = new Date().toISOString()
+      setRequests(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'released', release_date: releaseDate } : r
+      ))
+      toast.success('Demo document marked as released')
+      return
+    }
+
     try {
       const { error } = await supabase
         .from('document_requests')
@@ -243,6 +293,9 @@ export default function OfficialDocumentsPage() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">Document Requests</h1>
           <p className="text-xs md:text-sm text-muted-foreground">Process and manage document requests</p>
+          {isMockRequestData && (
+            <p className="mt-2 text-sm text-amber-700">Demo request data is displayed because no live requests were available.</p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowManageTypes(true)}>
@@ -415,6 +468,35 @@ export default function OfficialDocumentsPage() {
                   <p className="font-medium text-sm">PHP {selectedRequest.fee}</p>
                 </div>
               </div>
+
+              {selectedRequest.document_path && selectedRequest.document_path.length > 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900 mb-3">Uploaded documents package</p>
+                  <p className="text-xs text-slate-500 mb-4">This request includes all required uploads in one combined package for review.</p>
+                  <div className="space-y-3">
+                    {selectedRequest.document_path.map((doc, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-white p-3 border border-slate-200">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.requirement || doc.name || `Document ${index + 1}`}</p>
+                          <p className="text-xs text-slate-500 truncate">{doc.name ?? 'Uploaded file'}</p>
+                        </div>
+                        {doc.url ? (
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
+                            View file
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-500">No file URL available</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

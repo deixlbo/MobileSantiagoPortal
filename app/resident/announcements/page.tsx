@@ -10,59 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { DocumentHeader } from "@/components/document-header"
 import { Search, Megaphone, Calendar, MapPin, Clock } from "lucide-react"
 
-const mockAnnouncements = [
-  {
-    id: "ANN-2026-001",
-    title: "Community Clean-up Drive",
-    date: "April 25, 2026",
-    content: "Join us for a community-wide clean-up drive this Saturday. All residents are encouraged to participate in maintaining the cleanliness of our barangay. Together, we can create a cleaner and healthier environment for everyone.",
-    eventDate: "April 27, 2026",
-    eventTime: "7:00 AM - 12:00 PM",
-    venue: "Starting point: Barangay Hall",
-    category: "Event"
-  },
-  {
-    id: "ANN-2026-002",
-    title: "Free Medical Check-up",
-    date: "April 28, 2026",
-    content: "The barangay health center, in partnership with the Municipal Health Office, will be conducting a free medical check-up for all residents. Services include blood pressure monitoring, blood sugar testing, and general consultation. Please bring your Barangay ID.",
-    eventDate: "May 5, 2026",
-    eventTime: "8:00 AM - 4:00 PM",
-    venue: "Barangay Health Center",
-    category: "Health"
-  },
-  {
-    id: "ANN-2026-003",
-    title: "Barangay Assembly Meeting",
-    date: "April 20, 2026",
-    content: "All residents are invited to attend the quarterly Barangay Assembly. This is an opportunity to hear updates on barangay projects, ordinances, and financial reports. Your participation is important in shaping our community.",
-    eventDate: "May 1, 2026",
-    eventTime: "2:00 PM - 5:00 PM",
-    venue: "Barangay Multipurpose Hall",
-    category: "Meeting"
-  },
-  {
-    id: "ANN-2026-004",
-    title: "Water Service Interruption Notice",
-    date: "April 22, 2026",
-    content: "Please be advised that there will be a scheduled water service interruption on April 30, 2026, from 8:00 AM to 6:00 PM due to pipeline maintenance works in Purok 2 and Purok 3. Residents are advised to store enough water for their daily needs.",
-    eventDate: "April 30, 2026",
-    eventTime: "8:00 AM - 6:00 PM",
-    venue: "Purok 2 and Purok 3",
-    category: "Advisory"
-  },
-  {
-    id: "ANN-2026-005",
-    title: "Scholarship Program Application",
-    date: "April 15, 2026",
-    content: "The barangay is now accepting applications for the Educational Assistance Program for the upcoming school year. Qualified applicants must be bona fide residents of Barangay Santiago and must submit the required documents. Deadline of submission is on May 15, 2026.",
-    eventDate: null,
-    eventTime: null,
-    venue: "Submit at Barangay Hall",
-    category: "Program"
-  },
-]
-
 function getCategoryBadge(category: string) {
   const colors: Record<string, string> = {
     Event: "bg-blue-100 text-blue-700",
@@ -80,9 +27,10 @@ function getCategoryBadge(category: string) {
 
 export default function AnnouncementsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<typeof mockAnnouncements[0] | null>(null)
+  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null)
 
-  const filteredAnnouncements = mockAnnouncements.filter(ann => 
+  const filteredAnnouncements = announcements.filter(ann => 
     ann.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ann.content.toLowerCase().includes(searchTerm.toLowerCase())
   )

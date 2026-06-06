@@ -40,69 +40,6 @@ const LocationMap = dynamic(() => import("@/components/location-map"), {
   )
 })
 
-const mockBlotters = [
-  {
-    id: "BLT-2026-001",
-    type: "Noise Complaint",
-    description: "Loud karaoke past 10PM in Purok 3, disturbing nearby residents.",
-    location: "Purok 3, near the chapel",
-    locationCoords: { lat: 15.1355, lng: 120.0462 },
-    complainant: "Juan Dela Cruz",
-    complainantAddress: "Purok 3, Barangay Santiago",
-    respondent: "Pedro Santos",
-    respondentAddress: "Purok 3, Barangay Santiago",
-    status: "resolved",
-    filedDate: "April 20, 2026",
-    investigationDate: "April 21, 2026",
-    mediationScheduledDate: "April 23, 2026",
-    hearingDate: "April 24, 2026",
-    actionTaken: "Mediation conducted on April 24, 2026. Both parties reached mutual agreement.",
-    resolution: "Parties agreed to limit karaoke hours until 9PM. Respondent to install soundproofing.",
-    resolutionDate: "April 25, 2026",
-    resolutionDocument: "/documents/resolution-BLT-2026-001.pdf"
-  },
-  {
-    id: "BLT-2026-002",
-    type: "Property Dispute",
-    description: "Fence encroachment on neighboring lot.",
-    location: "Purok 2, Lot 15",
-    locationCoords: { lat: 15.1328, lng: 120.0440 },
-    complainant: "Maria Santos",
-    complainantAddress: "Lot 14, Purok 2",
-    respondent: "Pedro Reyes",
-    respondentAddress: "Lot 16, Purok 2",
-    status: "scheduled-mediation",
-    filedDate: "April 26, 2026",
-    investigationDate: "April 27, 2026",
-    mediationScheduledDate: "May 2, 2026",
-    hearingDate: null,
-    actionTaken: "Investigation completed. Property survey conducted.",
-    resolution: null,
-    resolutionDate: null,
-    resolutionDocument: null
-  },
-  {
-    id: "BLT-2026-003",
-    type: "Neighborhood Dispute",
-    description: "Ongoing argument about water drainage causing flooding.",
-    location: "Purok 1, near the drainage canal",
-    locationCoords: { lat: 15.1310, lng: 120.0432 },
-    complainant: "Ana Garcia",
-    complainantAddress: "Purok 1, Barangay Santiago",
-    respondent: "Carlos Mendoza",
-    respondentAddress: "Purok 1, Barangay Santiago",
-    status: "pending-review",
-    filedDate: "April 28, 2026",
-    investigationDate: null,
-    mediationScheduledDate: null,
-    hearingDate: null,
-    actionTaken: null,
-    resolution: null,
-    resolutionDate: null,
-    resolutionDocument: null
-  },
-]
-
 function getStatusBadge(status: string) {
   switch (status) {
     case "pending-review":
@@ -180,12 +117,12 @@ const itemVariants = {
 function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
   return (
     <div className={`flex items-center justify-between mb-4 p-4 border-b ${printOnly ? 'hidden print:flex' : ''}`}>
-      <Image src="/images/santiagologo.jpg" alt="Barangay Santiago" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
+      <Image src="/images/santiagologo.jpg" alt="AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
       <div className="text-center flex-1 px-2">
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
+        <p className="text-xs md:text-sm font-semibold print:text-black">AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation</p>
       </div>
       <Image src="/images/saz.jpg" alt="Municipality" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shrink-0" />
     </div>
@@ -194,9 +131,9 @@ function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
 
 export default function OfficialBlottersPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [blotters, setBlotters] = useState(mockBlotters)
-  const [selectedBlotter, setSelectedBlotter] = useState<typeof mockBlotters[0] | null>(null)
-  const [selectedPrintBlotter, setSelectedPrintBlotter] = useState<typeof mockBlotters[0] | null>(null)
+  const [blotters, setBlotters] = useState<any[]>([])
+  const [selectedBlotter, setSelectedBlotter] = useState<any | null>(null)
+  const [selectedPrintBlotter, setSelectedPrintBlotter] = useState<any | null>(null)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>("under-investigation")
   const [actionTaken, setActionTaken] = useState("")
@@ -223,7 +160,7 @@ export default function OfficialBlottersPage() {
   const processingCount = blotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).length
   const resolvedCount = blotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).length
 
-  const handlePrintBlotter = (blotter: typeof mockBlotters[0]) => {
+  const handlePrintBlotter = (blotter: any) => {
     setSelectedPrintBlotter(blotter)
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
@@ -348,7 +285,7 @@ export default function OfficialBlottersPage() {
   }
 
   // Export single blotter to Excel
-  const handleExportSingleBlotter = (blotter: typeof mockBlotters[0]) => {
+  const handleExportSingleBlotter = (blotter: any) => {
     exportSingleBlotterToExcel({
       id: blotter.id,
       type: blotter.type,
@@ -435,7 +372,7 @@ export default function OfficialBlottersPage() {
                 <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <div className="text-center md:text-left">
-                <p className="text-lg md:text-2xl font-bold">{mockBlotters.length}</p>
+                <p className="text-lg md:text-2xl font-bold">{blotters.length}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Total</p>
               </div>
             </div>

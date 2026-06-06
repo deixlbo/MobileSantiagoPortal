@@ -74,140 +74,6 @@ type Household = {
   registeredDate: string
 }
 
-const mockResidents: Resident[] = [
-  {
-    id: "RES-001",
-    name: "Juan Dela Cruz",
-    email: "juan@example.com",
-    purok: "Purok 3",
-    gender: "Male",
-    age: 45,
-    occupation: "Farmer",
-    status: "verified",
-    documentType: "Valid ID",
-    documentImage: "/images/sample-id-1.png",
-    registeredDate: "April 15, 2026",
-    householdId: "HH-001",
-    isHouseholdHead: true,
-    familyMembers: [
-      { id: "FM-001", name: "Maria Dela Cruz", relationship: "Spouse", age: 42, gender: "Female", occupation: "Housewife" },
-      { id: "FM-002", name: "Jose Dela Cruz", relationship: "Son", age: 20, gender: "Male", occupation: "Student" },
-      { id: "FM-003", name: "Anna Dela Cruz", relationship: "Daughter", age: 17, gender: "Female", occupation: "Student" },
-    ]
-  },
-  {
-    id: "RES-002",
-    name: "Maria Santos",
-    email: "maria@example.com",
-    purok: "Purok 1",
-    gender: "Female",
-    age: 19,
-    occupation: "Student",
-    status: "pending",
-    documentType: "Birth Certificate",
-    documentImage: "/images/sample-id-2.png",
-    registeredDate: "April 25, 2026"
-  },
-  {
-    id: "RES-003",
-    name: "Pedro Reyes",
-    email: "pedro@example.com",
-    purok: "Purok 2",
-    gender: "Male",
-    age: 35,
-    occupation: "Carpenter",
-    status: "verified",
-    documentType: "Voter's ID",
-    documentImage: "/images/sample-id-3.png",
-    registeredDate: "April 27, 2026",
-    householdId: "HH-002",
-    isHouseholdHead: true,
-    familyMembers: [
-      { id: "FM-004", name: "Lorna Reyes", relationship: "Spouse", age: 33, gender: "Female", occupation: "Teacher" },
-      { id: "FM-005", name: "Miguel Reyes", relationship: "Son", age: 8, gender: "Male", occupation: "Student" },
-    ]
-  },
-  {
-    id: "RES-004",
-    name: "Ana Garcia",
-    email: "ana@example.com",
-    purok: "Purok 4",
-    gender: "Female",
-    age: 52,
-    occupation: "Vendor",
-    status: "verified",
-    documentType: "Valid ID",
-    documentImage: "/images/sample-id-4.png",
-    registeredDate: "March 10, 2026",
-    householdId: "HH-003",
-    isHouseholdHead: true,
-    familyMembers: [
-      { id: "FM-006", name: "Roberto Garcia", relationship: "Spouse", age: 55, gender: "Male", occupation: "Farmer" },
-    ]
-  },
-  {
-    id: "RES-005",
-    name: "Carlos Mendoza",
-    email: "carlos@example.com",
-    purok: "Purok 5",
-    gender: "Male",
-    age: 28,
-    occupation: "Driver",
-    status: "declined",
-    documentType: "Birth Certificate",
-    documentImage: "/images/sample-id-5.png",
-    remarks: "Invalid document uploaded",
-    registeredDate: "April 20, 2026"
-  },
-]
-
-const mockHouseholds: Household[] = [
-  {
-    id: "HH-001",
-    householdNumber: "HH-2026-001",
-    address: "123 Main Street",
-    purok: "Purok 3",
-    headOfFamily: "Juan Dela Cruz",
-    headId: "RES-001",
-    totalMembers: 4,
-    members: [
-      { id: "RES-001", name: "Juan Dela Cruz", relationship: "Head", age: 45, gender: "Male", occupation: "Farmer" },
-      { id: "FM-001", name: "Maria Dela Cruz", relationship: "Spouse", age: 42, gender: "Female", occupation: "Housewife" },
-      { id: "FM-002", name: "Jose Dela Cruz", relationship: "Son", age: 20, gender: "Male", occupation: "Student" },
-      { id: "FM-003", name: "Anna Dela Cruz", relationship: "Daughter", age: 17, gender: "Female", occupation: "Student" },
-    ],
-    registeredDate: "April 15, 2026"
-  },
-  {
-    id: "HH-002",
-    householdNumber: "HH-2026-002",
-    address: "456 Secondary Road",
-    purok: "Purok 2",
-    headOfFamily: "Pedro Reyes",
-    headId: "RES-003",
-    totalMembers: 3,
-    members: [
-      { id: "RES-003", name: "Pedro Reyes", relationship: "Head", age: 35, gender: "Male", occupation: "Carpenter" },
-      { id: "FM-004", name: "Lorna Reyes", relationship: "Spouse", age: 33, gender: "Female", occupation: "Teacher" },
-      { id: "FM-005", name: "Miguel Reyes", relationship: "Son", age: 8, gender: "Male", occupation: "Student" },
-    ],
-    registeredDate: "April 27, 2026"
-  },
-  {
-    id: "HH-003",
-    householdNumber: "HH-2026-003",
-    address: "789 Coastal Ave",
-    purok: "Purok 4",
-    headOfFamily: "Ana Garcia",
-    headId: "RES-004",
-    totalMembers: 2,
-    members: [
-      { id: "RES-004", name: "Ana Garcia", relationship: "Head", age: 52, gender: "Female", occupation: "Vendor" },
-      { id: "FM-006", name: "Roberto Garcia", relationship: "Spouse", age: 55, gender: "Male", occupation: "Farmer" },
-    ],
-    registeredDate: "March 10, 2026"
-  },
-]
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -252,8 +118,8 @@ const itemVariants = {
 
 export default function ResidentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [residents, setResidents] = useState<Resident[]>(mockResidents)
-  const [households, setHouseholds] = useState<Household[]>(mockHouseholds)
+  const [residents, setResidents] = useState<Resident[]>([])
+  const [households, setHouseholds] = useState<Household[]>([])
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null)
   const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null)
   const [selectedPuroks, setSelectedPuroks] = useState<string[]>([])
@@ -269,7 +135,7 @@ export default function ResidentsPage() {
   })
 
   // Get unique puroks
-  const puroks = Array.from(new Set(mockResidents.map(r => r.purok))).sort()
+  const puroks = Array.from(new Set(residents.map(r => r.purok))).sort()
 
   // Age ranges for filtering
   const ageRanges = [

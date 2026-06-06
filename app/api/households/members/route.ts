@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     // Add resident to household
     const { data: updated, error: updateError } = await supabase
-      .from('residents')
+      .from('profiles')
       .update({ household_id: householdId })
       .eq('id', residentId)
       .select();
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // Update household member count
     const { data: members } = await supabase
-      .from('residents')
+      .from('profiles')
       .select('id')
       .eq('household_id', householdId);
 
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest) {
 
     // Remove resident from household
     const { data: updated, error: updateError } = await supabase
-      .from('residents')
+      .from('profiles')
       .update({ household_id: null })
       .eq('id', residentId)
       .select();
@@ -90,7 +90,7 @@ export async function DELETE(req: NextRequest) {
 
     // Update household member count
     const { data: members } = await supabase
-      .from('residents')
+      .from('profiles')
       .select('id')
       .eq('household_id', householdId);
 

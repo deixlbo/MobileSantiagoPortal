@@ -58,78 +58,6 @@ interface Asset {
   image?: string
 }
 
-const mockAssets: Asset[] = [
-  {
-    id: "AST-001",
-    name: "Barangay Service Vehicle",
-    category: "vehicle",
-    description: "Toyota Hiace for community service",
-    acquisitionDate: "2022-03-15",
-    acquisitionCost: 1500000,
-    currentValue: 1200000,
-    location: "Barangay Hall Garage",
-    status: "operational",
-    serialNumber: "TH-2022-001",
-    lastMaintenance: "2024-01-10",
-    assignedTo: "Barangay Captain",
-  },
-  {
-    id: "AST-002",
-    name: "Emergency Response Kit",
-    category: "equipment",
-    description: "Complete first aid and rescue equipment",
-    acquisitionDate: "2023-06-20",
-    acquisitionCost: 150000,
-    currentValue: 120000,
-    location: "Barangay Health Center",
-    status: "operational",
-    serialNumber: "ERK-2023-001",
-    lastMaintenance: "2024-02-15",
-    assignedTo: "Health Committee",
-  },
-  {
-    id: "AST-003",
-    name: "Conference Table Set",
-    category: "furniture",
-    description: "12-seater conference table with chairs",
-    acquisitionDate: "2021-08-10",
-    acquisitionCost: 80000,
-    currentValue: 50000,
-    location: "Barangay Hall Conference Room",
-    status: "operational",
-    serialNumber: "FRN-2021-001",
-    lastMaintenance: "2023-12-01",
-    assignedTo: "General Use",
-  },
-  {
-    id: "AST-004",
-    name: "Desktop Computer Set",
-    category: "electronics",
-    description: "Dell desktop with monitor for office use",
-    acquisitionDate: "2023-01-05",
-    acquisitionCost: 45000,
-    currentValue: 35000,
-    location: "Secretary Office",
-    status: "maintenance",
-    serialNumber: "PC-2023-001",
-    lastMaintenance: "2024-03-01",
-    assignedTo: "Barangay Secretary",
-  },
-  {
-    id: "AST-005",
-    name: "Basketball Court Lights",
-    category: "infrastructure",
-    description: "LED floodlights for basketball court",
-    acquisitionDate: "2022-11-20",
-    acquisitionCost: 200000,
-    currentValue: 160000,
-    location: "Barangay Basketball Court",
-    status: "damaged",
-    serialNumber: "INF-2022-001",
-    lastMaintenance: "2023-10-15",
-    assignedTo: "Sports Committee",
-  },
-]
 
 const categoryLabels: Record<AssetCategory, string> = {
   vehicle: "Vehicle",
@@ -147,7 +75,7 @@ const statusConfig: Record<AssetStatus, { label: string; variant: "default" | "s
 }
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>(mockAssets)
+  const [assets, setAssets] = useState<Asset[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")

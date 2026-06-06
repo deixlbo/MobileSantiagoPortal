@@ -113,10 +113,10 @@ export async function POST(req: NextRequest) {
     // Send notification
     if (document) {
       const { data: resident } = await supabase
-        .from('residents')
-        .select('email, phone')
+        .from('profiles')
+        .select('email, contact_number')
         .eq('id', document.resident_id)
-        .single();
+        .single()
 
       if (resident?.email) {
         // Send email notification

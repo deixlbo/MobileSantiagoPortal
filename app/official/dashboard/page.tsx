@@ -24,46 +24,18 @@ import {
 
 import { useRouter } from "next/navigation"
 
-// Mock data for notifications - document requests
-const initialNotifications = [
-  { id: 1, type: "document", message: "New clearance request from Maria Santos", requestId: "req-001", time: "5 mins ago", read: false },
-  { id: 2, type: "document", message: "New residency certificate request from Pedro Reyes", requestId: "req-002", time: "15 mins ago", read: false },
-  { id: 3, type: "document", message: "New indigency certificate request from Ana Cruz", requestId: "req-003", time: "1 hour ago", read: false },
-  { id: 4, type: "document", message: "New business permit request from Elena Store", requestId: "req-004", time: "2 hours ago", read: false },
-]
-
-// Mock data for charts
-const trendsData = [
-  { date: "Apr 24", requests: 12, approvals: 8, declines: 2 },
-  { date: "Apr 25", requests: 19, approvals: 15, declines: 2 },
-  { date: "Apr 26", requests: 15, approvals: 12, declines: 1 },
-  { date: "Apr 27", requests: 22, approvals: 18, declines: 3 },
-  { date: "Apr 28", requests: 28, approvals: 23, declines: 4 },
-]
-
-const alertsData = [
-  { id: 1, type: "overdue", message: "5 requests overdue (>7 days)", priority: "high" },
-  { id: 2, type: "pending", message: "12 pending document requests awaiting review", priority: "medium" },
-  { id: 3, type: "blotter", message: "3 unresolved blotter cases", priority: "high" },
-  { id: 4, type: "verification", message: "8 residents pending verification", priority: "medium" },
-]
-
-const recentActivities = [
-  { id: 1, user: "Maria Santos", action: "Submitted document request", type: "request", time: "5 mins ago" },
-  { id: 2, user: "Admin", action: "Approved clearance for Juan Dela Cruz", type: "approval", time: "15 mins ago" },
-  { id: 3, user: "Pedro Reyes", action: "Filed blotter report", type: "blotter", time: "1 hour ago" },
-  { id: 4, user: "Admin", action: "Verified resident account", type: "verification", time: "2 hours ago" },
-  { id: 5, user: "Elena Store", action: "Applied for business permit", type: "business", time: "3 hours ago" },
-]
+const trendsData: any[] = []
+const alertsData: any[] = []
+const recentActivities: any[] = []
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   
   const unreadCount = notifications.filter(n => !n.read).length
 
-  const handleNotificationClick = (notification: typeof initialNotifications[0]) => {
+  const handleNotificationClick = (notification: any) => {
     // Mark as read
     setNotifications(prev => 
       prev.map(n => n.id === notification.id ? { ...n, read: true } : n)

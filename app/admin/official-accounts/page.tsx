@@ -1,36 +1,103 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, ShieldCheck, Repeat, UserPlus } from "lucide-react"
-
-const initialOfficials = [
-  { id: "o-1", name: "Rolando Borja", email: "admin@barangaysantiago.gov.ph", role: "Captain", status: "Active" },
-  { id: "o-2", name: "Elena Reyes", email: "secretary@barangaysantiago.gov.ph", role: "Secretary", status: "Active" },
-  { id: "o-3", name: "Jun Mendoza", email: "kagawad@barangaysantiago.gov.ph", role: "Kagawad", status: "Deactivated" },
-]
+import { Plus, ShieldCheck, Repeat, Eye, EyeOff } from "lucide-react"
+import { createOfficial } from "@/lib/auth"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 const roles = ["Captain", "Secretary", "Kagawad", "Staff"]
 
 export default function AdminOfficialAccountsPage() {
-  const [officials, setOfficials] = useState(initialOfficials)
+  const [officials, setOfficials] = useState<any[]>([])
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const [role, setRole] = useState(roles[0])
 
-  const addOfficial = () => {
-    if (!name || !email) return
-    setOfficials((current) => [
-      ...current,
-      { id: `o-${Date.now()}`, name, email, role, status: "Active" },
-    ])
-    setName("")
-    setEmail("")
-    setRole(roles[0])
+  const fetchOfficials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, position, role, verification_status')
+        .eq('role', 'official')
+
+      if (error) throw error
+
+      setOfficials(
+        (data || []).map((profile: any) => ({
+          id: profile.id,
+          name: `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || 'Official',
+          email: profile.email,
+          role: profile.position || 'Official',
+          status: profile.verification_status === 'active' ? 'Active' : 'Active',
+        }))
+      )
+    } catch (error) {
+      console.error('Failed to load official users:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchOfficials()
+  }, [])
+
+  const addOfficial = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters")
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      const [firstName, ...lastNameParts] = name.trim().split(" ")
+      const lastName = lastNameParts.join(" ") || firstName
+
+      const result = await createOfficial({
+        email,
+        password,
+        firstName,
+        lastName,
+        position: role,
+      })
+
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+
+      await fetchOfficials()
+      setName("")
+      setEmail("")
+      setPassword("")
+      setConfirmPassword("")
+      setRole(roles[0])
+      toast.success("Official account created successfully")
+    } catch (error) {
+      toast.error("Failed to create official account")
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const toggleStatus = (id: string) => {
@@ -115,6 +182,44 @@ export default function AdminOfficialAccountsPage() {
                 <Input id="official-email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" />
               </div>
               <div>
+                <Label htmlFor="official-password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="official-password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="official-confirm-password">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="official-confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
                 <Label htmlFor="official-role">Role</Label>
                 <select
                   id="official-role"
@@ -130,8 +235,8 @@ export default function AdminOfficialAccountsPage() {
             </div>
           </CardContent>
           <div className="p-4">
-            <Button className="w-full" onClick={addOfficial}>
-              <Plus className="mr-2 h-4 w-4" /> Create official account
+            <Button className="w-full" onClick={addOfficial} disabled={isCreating}>
+              <Plus className="mr-2 h-4 w-4" /> {isCreating ? 'Creating...' : 'Create official account'}
             </Button>
           </div>
         </Card>

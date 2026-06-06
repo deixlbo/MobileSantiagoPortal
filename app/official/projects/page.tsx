@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,61 +22,8 @@ import {
   Wallet
 } from "lucide-react"
 import { Trash2 } from "lucide-react"
-import { updateProject, deleteProject, updateProjectStatus, updateProjectProgress } from "@/lib/project-utils"
+import { createProject, updateProject, deleteProject, updateProjectStatus, updateProjectProgress } from "@/lib/project-utils"
 
-const mockProjects = [
-  {
-    id: "PRJ-2026-001",
-    title: "Road Improvement Project",
-    type: "Infrastructure",
-    description: "This project aims to improve road accessibility in Purok 3 to ensure safer and more efficient transportation for residents.",
-    location: "Purok 3, Barangay Santiago",
-    startDate: "January 10, 2026",
-    targetCompletion: "March 30, 2026",
-    status: "Ongoing",
-    progress: 65,
-    budget: "150,000",
-    source: "Barangay Development Fund",
-    projectHead: "Juan Dela Cruz",
-    projectHeadPosition: "Barangay Kagawad",
-    beneficiaries: "Residents of Purok 3",
-    remarks: "Project is progressing as scheduled with no major delays."
-  },
-  {
-    id: "PRJ-2026-002",
-    title: "Health Center Renovation",
-    type: "Health",
-    description: "Renovation of the barangay health center to provide better medical services to residents.",
-    location: "Barangay Center",
-    startDate: "November 1, 2025",
-    targetCompletion: "February 28, 2026",
-    status: "Completed",
-    progress: 100,
-    budget: "200,000",
-    source: "LGU Support",
-    projectHead: "Maria Santos",
-    projectHeadPosition: "Barangay Kagawad - Health",
-    beneficiaries: "All Barangay Santiago Residents",
-    remarks: "Successfully completed ahead of schedule."
-  },
-  {
-    id: "PRJ-2026-003",
-    title: "Solar Street Lights Installation",
-    type: "Infrastructure",
-    description: "Installation of solar-powered street lights along the main road.",
-    location: "Main Road, Barangay Santiago",
-    startDate: "May 1, 2026",
-    targetCompletion: "June 30, 2026",
-    status: "Planned",
-    progress: 0,
-    budget: "100,000",
-    source: "Barangay Fund",
-    projectHead: "Pedro Reyes",
-    projectHeadPosition: "Barangay Treasurer",
-    beneficiaries: "All Residents",
-    remarks: "Awaiting procurement of materials."
-  },
-]
 
 const projectTypes = ["Infrastructure", "Health", "Education", "Environment", "Peace and Order", "Social Welfare"]
 
@@ -95,15 +42,19 @@ function getStatusBadge(status: string) {
 
 export default function OfficialProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [projects, setProjects] = useState(mockProjects)
-  const [selectedProject, setSelectedProject] = useState<typeof mockProjects[0] | null>(null)
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProject, setSelectedProject] = useState<any | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<typeof mockProjects[0] | null>(null)
+  const [editingProject, setEditingProject] = useState<any | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showProgressDialog, setShowProgressDialog] = useState(false)
   const [newProgress, setNewProgress] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isProgressSaving, setIsProgressSaving] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     type: "",
@@ -120,115 +71,173 @@ export default function OfficialProjectsPage() {
     remarks: "",
   })
 
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch('/api/projects')
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load projects')
+        }
+        setProjects(data || [])
+      } catch (error) {
+        console.error('Failed to load projects:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProjects()
+  }, [])
+
   const requestDeleteProject = (id: string) => {
     setConfirmDeleteProjectId(id)
     setIsConfirmOpen(true)
   }
 
-  const confirmDeleteProject = () => {
+  const confirmDeleteProject = async () => {
     if (!confirmDeleteProjectId) return
-    setProjects((s) => s.filter((p) => p.id !== confirmDeleteProjectId))
-    setConfirmDeleteProjectId(null)
-    setIsConfirmOpen(false)
+    try {
+      setLoading(true)
+      await deleteProject(confirmDeleteProjectId)
+      setProjects((s) => s.filter((p) => p.id !== confirmDeleteProjectId))
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+      alert('Failed to delete project')
+    } finally {
+      setConfirmDeleteProjectId(null)
+      setIsConfirmOpen(false)
+      setLoading(false)
+    }
   }
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!formData.title || !formData.type || !formData.location) {
       alert('Please fill in all required fields')
       return
     }
-    const newId = `PRJ-2026-${String(projects.length + 1).padStart(3, "0")}`
-    const newProject = {
-      id: newId,
-      title: formData.title,
-      type: formData.type,
-      description: formData.description,
-      location: formData.location,
-      startDate: formData.startDate,
-      targetCompletion: formData.targetCompletion,
-      status: formData.status,
-      progress: 0,
-      budget: formData.budget,
-      source: formData.source,
-      projectHead: formData.projectHead,
-      projectHeadPosition: formData.projectHeadPosition,
-      beneficiaries: formData.beneficiaries,
-      remarks: formData.remarks,
+
+    setIsSaving(true)
+    try {
+      const created = await createProject({
+        title: formData.title,
+        description: formData.description,
+        startDate: formData.startDate || new Date().toISOString().split('T')[0],
+        endDate: formData.targetCompletion || undefined,
+        progress: 0,
+        budget: formData.budget,
+        spent: 0,
+        location: formData.location,
+        status: formData.status,
+        createdBy: 'system',
+      })
+
+      const newProject = created?.project ?? created
+      setProjects([newProject, ...projects])
+      setShowCreateDialog(false)
+      setFormData({
+        title: "",
+        type: "",
+        description: "",
+        location: "",
+        startDate: "",
+        targetCompletion: "",
+        status: "Planned",
+        budget: "",
+        source: "",
+        projectHead: "",
+        projectHeadPosition: "",
+        beneficiaries: "",
+        remarks: "",
+      })
+    } catch (error) {
+      console.error('Failed to create project:', error)
+      alert('Failed to create project')
+    } finally {
+      setIsSaving(false)
     }
-    setProjects([newProject, ...projects])
-    setShowCreateDialog(false)
-    setFormData({
-      title: "",
-      type: "",
-      description: "",
-      location: "",
-      startDate: "",
-      targetCompletion: "",
-      status: "Planned",
-      budget: "",
-      source: "",
-      projectHead: "",
-      projectHeadPosition: "",
-      beneficiaries: "",
-      remarks: "",
-    })
   }
 
-  const handleEditProject = (project: typeof mockProjects[0]) => {
+  const handleEditProject = (project: any) => {
     setEditingProject(project)
     setFormData({
       title: project.title,
       type: project.type,
       description: project.description,
       location: project.location,
-      startDate: project.startDate,
-      targetCompletion: project.targetCompletion,
-      status: project.status,
-      budget: project.budget,
-      source: project.source,
-      projectHead: project.projectHead,
-      projectHeadPosition: project.projectHeadPosition,
-      beneficiaries: project.beneficiaries,
-      remarks: project.remarks,
+      startDate: project.start_date || project.startDate || "",
+      targetCompletion: project.end_date || project.targetCompletion || "",
+      status: project.status || "Planned",
+      budget: project.budget || "",
+      source: project.source || "",
+      projectHead: project.projectHead || "",
+      projectHeadPosition: project.projectHeadPosition || "",
+      beneficiaries: project.beneficiaries || "",
+      remarks: project.remarks || "",
     })
     setShowEditDialog(true)
   }
 
-  const handleUpdateProject = () => {
+  const handleUpdateProject = async () => {
     if (!editingProject) return
-    const updated = {
-      ...editingProject,
-      ...formData,
+
+    setIsUpdating(true)
+    try {
+      const updatedResponse = await updateProject(editingProject.id, {
+        title: formData.title,
+        description: formData.description,
+        startDate: formData.startDate,
+        endDate: formData.targetCompletion,
+        status: formData.status,
+        budget: formData.budget,
+        source: formData.source,
+        location: formData.location,
+      })
+
+      const updatedProject = updatedResponse?.project ?? updatedResponse
+      setProjects(projects.map(p => p.id === editingProject.id ? updatedProject : p))
+      setShowEditDialog(false)
+      setEditingProject(null)
+      setFormData({
+        title: "",
+        type: "",
+        description: "",
+        location: "",
+        startDate: "",
+        targetCompletion: "",
+        status: "Planned",
+        budget: "",
+        source: "",
+        projectHead: "",
+        projectHeadPosition: "",
+        beneficiaries: "",
+        remarks: "",
+      })
+    } catch (error) {
+      console.error('Failed to update project:', error)
+      alert('Failed to update project')
+    } finally {
+      setIsUpdating(false)
     }
-    setProjects(projects.map(p => p.id === editingProject.id ? updated : p))
-    setShowEditDialog(false)
-    setEditingProject(null)
-    setFormData({
-      title: "",
-      type: "",
-      description: "",
-      location: "",
-      startDate: "",
-      targetCompletion: "",
-      status: "Planned",
-      budget: "",
-      source: "",
-      projectHead: "",
-      projectHeadPosition: "",
-      beneficiaries: "",
-      remarks: "",
-    })
   }
 
-  const handleUpdateProgress = () => {
+  const handleUpdateProgress = async () => {
     if (!selectedProject) return
-    const updated = {
-      ...selectedProject,
-      progress: newProgress,
+
+    setIsProgressSaving(true)
+    try {
+      const updatedResponse = await updateProjectProgress(selectedProject.id, newProgress)
+      const updatedProject = updatedResponse?.project ?? updatedResponse
+      setProjects(projects.map(p => p.id === selectedProject.id ? updatedProject : p))
+      setSelectedProject(updatedProject)
+      setShowProgressDialog(false)
+    } catch (error) {
+      console.error('Failed to update project progress:', error)
+      alert('Failed to update project progress')
+    } finally {
+      setIsProgressSaving(false)
     }
-    setProjects(projects.map(p => p.id === selectedProject.id ? updated : p))
-    setSelectedProject(updated)
-    setShowProgressDialog(false)
   }
 
   const ongoingCount = projects.filter(p => p.status === "Ongoing").length
@@ -430,7 +439,7 @@ export default function OfficialProjectsPage() {
                 <FolderKanban className="h-5 w-5 text-gray-700" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockProjects.filter(p => p.status === "Planned").length}</p>
+                <p className="text-2xl font-bold">{projects.filter((p: any) => p.status === "Planned").length}</p>
                 <p className="text-sm text-muted-foreground">Planned</p>
               </div>
             </div>
@@ -443,7 +452,7 @@ export default function OfficialProjectsPage() {
                 <FolderKanban className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockProjects.length}</p>
+                <p className="text-2xl font-bold">{projects.length}</p>
                 <p className="text-sm text-muted-foreground">Total</p>
               </div>
             </div>

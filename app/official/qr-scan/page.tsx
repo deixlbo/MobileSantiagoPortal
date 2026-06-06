@@ -5,36 +5,7 @@ import { OfficialQRScanner } from '@/components/official-qr-scanner'
 import { Badge } from '@/components/ui/badge'
 import { Camera, CheckCircle2, Clock, FileText, AlertTriangle } from 'lucide-react'
 
-// Mock recent scans
-const recentScans = [
-  {
-    id: 1,
-    type: 'document',
-    name: 'Juan Dela Cruz',
-    documentType: 'Barangay Clearance',
-    requestNumber: 'REQ-2026-001',
-    status: 'approved',
-    scannedAt: '10 minutes ago'
-  },
-  {
-    id: 2,
-    type: 'document',
-    name: 'Maria Santos',
-    documentType: 'Certificate of Residency',
-    requestNumber: 'REQ-2026-002',
-    status: 'completed',
-    scannedAt: '25 minutes ago'
-  },
-  {
-    id: 3,
-    type: 'blotter',
-    name: 'Pedro Reyes',
-    documentType: 'Noise Complaint',
-    requestNumber: 'BLT-2026-003',
-    status: 'under-investigation',
-    scannedAt: '1 hour ago'
-  },
-]
+const recentScans: any[] = []
 
 function getStatusBadge(status: string) {
   switch (status) {

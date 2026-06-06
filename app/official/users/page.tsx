@@ -26,66 +26,6 @@ import {
   ClipboardList,
 } from "lucide-react"
 
-// Mock data for users
-const mockUsers = [
-  {
-    id: 1,
-    name: "Rolando C. Borja",
-    email: "rolando@barangaysantiago.gov.ph",
-    role: "Admin",
-    status: "active",
-    lastLogin: "Today at 2:30 PM",
-    department: "Administration",
-    actions: ["View All", "Edit Records", "Approve Requests", "Generate Reports", "Manage Users"],
-    logs: [
-      { action: "Logged in", time: "Today at 2:30 PM" },
-      { action: "Approved 3 document requests", time: "Today at 1:45 PM" },
-      { action: "Generated monthly report", time: "Today at 12:00 PM" },
-    ]
-  },
-  {
-    id: 2,
-    name: "Maria Cruz",
-    email: "maria@barangaysantiago.gov.ph",
-    role: "Staff",
-    status: "active",
-    lastLogin: "Today at 1:15 PM",
-    department: "Documents",
-    actions: ["View Assigned", "Process Requests", "Upload Documents"],
-    logs: [
-      { action: "Logged in", time: "Today at 1:15 PM" },
-      { action: "Processed 5 clearance requests", time: "Today at 10:30 AM" },
-    ]
-  },
-  {
-    id: 3,
-    name: "Juan Reyes",
-    email: "juan@barangaysantiago.gov.ph",
-    role: "Staff",
-    status: "active",
-    lastLogin: "Yesterday at 4:00 PM",
-    department: "Blotter",
-    actions: ["View Assigned", "Process Cases", "Schedule Hearings"],
-    logs: [
-      { action: "Logged in", time: "Yesterday at 4:00 PM" },
-      { action: "Filed 2 new blotter cases", time: "Yesterday at 3:15 PM" },
-    ]
-  },
-  {
-    id: 4,
-    name: "Ana Gabrielle Santos",
-    email: "ana@barangaysantiago.gov.ph",
-    role: "Official",
-    status: "active",
-    lastLogin: "Today at 3:45 PM",
-    department: "Leadership",
-    actions: ["View All", "Approve Requests", "Sign Documents"],
-    logs: [
-      { action: "Logged in", time: "Today at 3:45 PM" },
-      { action: "Signed 5 documents", time: "Today at 3:00 PM" },
-    ]
-  },
-]
 
 const rolePermissions = [
   {
@@ -123,10 +63,10 @@ const itemVariants = {
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState<any[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [editingUser, setEditingUser] = useState<typeof mockUsers[0] | null>(null)
+  const [editingUser, setEditingUser] = useState<any | null>(null)
   const [editedUserData, setEditedUserData] = useState({ name: "", email: "", department: "", role: "Staff" as "Admin" | "Official" | "Staff" })
   const [newUserRole, setNewUserRole] = useState<"Admin" | "Official" | "Staff">("Staff")
   const [newUserData, setNewUserData] = useState({ name: "", email: "", department: "" })
@@ -165,7 +105,7 @@ export default function UsersPage() {
       ? ["View All", "Approve Requests", "Sign Documents"]
       : ["View Assigned", "Process Requests", "Upload Documents"]
 
-  const openEditDialog = (user: typeof mockUsers[0]) => {
+  const openEditDialog = (user: any) => {
     setEditingUser(user)
     setEditedUserData({ name: user.name, email: user.email, department: user.department, role: user.role as "Admin" | "Official" | "Staff" })
     setShowEditDialog(true)

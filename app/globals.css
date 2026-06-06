@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Government Green Theme - Barangay Santiago */
+  /* Government Green Theme - AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation */
   --background: oklch(0.98 0.008 145);
   --foreground: oklch(0.20 0.03 145);
   --card: oklch(1 0 0);

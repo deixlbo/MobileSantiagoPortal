@@ -43,7 +43,7 @@ const statusOptions = [
   { value: 'approved', label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
   { value: 'ready', label: 'Ready for Pickup', color: 'bg-green-100 text-green-700' },
   { value: 'completed', label: 'Completed', color: 'bg-emerald-100 text-emerald-800' },
-  { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+  { value: 'declined', label: 'Declined', color: 'bg-red-100 text-red-700' },
 ]
 
 export function OfficialQRScanner({ onStatusUpdate }: OfficialQRScannerProps) {

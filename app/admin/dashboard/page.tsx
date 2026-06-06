@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
                 <ShieldCheck className="h-5 w-5 text-slate-700" />
                 <p className="font-semibold">Resident Verification</p>
               </div>
-              <p className="text-sm text-slate-600">Review pending accounts, view IDs, approve or reject registrations, and manage verification status.</p>
+              <p className="text-sm text-slate-600">Review pending accounts, view IDs, approve or decline registrations, and manage verification status.</p>
               <Button variant="secondary" className="w-full" asChild>
                 <Link href="/admin/resident-verification">Open verification</Link>
               </Button>
@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
                 <ClipboardList className="h-5 w-5 text-slate-700" />
                 <p className="font-semibold">Document Requests</p>
               </div>
-              <p className="text-sm text-slate-600">Manage requests, approve or reject documents, change status, and print or download PDFs.</p>
+              <p className="text-sm text-slate-600">Manage requests, approve or decline documents, change status, and print or download PDFs.</p>
               <Button variant="secondary" className="w-full" asChild>
                 <Link href="/admin/document-requests">Open requests</Link>
               </Button>

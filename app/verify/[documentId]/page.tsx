@@ -159,7 +159,7 @@ async function VerifyContent({
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            This verification confirms the document has not been tampered with. For official use, verify with Barangay Santiago directly.
+            This verification confirms the document has not been tampered with. For official use, verify with AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation directly.
           </AlertDescription>
         </Alert>
       </div>
@@ -193,13 +193,13 @@ export default async function VerifyPage(props: VerifyPageProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Document Verification</h1>
           <p className="text-muted-foreground mt-2">
-            Verify the authenticity of your Barangay Santiago document
+            Verify the authenticity of your AI-Assisted Barangay Santiago Portal document
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Barangay Santiago Portal</CardTitle>
+            <CardTitle className="text-lg">AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation</CardTitle>
             <CardDescription>Official Document Verification</CardDescription>
           </CardHeader>
           <CardContent>

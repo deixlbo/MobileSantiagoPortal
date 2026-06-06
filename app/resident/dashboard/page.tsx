@@ -25,18 +25,6 @@ import {
   Loader2,
 } from "lucide-react"
 
-const barangayInfo = {
-  name: "Barangay Santiago",
-  municipality: "San Antonio",
-  province: "Zambales",
-  region: "Central Luzon (Region III)",
-  punongBarangay: "Hon. Rolando C. Borja",
-  address: "Barangay Santiago, San Antonio, Zambales 2206",
-  phone: "(047) 123-4567",
-  email: "barangaysantiago@sanantonio.gov.ph",
-  officeHours: "Monday - Friday, 8:00 AM - 5:00 PM",
-}
-
 export default function ResidentDashboard() {
   const router = useRouter()
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -44,6 +32,7 @@ export default function ResidentDashboard() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [barangayInfo, setBarangayInfo] = useState<any | null>(null)
   
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
@@ -421,33 +410,33 @@ export default function ResidentDashboard() {
             <div className="space-y-2">
               <div>
                 <p className="text-xs text-muted-foreground">Punong Barangay</p>
-                <p className="font-medium">{barangayInfo.punongBarangay}</p>
+                <p className="font-medium">{barangayInfo?.punongBarangay || ""}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Location</p>
-                <p className="font-medium">{barangayInfo.municipality}, {barangayInfo.province}</p>
+                <p className="font-medium">{barangayInfo ? `${barangayInfo.municipality}, ${barangayInfo.province}` : ""}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Region</p>
-                <p className="font-medium">{barangayInfo.region}</p>
+                <p className="font-medium">{barangayInfo?.region || ""}</p>
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <p className="text-xs">{barangayInfo.address}</p>
+                <p className="text-xs">{barangayInfo?.address || ""}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo.phone}</p>
+                <p className="text-xs">{barangayInfo?.phone || ""}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo.email}</p>
+                <p className="text-xs">{barangayInfo?.email || ""}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo.officeHours}</p>
+                <p className="text-xs">{barangayInfo?.officeHours || ""}</p>
               </div>
             </div>
           </div>

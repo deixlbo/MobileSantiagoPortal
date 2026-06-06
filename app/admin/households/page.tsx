@@ -1,30 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, House, Users } from "lucide-react"
-
-const initialHouseholds = [
-  { id: "h-1", head: "Juan Dela Cruz", address: "Purok 1, Brgy. Santiago", members: 5 },
-  { id: "h-2", head: "Maria Santos", address: "Purok 3, Brgy. Santiago", members: 4 },
-]
+import { supabase } from "@/lib/supabase"
 
 export default function AdminHouseholdsPage() {
-  const [households, setHouseholds] = useState(initialHouseholds)
+  const [households, setHouseholds] = useState<any[]>([])
   const [head, setHead] = useState("")
   const [address, setAddress] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
 
-  const addHousehold = () => {
+  useEffect(() => {
+    const fetchHouseholds = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('households')
+          .select('id, name, address, purok, member_count')
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        setHouseholds(data || [])
+      } catch (error) {
+        console.error('Failed to load households:', error)
+      }
+    }
+
+    fetchHouseholds()
+  }, [])
+
+  const addHousehold = async () => {
     if (!head || !address) return
-    setHouseholds((current) => [
-      ...current,
-      { id: `h-${Date.now()}`, head, address, members: 1 },
-    ])
-    setHead("")
-    setAddress("")
+    setIsSaving(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('households')
+        .insert([{ name: head, address, purok: address, member_count: 1 }])
+        .select()
+        .single()
+
+      if (error) throw error
+      setHouseholds((current) => [data, ...current])
+      setHead("")
+      setAddress("")
+    } catch (error) {
+      console.error('Failed to create household:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (

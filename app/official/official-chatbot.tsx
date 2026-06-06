@@ -70,7 +70,7 @@ function getOfficialResponse(question: string): string {
     return "May 24 requests na naghihintay ng inyong approval: 12 Barangay Clearance (priority), 8 Certificate of Residency, at 4 Certificate of Indigency. May 3 urgent requests na marked as 'Rush'. Pumunta sa Documents > For Approval."
   }
   
-  if (lowerQuestion.includes("rejected") || lowerQuestion.includes("declined")) {
+  if (lowerQuestion.includes("declined")) {
     return "Ngayong linggo, may 8 declined applications: 5 dahil sa incomplete requirements, 2 dahil sa invalid ID, at 1 dahil sa unverified residency. Pumunta sa Documents > Declined para i-review at i-notify ang mga applicants."
   }
   

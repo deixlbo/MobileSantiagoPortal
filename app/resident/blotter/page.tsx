@@ -25,68 +25,6 @@ import {
   Download
 } from "lucide-react"
 
-const incidentTypes = [
-  "Noise Complaint",
-  "Property Dispute",
-  "Physical Altercation",
-  "Theft",
-  "Vandalism",
-  "Domestic Issue",
-  "Neighborhood Dispute",
-  "Other"
-]
-
-const mockBlotters = [
-  {
-    id: "BLT-2026-001",
-    type: "Noise Complaint",
-    description: "Loud karaoke past 10PM in Purok 3",
-    location: "Purok 3, near the chapel",
-    status: "resolved",
-    filedDate: "April 20, 2026",
-    investigationDate: "April 21, 2026",
-    mediationScheduledDate: "April 23, 2026",
-    hearingDate: "April 24, 2026",
-    resolutionDate: "April 25, 2026",
-    resolution: "Parties agreed to limit karaoke hours until 9PM",
-    resolutionDocument: "/documents/resolution-BLT-2026-001.pdf",
-    complainant: "Juan Dela Cruz",
-    respondent: "Pedro Santos"
-  },
-  {
-    id: "BLT-2026-002",
-    type: "Property Dispute",
-    description: "Fence encroachment on neighboring lot",
-    location: "Purok 2, Lot 15",
-    status: "scheduled-mediation",
-    filedDate: "April 26, 2026",
-    investigationDate: "April 27, 2026",
-    mediationScheduledDate: "May 2, 2026",
-    hearingDate: null,
-    resolutionDate: null,
-    resolution: null,
-    resolutionDocument: null,
-    complainant: "Juan Dela Cruz",
-    respondent: "Maria Garcia"
-  },
-  {
-    id: "BLT-2026-003",
-    type: "Neighborhood Dispute",
-    description: "Ongoing argument about water drainage",
-    location: "Purok 1",
-    status: "pending-review",
-    filedDate: "April 28, 2026",
-    investigationDate: null,
-    mediationScheduledDate: null,
-    hearingDate: null,
-    resolutionDate: null,
-    resolution: null,
-    resolutionDocument: null,
-    complainant: "Juan Dela Cruz",
-    respondent: "Jose Reyes"
-  },
-]
-
 function getStatusBadge(status: string) {
   switch (status) {
     case "pending-review":
@@ -145,7 +83,9 @@ function getStatusBadge(status: string) {
 
 export default function BlotterPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [showPreview, setShowPreview] = useState<typeof mockBlotters[0] | null>(null)
+  const [incidentTypes] = useState<string[]>([])
+  const [blotters, setBlotters] = useState<any[]>([])
+  const [showPreview, setShowPreview] = useState<any | null>(null)
   const [location, setLocation] = useState("")
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null)
 
@@ -305,7 +245,7 @@ export default function BlotterPage() {
             </TabsList>
             <TabsContent value="all" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.map((blotter) => (
+                {blotters.map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -331,7 +271,7 @@ export default function BlotterPage() {
             </TabsContent>
             <TabsContent value="pending" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => b.status === "pending-review").map((blotter) => (
+                {blotters.filter(b => b.status === "pending-review").map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -348,7 +288,7 @@ export default function BlotterPage() {
             </TabsContent>
             <TabsContent value="processing" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
+                {blotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"
@@ -365,7 +305,7 @@ export default function BlotterPage() {
             </TabsContent>
             <TabsContent value="resolved" className="mt-4">
               <div className="space-y-3 sm:space-y-4">
-                {mockBlotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).map((blotter) => (
+                {blotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).map((blotter) => (
                   <div 
                     key={blotter.id}
                     className="rounded-lg border p-3 sm:p-4 cursor-pointer transition-all hover:bg-muted/50 hover:border-primary hover:shadow-md"

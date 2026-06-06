@@ -1,20 +1,21 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ShieldCheck, Eye as EyeIcon, Users } from "lucide-react"
 import { signIn } from "@/lib/auth"
 import { toast } from "sonner"
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -37,254 +38,157 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <>
-      {/* Mobile Layout */}
-      <div className="flex min-h-screen flex-col md:hidden">
-        {/* Top Half - Background Image */}
-        <div 
-          className="relative h-[45vh] bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/bg.jpg')",
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-red-700/60 via-red-600/40 to-red-500/20" />
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-white text-slate-950">
+      <div className="pointer-events-none absolute left-0 top-0 h-[30rem] w-[30rem] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle_at_top_left,_rgba(159,230,163,0.28),transparent_55%)] blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-24 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle_at_top_right,_rgba(120,187,113,0.20),transparent_55%)] blur-3xl" />
+      <div className="pointer-events-none absolute left-0 bottom-0 h-[24rem] w-[24rem] rounded-full bg-[radial-gradient(circle_at_bottom_left,_rgba(143,214,178,0.18),transparent_55%)] blur-3xl" />
 
-        {/* Bottom Half - Form */}
-        <div className="relative flex-1 -mt-6 rounded-t-3xl bg-background px-6 pb-8 pt-14">
-          {/* Floating Logo */}
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="absolute -top-10 left-1/2 -translate-x-1/2"
-          >
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-red-600 shadow-lg overflow-hidden">
+      <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col justify-center gap-12 px-6 py-10 sm:px-10 lg:flex-row lg:items-center lg:px-16 xl:px-24">
+        <motion.section
+          initial={{ opacity: 0, x: -60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7 }}
+          className="flex-1"
+        >
+          <div className="flex items-center gap-4 rounded-3xl border border-emerald-200/70 bg-emerald-50/80 p-4 shadow-sm shadow-emerald-100/60 backdrop-blur-sm max-w-max">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
               <Image
                 src="/images/santiagologo.jpg"
                 alt="Barangay Santiago Logo"
-                width={60}
-                height={60}
-                className="h-full w-full rounded-full object-cover"
+                width={56}
+                height={56}
+                className="h-full w-full object-cover"
               />
             </div>
-          </motion.div>
-
-          {/* Form Content */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-tight">ADMIN DASHBOARD</h1>
-            <p className="text-sm text-muted-foreground mt-1">System Administrator Access</p>
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] text-emerald-700">Barangay Santiago</p>
+              <p className="text-sm text-slate-600">Government management suite</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email-mobile">Email</Label>
+          <div className="mt-12 max-w-2xl space-y-6">
+            <h1 className="text-6xl font-semibold tracking-tight text-slate-950 sm:text-7xl">Sign in to your account</h1>
+            <p className="text-lg leading-8 text-slate-700">
+              Secure access for authorized personnel. Manage community services with clarity, integrity, and a people-first government approach.
+            </p>
+          </div>
+
+          <div className="mt-14 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-sm shadow-slate-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <EyeIcon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-slate-950">Transparency</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Open workflows and clear access controls for barangay administrators.</p>
+            </div>
+            <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-sm shadow-slate-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-slate-950">Integrity</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Secure sign-in and trusted governance tools for officials.</p>
+            </div>
+            <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-sm shadow-slate-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <Users className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-slate-950">Community</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">A portal built for public service, residents, and barangay teams.</p>
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="w-full rounded-[38px] border border-slate-200/70 bg-white/95 p-10 shadow-[0_40px_120px_-60px_rgba(15,23,42,0.18)] backdrop-blur-xl lg:w-[38rem]"
+        >
+          <div className="mb-10">
+            <p className="text-sm uppercase tracking-[0.35em] text-emerald-700">Admin sign in</p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Barangay Santiago</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+              Authorized personnel can access the barangay management system to coordinate services, review reports, and support residents.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-3">
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  id="email-mobile" 
-                  type="email" 
-                  placeholder="Enter your email"
-                  className="pl-10"
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@barangaysantiago.gov.ph"
+                  className="pl-12"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required 
+                  required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password-mobile">Password</Label>
+            <div className="space-y-3">
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  id="password-mobile" 
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="pl-10 pr-10"
+                  className="pl-12 pr-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required 
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Info hint */}
-            <div className="rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
-              <p className="font-medium">Admin Access:</p>
-              <p>First time? Go to /admin/register to create an admin account.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <label className="inline-flex items-center gap-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
+                />
+                Remember me
+              </label>
+              <Link href="/forgot-password" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+                Forgot password?
+              </Link>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full text-base font-semibold bg-red-600 hover:bg-red-700" 
+            <Button
+              type="submit"
+              className="w-full bg-emerald-700 text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800"
               size="lg"
               disabled={isLoading}
             >
               {isLoading ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
-                />
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white border-t-transparent animate-spin" />
               ) : (
-                "SIGN IN"
+                "Sign In"
               )}
             </Button>
+
+            <p className="text-sm text-slate-600">
+              Need admin access?{' '}
+              <Link href="/admin/register" className="font-medium text-emerald-700 hover:text-emerald-800">
+                Create account
+              </Link>
+            </p>
           </form>
-        </div>
+        </motion.section>
       </div>
-
-      {/* Desktop Layout */}
-      <div className="relative hidden min-h-screen items-center justify-center overflow-hidden md:flex">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/bg.jpg')",
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-red-800/80 via-red-700/60 to-transparent" />
-        </div>
-
-        {/* Welcome Text */}
-        <motion.div 
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="absolute left-16 top-1/2 -translate-y-1/2 text-white lg:left-24"
-        >
-          <h1 className="text-5xl font-bold lg:text-6xl">Admin Dashboard</h1>
-          <p className="mt-4 max-w-xs text-lg text-white/90">
-            System Administration & Management
-          </p>
-        </motion.div>
-
-        {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="relative z-10 mx-4 w-full max-w-md ml-auto mr-16 lg:mr-24"
-        >
-          <Card className="border-0 shadow-2xl">
-            <CardHeader className="pb-4 text-center">
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
-                className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-600 shadow-lg overflow-hidden"
-              >
-                <Image
-                  src="/images/santiagologo.jpg"
-                  alt="Barangay Santiago Logo"
-                  width={80}
-                  height={80}
-                  className="h-full w-full rounded-full object-cover"
-                />
-              </motion.div>
-              <CardTitle className="text-2xl font-bold tracking-tight">ADMIN DASHBOARD</CardTitle>
-              <CardDescription>
-                System Administrator Access
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="space-y-2"
-                >
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="Enter your email"
-                      className="pl-10"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="space-y-2"
-                >
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      className="pl-10 pr-10"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </motion.div>
-                
-                {/* Info hint */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200"
-                >
-                  <p className="font-medium">Admin Access:</p>
-                  <p>First time? Go to /admin/register to create an admin account.</p>
-                </motion.div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="w-full"
-                >
-                  <Button 
-                    type="submit" 
-                    className="w-full text-base font-semibold bg-red-600 hover:bg-red-700" 
-                    size="lg"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
-                      />
-                    ) : (
-                      "SIGN IN"
-                    )}
-                  </Button>
-                </motion.div>
-              </CardFooter>
-            </form>
-          </Card>
-        </motion.div>
-      </div>
-    </>
+    </div>
   )
 }
