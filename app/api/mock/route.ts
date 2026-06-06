@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
-import { mockData } from '../../../lib/mock-data'
+import { getMockComplaints, getMockDocuments } from '../../../lib/mock-data'
 
 export async function GET() {
-  return NextResponse.json(mockData)
+  return NextResponse.json({
+    complaints: getMockComplaints(),
+    documents: getMockDocuments(),
+  })
 }

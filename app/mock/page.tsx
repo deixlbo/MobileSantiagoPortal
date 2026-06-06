@@ -1,7 +1,15 @@
+'use client'
+
 import React from 'react'
-import { mockData } from '../../lib/mock-data'
+import { getMockComplaints, getMockDocuments, getMockAppointments } from '../../lib/mock-data'
 
 export default function MockPage() {
+  const complaints = getMockComplaints()
+  const documents = getMockDocuments()
+  const appointments = getMockAppointments()
+
+  const mockData = { complaints, documents, appointments }
+
   return (
     <div style={{ padding: 16 }}>
       <h1>Mock Data</h1>
