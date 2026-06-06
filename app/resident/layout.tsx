@@ -296,13 +296,15 @@ export default function ResidentLayout({
           transition={{ duration: 0.3 }}
           className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden"
         >
-          <div className="flex h-14 items-center justify-start px-4">
+          <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 gap-3">
             <button 
-              className="rounded-lg p-2 hover:bg-muted"
+              className="rounded-lg p-2 hover:bg-muted active:scale-95 transition-transform"
               onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
+            <span className="text-xs sm:text-sm font-semibold text-muted-foreground truncate">Resident Portal</span>
           </div>
         </motion.header>
 
@@ -314,7 +316,7 @@ export default function ResidentLayout({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 container mx-auto px-4 py-6 md:px-6"
+            className="flex-1 w-full px-3 sm:px-4 md:px-6 py-4 sm:py-6 overflow-x-hidden"
           >
             {children}
           </motion.main>

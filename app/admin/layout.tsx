@@ -218,7 +218,7 @@ export default function AdminLayout({
               <div className="text-sm font-semibold text-emerald-900">Admin Portal</div>
             </div>
           </header>
-          <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-6">
+          <main className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-6 md:px-6">
             <div className="w-full">
               {children}
             </div>

@@ -298,30 +298,30 @@ export default function ResidentDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Welcome, Resident</h1>
-          <p className="text-sm text-muted-foreground mt-1">Barangay Santiago Resident Dashboard</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">Welcome, Resident</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Barangay Santiago Resident Dashboard</p>
         </div>
         
         {/* Notification Bell */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Button 
             variant="outline" 
             size="icon" 
-            className="relative"
+            className="relative w-full sm:w-auto"
             onClick={() => setShowNotifications(!showNotifications)}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
                 {unreadCount}
               </span>
             )}
           </Button>
           
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
+            <div className="absolute right-0 mt-2 w-full sm:w-80 bg-white rounded-lg shadow-lg border z-50">
               <div className="p-3 border-b flex items-center justify-between">
                 <h3 className="font-semibold text-sm">Notifications</h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)}>

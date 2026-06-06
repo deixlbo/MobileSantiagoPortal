@@ -123,39 +123,39 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">Admin Dashboard</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Barangay Administration Overview</h1>
-          <p className="max-w-2xl text-sm text-slate-600 mt-2">
+          <p className="text-xs sm:text-sm font-medium text-slate-500">Admin Dashboard</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Barangay Administration Overview</h1>
+          <p className="max-w-2xl text-xs sm:text-sm text-slate-600 mt-2">
             Manage residents, household records, verification workflows, document requests, activity logs, and barangay settings.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild>
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/admin/register">Create Admin Account</Link>
           </Button>
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" asChild className="w-full sm:w-auto">
             <Link href="/official/login-form">Official Portal</Link>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statsConfig.map((item) => {
           const Icon = item.icon
           return (
             <Card key={item.label} className="overflow-hidden">
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6">
                 <div className="flex items-center justify-between gap-4">
                   <div className={"rounded-2xl p-3 shadow-sm " + item.color}>
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <Badge variant="outline">Live</Badge>
+                  <Badge variant="outline" className="text-xs">Live</Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">{item.label}</p>
-                  <p className="mt-2 text-3xl font-semibold text-slate-900">{item.value}</p>
+                  <p className="text-xs sm:text-sm text-slate-500">{item.label}</p>
+                  <p className="mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-slate-900">{item.value}</p>
                 </div>
               </CardContent>
             </Card>
@@ -163,50 +163,50 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[2fr_1fr]">
         <Card className="space-y-6">
           <CardHeader>
-            <CardTitle>Admin workflows</CardTitle>
-            <CardDescription>Quick access to the key admin features and status areas.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Admin workflows</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Quick access to the key admin features and status areas.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3 text-slate-900">
-                <ShieldCheck className="h-5 w-5 text-slate-700" />
-                <p className="font-semibold">Resident Verification</p>
+          <CardContent className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+            <div className="space-y-3 sm:space-y-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Resident Verification</p>
               </div>
-              <p className="text-sm text-slate-600">Review pending accounts, view IDs, approve or decline registrations, and manage verification status.</p>
-              <Button variant="secondary" className="w-full" asChild>
+              <p className="text-xs sm:text-sm text-slate-600">Review pending accounts, view IDs, approve or decline registrations, and manage verification status.</p>
+              <Button variant="secondary" className="w-full text-xs sm:text-sm" asChild>
                 <Link href="/admin/resident-verification">Open verification</Link>
               </Button>
             </div>
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3 text-slate-900">
-                <Users className="h-5 w-5 text-slate-700" />
-                <p className="font-semibold">Resident Management</p>
+            <div className="space-y-3 sm:space-y-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Resident Management</p>
               </div>
-              <p className="text-sm text-slate-600">View residents, update details, search records, delete entries, and export CSV/Excel.</p>
-              <Button variant="secondary" className="w-full" asChild>
+              <p className="text-xs sm:text-sm text-slate-600">View residents, update details, search records, delete entries, and export CSV/Excel.</p>
+              <Button variant="secondary" className="w-full text-xs sm:text-sm" asChild>
                 <Link href="/admin/resident-management">Open resident list</Link>
               </Button>
             </div>
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3 text-slate-900">
-                <Home className="h-5 w-5 text-slate-700" />
-                <p className="font-semibold">Household Management</p>
+            <div className="space-y-3 sm:space-y-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <Home className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Household Management</p>
               </div>
-              <p className="text-sm text-slate-600">Create households, assign heads, track members, and view household address details.</p>
-              <Button variant="secondary" className="w-full" asChild>
+              <p className="text-xs sm:text-sm text-slate-600">Create households, assign heads, track members, and view household address details.</p>
+              <Button variant="secondary" className="w-full text-xs sm:text-sm" asChild>
                 <Link href="/admin/households">Open households</Link>
               </Button>
             </div>
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3 text-slate-900">
-                <ClipboardList className="h-5 w-5 text-slate-700" />
-                <p className="font-semibold">Document Requests</p>
+            <div className="space-y-3 sm:space-y-4 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Document Requests</p>
               </div>
-              <p className="text-sm text-slate-600">Manage requests, approve or decline documents, change status, and print or download PDFs.</p>
-              <Button variant="secondary" className="w-full" asChild>
+              <p className="text-xs sm:text-sm text-slate-600">Manage requests, approve or decline documents, change status, and print or download PDFs.</p>
+              <Button variant="secondary" className="w-full text-xs sm:text-sm" asChild>
                 <Link href="/admin/document-requests">Open requests</Link>
               </Button>
             </div>
@@ -215,48 +215,48 @@ export default function AdminDashboardPage() {
 
         <Card className="space-y-4">
           <CardHeader>
-            <CardTitle>Pending verification summary</CardTitle>
-            <CardDescription>Residents waiting for admin approval and upcoming actions.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Pending verification summary</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Residents waiting for admin approval and upcoming actions.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-slate-800">Pending Residents</span>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{stats.pendingVerifications} pending</span>
+          <CardContent className="space-y-2 sm:space-y-3">
+            <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-medium text-slate-800">Pending Residents</span>
+                <span className="rounded-full bg-amber-100 px-2 sm:px-3 py-1 text-xs font-semibold text-amber-800 shrink-0">{stats.pendingVerifications} pending</span>
               </div>
-              <p className="mt-2 text-sm text-slate-600">Review valid IDs, confirm identity, and update verification status.</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600">Review valid IDs, confirm identity, and update verification status.</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-slate-800">Requested Documents</span>
-                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">{stats.pendingDocuments} active</span>
+            <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-medium text-slate-800">Requested Documents</span>
+                <span className="rounded-full bg-violet-100 px-2 sm:px-3 py-1 text-xs font-semibold text-violet-800 shrink-0">{stats.pendingDocuments} active</span>
               </div>
-              <p className="mt-2 text-sm text-slate-600">Approve requests, change statuses, and track ready-to-print items.</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600">Approve requests, change statuses, and track ready-to-print items.</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <Card className="space-y-6">
           <CardHeader>
-            <CardTitle>Activity Logs</CardTitle>
-            <CardDescription>Recent administrator actions and system events.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Activity Logs</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Recent administrator actions and system events.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
+          <CardContent className="space-y-2 sm:space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {activities.length > 0 ? (
                 activities.map((entry) => (
-                  <div key={entry.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between gap-2 text-sm text-slate-500">
+                  <div key={entry.id} className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-2 text-xs sm:text-sm text-slate-500 flex-wrap">
                       <span>{entry.action}</span>
-                      <span>{formatTimeAgo(entry.created_at)}</span>
+                      <span className="shrink-0">{formatTimeAgo(entry.created_at)}</span>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">By Admin</p>
+                    <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600">By Admin</p>
                   </div>
                 ))
               ) : (
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center text-slate-500">
+                <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center text-slate-500 text-sm">
                   No recent activity logs
                 </div>
               )}
@@ -266,27 +266,27 @@ export default function AdminDashboardPage() {
 
         <Card className="space-y-4">
           <CardHeader>
-            <CardTitle>Settings & templates</CardTitle>
-            <CardDescription>Admin settings for barangay info, officials, and document templates.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Settings & templates</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Admin settings for barangay info, officials, and document templates.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-3 text-slate-900">
-                <Cog className="h-5 w-5" />
-                <p className="font-semibold">Barangay Settings</p>
+          <CardContent className="space-y-2 sm:space-y-3">
+            <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <Cog className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Barangay Settings</p>
               </div>
-              <p className="text-sm text-slate-600">Update logo, barangay details, and default document templates.</p>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">Update logo, barangay details, and default document templates.</p>
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-3 text-slate-900">
-                <ShieldCheck className="h-5 w-5" />
-                <p className="font-semibold">Account Management</p>
+            <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Account Management</p>
               </div>
-              <p className="text-sm text-slate-600">Create official accounts, assign roles, and manage status.</p>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">Create official accounts, assign roles, and manage status.</p>
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" asChild>
+            <Button className="w-full text-xs sm:text-sm" asChild>
               <Link href="/admin/settings">Review admin settings</Link>
             </Button>
           </CardFooter>

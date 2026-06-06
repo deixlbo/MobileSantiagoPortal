@@ -227,8 +227,22 @@ export default function OfficialLayout({
 
       {/* Main Content */}
       <div className="lg:pl-64">
-        {/* Page Content */}
-        <main className="p-4 md:p-6">
+        {/* Mobile Header for small screens */}
+        <header className="fixed top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-b lg:hidden">
+          <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3 px-3 sm:px-4">
+            <button
+              className="rounded-lg p-2 hover:bg-slate-100 active:scale-95 transition-transform lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-slate-700" />
+            </button>
+            <span className="text-xs sm:text-sm font-semibold text-slate-700 truncate">Official Portal</span>
+          </div>
+        </header>
+        
+        {/* Page Content with top padding for mobile header */}
+        <main className="pt-14 sm:pt-16 lg:pt-0 p-3 sm:p-4 md:p-6">
           {children}
         </main>
       </div>

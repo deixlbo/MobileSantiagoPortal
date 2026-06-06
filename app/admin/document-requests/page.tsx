@@ -185,56 +185,56 @@ export default function AdminDocumentRequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">Document Requests</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Manage requested documents</h1>
-          <p className="max-w-2xl text-sm text-slate-600 mt-2">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex-1">
+          <p className="text-xs sm:text-sm font-medium text-slate-500">Document Requests</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">Manage requested documents</h1>
+          <p className="max-w-2xl text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">
             Approve or decline requests, change status, print documents, and manage timelines.
           </p>
           {isMockRequestData && (
-            <p className="mt-2 text-sm text-amber-700">Demo request data is displayed because no live requests were available.</p>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-amber-700">Demo request data is displayed because no live requests were available.</p>
           )}
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <FileText className="h-4 w-4 text-slate-500" /> {requests.length} total requests
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 shrink-0">
+          <FileText className="h-4 w-4 text-slate-500" /> {requests.length} requests
         </div>
       </div>
 
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="space-y-4">
           <CardHeader>
-            <CardTitle>Live requests</CardTitle>
-            <CardDescription>Track document request status and actions.</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Live requests</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Track document request status and actions.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4">
             {requests.length === 0 ? (
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+              <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-8 text-center text-slate-500 text-xs sm:text-sm">
                 No document requests yet
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {requests.map((request) => (
-                  <div key={request.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-lg font-semibold text-slate-900">
+                  <div key={request.id} className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                           {formatDocType(request.document_type)}
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-xs sm:text-sm text-slate-600">
                           Requested by {request.profiles?.first_name} {request.profiles?.last_name}
                         </p>
-                        <p className="text-sm text-slate-500">{formatTimeAgo(request.created_at)}</p>
+                        <p className="text-xs text-slate-500">{formatTimeAgo(request.created_at)}</p>
                         {request.control_number && (
-                          <p className="text-xs text-slate-400 mt-1">Control #: {request.control_number}</p>
+                          <p className="text-xs text-slate-400 mt-0.5 sm:mt-1">Control #: {request.control_number}</p>
                         )}
                       </div>
-                      <Badge className={statusStyles[request.status] || statusStyles.pending}>
+                      <Badge className={`${statusStyles[request.status] || statusStyles.pending} text-xs sm:text-sm shrink-0`}>
                         {request.status.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
                       {request.status === 'pending' && (
                         <>
                           <Button 
@@ -242,14 +242,16 @@ export default function AdminDocumentRequestsPage() {
                             variant="secondary" 
                             onClick={() => updateStatus(request.id, "approved")}
                             disabled={actionLoading === request.id}
+                            className="text-xs sm:text-sm flex-1 sm:flex-none"
                           >
-                            {actionLoading === request.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Approve'}
+                            {actionLoading === request.id ? <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : 'Approve'}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="destructive" 
                             onClick={() => updateStatus(request.id, "declined")}
                             disabled={actionLoading === request.id}
+                            className="text-xs sm:text-sm flex-1 sm:flex-none"
                           >
                             Decline
                           </Button>
@@ -261,13 +263,14 @@ export default function AdminDocumentRequestsPage() {
                           variant="ghost" 
                           onClick={() => updateStatus(request.id, "ready_to_print")}
                           disabled={actionLoading === request.id}
+                          className="text-xs sm:text-sm w-full sm:w-auto"
                         >
                           Ready to Print
                         </Button>
                       )}
                       {request.status === 'ready_to_print' && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => toast.info('Printing document...')}>
+                          <Button size="sm" variant="outline" onClick={() => toast.info('Printing document...')} className="text-xs sm:text-sm flex-1 sm:flex-none">
                             Print
                           </Button>
                           <Button 
@@ -275,6 +278,7 @@ export default function AdminDocumentRequestsPage() {
                             variant="secondary" 
                             onClick={() => updateStatus(request.id, "released")}
                             disabled={actionLoading === request.id}
+                            className="text-xs sm:text-sm flex-1 sm:flex-none"
                           >
                             Mark as Released
                           </Button>
@@ -290,24 +294,24 @@ export default function AdminDocumentRequestsPage() {
 
         <Card className="space-y-4">
           <CardHeader>
-            <CardTitle>Request timeline</CardTitle>
-            <CardDescription>Audit request activity and status updates.</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Request timeline</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Audit request activity and status updates.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-3 text-slate-900">
-                <Timer className="h-4 w-4" />
-                <p className="font-semibold">Recent activity</p>
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3 rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3 text-slate-900">
+                <Timer className="h-4 w-4 text-slate-700 shrink-0" />
+                <p className="font-semibold text-sm sm:text-base">Recent activity</p>
               </div>
-              <div className="grid gap-2 text-sm text-slate-600">
+              <div className="grid gap-1 sm:gap-2 text-xs sm:text-sm text-slate-600">
                 {requests.slice(0, 5).map((request) => (
-                  <div key={request.id} className="rounded-2xl bg-white p-3 shadow-sm">
-                    {formatDocType(request.document_type)} - {request.status.replace('_', ' ')}
-                    <span className="block text-xs text-slate-400">{formatTimeAgo(request.created_at)}</span>
+                  <div key={request.id} className="rounded-lg sm:rounded-2xl bg-white p-2 sm:p-3 shadow-sm">
+                    <div className="truncate">{formatDocType(request.document_type)} - {request.status.replace('_', ' ')}</div>
+                    <span className="block text-xs text-slate-400 mt-0.5">{formatTimeAgo(request.created_at)}</span>
                   </div>
                 ))}
                 {requests.length === 0 && (
-                  <p className="text-center text-slate-400">No activity yet</p>
+                  <p className="text-center text-slate-400 text-xs py-4">No activity yet</p>
                 )}
               </div>
             </div>
