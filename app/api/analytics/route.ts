@@ -1,80 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server'
+import {
+  getMockComplaintStats,
+  getMockDocumentStats,
+  getMockAppointmentStats,
+} from '@/lib/mock-data'
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const days = parseInt(searchParams.get('days') || '30');
-    const metricType = searchParams.get('type') || 'all';
+    const searchParams = request.nextUrl.searchParams
+    const days = parseInt(searchParams.get('days') || '30')
 
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const complaintStats = getMockComplaintStats(days)
+    const documentStats = getMockDocumentStats(days)
+    const appointmentStats = getMockAppointmentStats(days)
 
-    // Fetch document request trends
-    const { data: documentTrends } = await supabase
-      .from('document_requests')
-      .select('created_at, status')
-      .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: true });
+    // Generate predictive analytics
+    const avgComplaintsPerDay = Math.ceil(complaintStats.total / days)
+    const avgDocumentsPerDay = Math.ceil(documentStats.total / days)
+    const avgAppointmentsPerDay = Math.ceil(appointmentStats.total / days)
 
-    // Fetch complaint trends
-    const { data: complaintTrends } = await supabase
-      .from('complaints')
-      .select('created_at, status')
-      .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: true });
-
-    // Fetch appointment trends
-    const { data: appointmentTrends } = await supabase
-      .from('appointments')
-      .select('created_at, status')
-      .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: true });
-
-    // Process data for analytics
-    const analytics = {
-      documentRequests: {
-        total: documentTrends?.length || 0,
-        approved: documentTrends?.filter((d: any) => d.status === 'approved').length || 0,
-        pending: documentTrends?.filter((d: any) => d.status === 'pending').length || 0,
-        declined: documentTrends?.filter((d: any) => d.status === 'declined').length || 0,
-      },
-      complaints: {
-        total: complaintTrends?.length || 0,
-        open: complaintTrends?.filter((c: any) => c.status === 'open').length || 0,
-        resolved: complaintTrends?.filter((c: any) => c.status === 'resolved').length || 0,
-      },
-      appointments: {
-        total: appointmentTrends?.length || 0,
-        confirmed: appointmentTrends?.filter((a: any) => a.status === 'confirmed').length || 0,
-        pending: appointmentTrends?.filter((a: any) => a.status === 'pending').length || 0,
-      },
-      period: {
-        days,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-      },
-    };
-
-    // Simple predictions based on trends
     const predictions = {
-      expectedDocumentRequests: Math.round((analytics.documentRequests.total / days) * 7),
-      expectedComplaints: Math.round((analytics.complaints.total / days) * 7),
-      expectedAppointments: Math.round((analytics.appointments.total / days) * 7),
-      resolutionTimeAverage: '3-5 days',
-      busyDays: ['Monday', 'Tuesday'],
-    };
+      nextWeek: {
+        complaints: avgComplaintsPerDay * 7,
+        documents: avgDocumentsPerDay * 7,
+        appointments: avgAppointmentsPerDay * 7,
+      },
+      busyDays: ['Monday', 'Wednesday', 'Friday'],
+      trends: {
+        complaints: 'increasing',
+        documents: 'stable',
+        appointments: 'increasing',
+      },
+    }
 
     return NextResponse.json({
       success: true,
-      analytics,
-      predictions,
-    });
-  } catch (error: any) {
-    console.error('[Analytics API Error]', error);
+      analytics: {
+        period: `Last ${days} days`,
+        complaints: complaintStats,
+        documents: documentStats,
+        appointments: appointmentStats,
+        predictions,
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching analytics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }
-    );
+    )
   }
 }

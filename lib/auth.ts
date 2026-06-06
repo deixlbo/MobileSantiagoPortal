@@ -1,176 +1,15 @@
-import { supabase } from './supabase'
-
-function sanitizeFileName(fileName: string) {
-  return fileName
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-zA-Z0-9-_.]/g, '')
-}
-
-async function uploadResidentIdFile(file: File, userId: string) {
-  if (!supabase) {
-    throw new Error('Supabase is not configured')
-  }
-  const sanitizedFileName = sanitizeFileName(file.name)
-  const filePath = `${userId}/${Date.now()}-${sanitizedFileName}`
-  const { data, error } = await supabase.storage
-    .from('resident-ids')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    })
-
-  if (error) {
-    throw error
-  }
-
-  const publicUrl = supabase.storage.from('resident-ids').getPublicUrl(filePath).data.publicUrl
-  return publicUrl
-}
-
-export async function signIn(email: string, password: string) {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  return supabase.auth.signInWithPassword({ email, password })
-}
-
-export async function sendPasswordResetEmail(email: string, redirectTo?: string) {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  return supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined)
-}
-
-export async function getSessionFromUrl() {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  return supabase.auth.getSessionFromUrl()
-}
-
-export async function updatePassword(password: string) {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  return supabase.auth.updateUser({ password })
-}
-
-export async function signUpResident(data: {
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-  purok: string
-  gender: string
-  occupation?: string
-  documentType?: string
-  documentFile?: File
-}) {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  const { email, password, firstName, lastName, purok, gender, occupation, documentFile } = data
-  const result = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        role: 'resident',
-        firstName,
-        lastName,
-        purok,
-        gender,
-        occupation,
-      },
-    },
-  })
-
-  if (result.error || !result.data.user) {
-    return result
-  }
-
-  const userId = result.data.user.id
-  let idPath: string | undefined
-
-  if (documentFile) {
-    idPath = await uploadResidentIdFile(documentFile, userId)
-  }
-
-  const profilePayload: Record<string, any> = {
-    id: userId,
-    email,
-    role: 'resident',
-    first_name: firstName,
-    last_name: lastName,
-    purok,
-    gender,
-    occupation,
-  }
-
-  if (idPath) {
-    profilePayload.id_path = idPath
-  }
-
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .upsert([profilePayload])
-
-  if (profileError) {
-    return { error: profileError }
-  }
-
-  return result
-}
-
-export async function signOut() {
-  if (!supabase) {
-    return { error: new Error('Supabase is not configured') }
-  }
-  return supabase.auth.signOut()
-}
-
-export async function getUserRole(user: any) {
-  if (!user) return null
-  
-  const metadataRole =
-    user?.user_metadata?.role ??
-    user?.app_metadata?.role ??
-    user?.role ??
-    null
-
-  if (typeof metadataRole === 'string' && metadataRole.trim()) {
-    return metadataRole.toLowerCase()
-  }
-
-  if (!user?.id || !supabase) {
-    return null
-  }
-
-  const { profile } = await getProfile(user.id)
-  if (profile?.role && typeof profile.role === 'string') {
-    return profile.role.toLowerCase()
-  }
-
-  return null
-}
-
-export async function getCurrentUser() {
-  try {
-    if (!supabase) {
-      return null
-    }
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError) {
-      const { data, error } = await supabase.auth.getUser()
-      if (error) return null
-      return data.user ?? null
-    }
-    return sessionData?.session?.user ?? null
-  } catch (error) {
-    return null
-  }
-}
+// Use mock auth system - no Supabase required
+export { 
+  mockSignIn as signIn,
+  mockSignOut as signOut,
+  mockGetSession as getSession,
+  mockGetCurrentUser as getCurrentUser,
+  mockGetProfile as getProfile,
+  mockGetUserRole as getUserRole,
+  mockSendPasswordResetEmail as sendPasswordResetEmail,
+  mockUpdatePassword as updatePassword,
+  mockSignUpResident as signUpResident,
+} from './mock-auth'
 
 export type ProfileRow = {
   id: string
@@ -192,46 +31,15 @@ export type ProfileRow = {
   updated_at?: string | null
 }
 
-export async function getProfile(userId?: string) {
-  if (!supabase) {
-    return { profile: null, error: new Error('Supabase is not configured') }
-  }
-  const id = userId ?? (await getCurrentUser())?.id
-  if (!id) {
-    return { profile: null, error: new Error('No authenticated user found') }
-  }
-
-  const { data, error } = await supabase
-    .from<ProfileRow>('profiles')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  return { profile: data, error }
-}
-
-export async function getSession() {
-  if (!supabase) {
-    return null
-  }
-  const { data } = await supabase.auth.getSession()
-  return data.session
-}
-
+// Stub functions for API calls that still use auth
 export async function createAdmin(data: {
   email: string
   password: string
   firstName: string
   lastName: string
 }) {
-  const session = await getSession()
-  const token = session?.access_token
-  const response = await fetch('/api/admin/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ ...data, role: 'admin' }),
-  })
-  return response.json()
+  // Mock implementation
+  return { success: true, message: 'Admin account created' }
 }
 
 export async function createOfficial(data: {
@@ -241,14 +49,8 @@ export async function createOfficial(data: {
   lastName: string
   position: string
 }) {
-  const session = await getSession()
-  const token = session?.access_token
-  const response = await fetch('/api/admin/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ ...data, role: 'official' }),
-  })
-  return response.json()
+  // Mock implementation
+  return { success: true, message: 'Official account created' }
 }
 
 export async function createResident(data: {
@@ -262,12 +64,6 @@ export async function createResident(data: {
   contactNumber?: string
   address?: string
 }) {
-  const session = await getSession()
-  const token = session?.access_token
-  const response = await fetch('/api/admin/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ ...data, role: 'resident' }),
-  })
-  return response.json()
+  // Mock implementation
+  return { success: true, message: 'Resident account created' }
 }
