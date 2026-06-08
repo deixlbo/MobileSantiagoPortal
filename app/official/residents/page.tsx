@@ -1,0 +1,927 @@
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { exportCensusToExcel } from "@/lib/export-utils"
+import { 
+  Search, 
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Users,
+  Download,
+  FileText,
+  Filter,
+  Home,
+  Plus,
+  UserPlus,
+  ChevronRight,
+  Trash2
+} from "lucide-react"
+
+// Type for family members
+type FamilyMember = {
+  id: string
+  name: string
+  relationship: string
+  age: number
+  gender: string
+  occupation?: string
+}
+
+// Type for resident with family
+type Resident = {
+  id: string
+  name: string
+  email: string
+  purok: string
+  gender: string
+  age: number
+  occupation?: string
+  status: string
+  documentType: string
+  documentImage?: string
+  registeredDate: string
+  remarks?: string
+  householdId?: string
+  isHouseholdHead?: boolean
+  familyMembers?: FamilyMember[]
+}
+
+// Type for household
+type Household = {
+  id: string
+  householdNumber: string
+  address: string
+  purok: string
+  headOfFamily: string
+  headId: string
+  totalMembers: number
+  members: FamilyMember[]
+  registeredDate: string
+}
+
+
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "verified":
+      return (
+        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-[10px] md:text-xs">
+          <CheckCircle2 className="mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Verified</span>
+          <span className="sm:hidden">OK</span>
+        </Badge>
+      )
+    case "pending":
+      return (
+        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px] md:text-xs">
+          <Clock className="mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Pending</span>
+          <span className="sm:hidden">Wait</span>
+        </Badge>
+      )
+    case "declined":
+      return (
+        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] md:text-xs">
+          <XCircle className="mr-1 h-2.5 w-2.5 md:h-3 md:w-3" />
+          <span className="hidden sm:inline">Declined</span>
+          <span className="sm:hidden">No</span>
+        </Badge>
+      )
+    default:
+      return <Badge variant="secondary">{status}</Badge>
+  }
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+}
+
+export default function ResidentsPage() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [residents, setResidents] = useState<Resident[]>([])
+  const [households, setHouseholds] = useState<Household[]>([])
+  const [selectedResident, setSelectedResident] = useState<Resident | null>(null)
+  const [selectedHousehold, setSelectedHousehold] = useState<Household | null>(null)
+  const [selectedPuroks, setSelectedPuroks] = useState<string[]>([])
+  const [selectedAgeRanges, setSelectedAgeRanges] = useState<string[]>([])
+  const [activeMainTab, setActiveMainTab] = useState("residents")
+  const [showAddFamilyMember, setShowAddFamilyMember] = useState(false)
+  const [newFamilyMember, setNewFamilyMember] = useState({
+    name: "",
+    relationship: "",
+    age: "",
+    gender: "",
+    occupation: ""
+  })
+
+  // Get unique puroks
+  const puroks = Array.from(new Set(residents.map(r => r.purok))).sort()
+
+  // Age ranges for filtering
+  const ageRanges = [
+    { label: "18-21", min: 18, max: 21 },
+    { label: "22-25", min: 22, max: 25 },
+    { label: "26-30", min: 26, max: 30 },
+    { label: "31+", min: 31, max: 999 }
+  ]
+
+  // Filter residents
+  const filteredResidents = residents.filter(res => {
+    const matchesSearch = res.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      res.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesPurok = selectedPuroks.length === 0 || selectedPuroks.includes(res.purok)
+    let matchesAge = selectedAgeRanges.length === 0
+    if (selectedAgeRanges.length > 0) {
+      matchesAge = selectedAgeRanges.some(range => {
+        const ageRange = ageRanges.find(ar => ar.label === range)
+        return ageRange && res.age >= ageRange.min && res.age <= ageRange.max
+      })
+    }
+    return matchesSearch && matchesPurok && matchesAge
+  })
+
+  // Filter households
+  const filteredHouseholds = households.filter(hh => 
+    hh.headOfFamily.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hh.householdNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    hh.address.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Calculate stats
+  const maleCount = filteredResidents.filter(r => r.gender === "Male").length
+  const femaleCount = filteredResidents.filter(r => r.gender === "Female").length
+  const pendingCount = residents.filter(r => r.status === "pending").length
+  const verifiedCount = residents.filter(r => r.status === "verified").length
+  const totalHouseholds = households.length
+  const totalPopulation = households.reduce((sum, hh) => sum + hh.totalMembers, 0)
+
+  // Toggle purok selection
+  const togglePurok = (purok: string) => {
+    setSelectedPuroks(prev => 
+      prev.includes(purok) ? prev.filter(p => p !== purok) : [...prev, purok]
+    )
+  }
+
+  // Toggle age range selection
+  const toggleAgeRange = (range: string) => {
+    setSelectedAgeRanges(prev => 
+      prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+    )
+  }
+
+  // Reset filters
+  const resetFilters = () => {
+    setSelectedPuroks([])
+    setSelectedAgeRanges([])
+    setSearchTerm("")
+  }
+
+  // Add family member to resident
+  const handleAddFamilyMember = () => {
+    if (!selectedResident || !newFamilyMember.name || !newFamilyMember.relationship) return
+    
+    const newMember: FamilyMember = {
+      id: `FM-${Date.now()}`,
+      name: newFamilyMember.name,
+      relationship: newFamilyMember.relationship,
+      age: parseInt(newFamilyMember.age) || 0,
+      gender: newFamilyMember.gender,
+      occupation: newFamilyMember.occupation
+    }
+
+    const updatedResidents = residents.map(r => {
+      if (r.id === selectedResident.id) {
+        return {
+          ...r,
+          familyMembers: [...(r.familyMembers || []), newMember]
+        }
+      }
+      return r
+    })
+
+    setResidents(updatedResidents)
+    setSelectedResident({
+      ...selectedResident,
+      familyMembers: [...(selectedResident.familyMembers || []), newMember]
+    })
+
+    // Also update household if exists
+    if (selectedResident.householdId) {
+      const updatedHouseholds = households.map(hh => {
+        if (hh.id === selectedResident.householdId) {
+          return {
+            ...hh,
+            totalMembers: hh.totalMembers + 1,
+            members: [...hh.members, newMember]
+          }
+        }
+        return hh
+      })
+      setHouseholds(updatedHouseholds)
+    }
+
+    setNewFamilyMember({ name: "", relationship: "", age: "", gender: "", occupation: "" })
+    setShowAddFamilyMember(false)
+  }
+
+  // Export census data to Excel
+  const handleExportCensus = () => {
+    // Transform residents to export format
+    const residentsData = residents.map(r => ({
+      name: r.name,
+      purok: r.purok,
+      age: r.age,
+      gender: r.gender,
+      familyMembers: (r.familyMembers?.length || 0) + 1,
+      status: r.status,
+      occupation: r.occupation || ''
+    }))
+
+    // Transform households to export format
+    const householdsData = households.map(hh => ({
+      householdNumber: hh.householdNumber,
+      headOfFamily: hh.headOfFamily,
+      address: hh.address,
+      purok: hh.purok,
+      totalMembers: hh.totalMembers,
+      members: hh.members.map(m => ({
+        name: m.name,
+        relationship: m.relationship,
+        age: m.age,
+        gender: m.gender,
+        occupation: m.occupation || ''
+      }))
+    }))
+
+    const today = new Date().toISOString().split('T')[0]
+    exportCensusToExcel(residentsData, householdsData, `Census_Report_${today}.xlsx`)
+  }
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-4 md:space-y-6"
+    >
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Residents Management</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Manage residents, households, and census data</p>
+        </div>
+        <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm" onClick={handleExportCensus}>
+          <Download className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+          <span className="hidden md:inline">Export</span>
+        </Button>
+      </motion.div>
+
+      {/* Stats */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4">
+        <Card>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="rounded-lg bg-primary/10 p-1.5 md:p-2">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-lg md:text-2xl font-bold">{filteredResidents.length}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Residents</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="rounded-lg bg-amber-100 p-1.5 md:p-2">
+                <Home className="h-4 w-4 md:h-5 md:w-5 text-amber-700" />
+              </div>
+              <div>
+                <p className="text-lg md:text-2xl font-bold">{totalHouseholds}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Households</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="rounded-lg bg-blue-100 p-1.5 md:p-2">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-700" />
+              </div>
+              <div>
+                <p className="text-lg md:text-2xl font-bold">{maleCount}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Male</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="rounded-lg bg-pink-100 p-1.5 md:p-2">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-pink-700" />
+              </div>
+              <div>
+                <p className="text-lg md:text-2xl font-bold">{femaleCount}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Female</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="rounded-lg bg-emerald-100 p-1.5 md:p-2">
+                <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-emerald-700" />
+              </div>
+              <div>
+                <p className="text-lg md:text-2xl font-bold">{totalPopulation}</p>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Population</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Main Tabs: Residents vs Households */}
+      <motion.div variants={itemVariants}>
+        <Tabs value={activeMainTab} onValueChange={setActiveMainTab}>
+          <TabsList className="h-10 w-full justify-start bg-muted/50">
+            <TabsTrigger value="residents" className="text-sm px-4">
+              <Users className="h-4 w-4 mr-2" />
+              Residents
+            </TabsTrigger>
+            <TabsTrigger value="households" className="text-sm px-4">
+              <Home className="h-4 w-4 mr-2" />
+              Housing / Census
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Residents Tab Content */}
+          <TabsContent value="residents" className="mt-4 space-y-4">
+            {/* Filters */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter by Purok
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {puroks.map((purok) => (
+                      <label key={purok} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox 
+                          checked={selectedPuroks.includes(purok)}
+                          onCheckedChange={() => togglePurok(purok)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">{purok}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter by Age
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {ageRanges.map((range) => (
+                      <label key={range.label} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox 
+                          checked={selectedAgeRanges.includes(range.label)}
+                          onCheckedChange={() => toggleAgeRange(range.label)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">{range.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Active Filters */}
+            {(selectedPuroks.length > 0 || selectedAgeRanges.length > 0) && (
+              <div className="flex items-center gap-2 flex-wrap p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Active filters:</span>
+                {selectedPuroks.map(purok => (
+                  <Badge key={purok} variant="secondary">{purok}</Badge>
+                ))}
+                {selectedAgeRanges.map(range => (
+                  <Badge key={range} variant="secondary">{range} yrs</Badge>
+                ))}
+                <Button variant="ghost" size="sm" className="ml-auto text-xs" onClick={resetFilters}>
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                placeholder="Search residents..." 
+                className="pl-10 h-9 md:h-10 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Residents Table */}
+            <Card>
+              <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
+                <CardTitle className="text-base md:text-lg">Resident List</CardTitle>
+                <CardDescription className="text-xs md:text-sm">Click on a resident to view family members</CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 md:p-6 pt-0">
+                {/* Mobile card list - stacked cards on small screens */}
+                <div className="space-y-3 sm:hidden">
+                  {filteredResidents.map((resident) => (
+                    <div key={resident.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{resident.name}</p>
+                          <p className="text-xs text-slate-600">{resident.purok}</p>
+                          <p className="text-xs text-slate-400 mt-1">{resident.familyMembers?.length || 0} members</p>
+                        </div>
+                        <div className="shrink-0">{getStatusBadge(resident.status)}</div>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedResident(resident)}>
+                          View
+                        </Button>
+                        {resident.status === "pending" && (
+                          <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                            <CheckCircle2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Table view for larger screens */}
+                <div className="hidden sm:block rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs md:text-sm">Name</TableHead>
+                        <TableHead className="text-xs md:text-sm hidden sm:table-cell">Purok</TableHead>
+                        <TableHead className="text-xs md:text-sm hidden md:table-cell">Family Members</TableHead>
+                        <TableHead className="text-xs md:text-sm">Status</TableHead>
+                        <TableHead className="text-xs md:text-sm">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredResidents.map((resident) => (
+                        <TableRow key={resident.id}>
+                          <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">
+                            <div>
+                              {resident.name}
+                              {resident.isHouseholdHead && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">Head</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{resident.purok}</TableCell>
+                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden md:table-cell">
+                            {resident.familyMembers?.length || 0} members
+                          </TableCell>
+                          <TableCell className="py-2 md:py-4">{getStatusBadge(resident.status)}</TableCell>
+                          <TableCell className="py-2 md:py-4">
+                            <div className="flex gap-1 md:gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="h-7 md:h-8 px-2 md:px-3 text-xs"
+                                onClick={() => setSelectedResident(resident)}
+                              >
+                                <Eye className="h-3 w-3 md:mr-1" />
+                                <span className="hidden md:inline">View</span>
+                              </Button>
+                              {resident.status === "pending" && (
+                                <Button size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs bg-emerald-600 hover:bg-emerald-700">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Households Tab Content */}
+          <TabsContent value="households" className="mt-4 space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                placeholder="Search households..." 
+                className="pl-10 h-9 md:h-10 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Households Grid */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredHouseholds.map((household) => (
+                <Card 
+                  key={household.id} 
+                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => setSelectedHousehold(household)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">{household.householdNumber}</Badge>
+                      <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                        {household.totalMembers} members
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-base mt-2">{household.headOfFamily}</CardTitle>
+                    <CardDescription className="text-xs">{household.address}, {household.purok}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Family Members:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {household.members.slice(0, 3).map((member) => (
+                          <Badge key={member.id} variant="secondary" className="text-[10px]">
+                            {member.name.split(" ")[0]}
+                          </Badge>
+                        ))}
+                        {household.members.length > 3 && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            +{household.members.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                      <p className="text-xs text-muted-foreground">Registered: {household.registeredDate}</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </motion.div>
+
+      {/* Resident Details Modal with Family Members */}
+      <Dialog open={!!selectedResident} onOpenChange={() => setSelectedResident(null)}>
+        <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-base md:text-lg">Resident Profile</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              View resident information and family members
+            </DialogDescription>
+          </DialogHeader>
+          {selectedResident && (
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4">
+                {/* Basic Info */}
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedResident.name}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedResident.email}</p>
+                  </div>
+                  {getStatusBadge(selectedResident.status)}
+                </div>
+
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Purok</p>
+                    <p className="font-medium text-sm">{selectedResident.purok}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Age</p>
+                    <p className="font-medium text-sm">{selectedResident.age} years old</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Gender</p>
+                    <p className="font-medium text-sm">{selectedResident.gender}</p>
+                  </div>
+                  {selectedResident.occupation && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Occupation</p>
+                      <p className="font-medium text-sm">{selectedResident.occupation}</p>
+                    </div>
+                  )}
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Registered</p>
+                    <p className="font-medium text-sm">{selectedResident.registeredDate}</p>
+                  </div>
+                </div>
+
+                {/* Uploaded Document Section */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-semibold text-sm">Uploaded Document</p>
+                    <Badge variant="outline" className="text-xs">{selectedResident.documentType}</Badge>
+                  </div>
+                  
+                  {selectedResident.documentImage ? (
+                    <div className="space-y-3">
+                      <div className="relative aspect-[4/3] w-full max-w-sm mx-auto rounded-lg overflow-hidden border bg-muted">
+                        <Image
+                          src={selectedResident.documentImage}
+                          alt={`${selectedResident.documentType} - ${selectedResident.name}`}
+                          fill
+                          className="object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = "/images/placeholder-document.png"
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <FileText className="h-3 w-3" />
+                        <span>{selectedResident.documentType} - {selectedResident.documentImage.split('/').pop()}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No document uploaded</p>
+                    </div>
+                  )}
+                  
+                  {selectedResident.remarks && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-xs font-medium text-red-800">Note:</p>
+                      <p className="text-sm text-red-700">{selectedResident.remarks}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Family Members Section */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-semibold text-sm">Family Members</p>
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedResident.familyMembers?.length || 0}
+                      </Badge>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => setShowAddFamilyMember(true)}
+                    >
+                      <UserPlus className="h-3 w-3 mr-1" />
+                      Add Member
+                    </Button>
+                  </div>
+
+                  {selectedResident.familyMembers && selectedResident.familyMembers.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedResident.familyMembers.map((member) => (
+                        <div 
+                          key={member.id} 
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {member.relationship} - {member.age} yrs - {member.gender}
+                              {member.occupation && ` - ${member.occupation}`}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">{member.relationship}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No family members added yet</p>
+                      <p className="text-xs">Click Add Member to start building the household</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedResident(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Family Member Dialog */}
+      <Dialog open={showAddFamilyMember} onOpenChange={setShowAddFamilyMember}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Family Member</DialogTitle>
+            <DialogDescription>
+              Add a new family member to {selectedResident?.name}&apos;s household
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input 
+                placeholder="Enter full name"
+                value={newFamilyMember.name}
+                onChange={(e) => setNewFamilyMember({...newFamilyMember, name: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Relationship</Label>
+                <Select 
+                  value={newFamilyMember.relationship} 
+                  onValueChange={(v) => setNewFamilyMember({...newFamilyMember, relationship: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Spouse">Spouse</SelectItem>
+                    <SelectItem value="Son">Son</SelectItem>
+                    <SelectItem value="Daughter">Daughter</SelectItem>
+                    <SelectItem value="Father">Father</SelectItem>
+                    <SelectItem value="Mother">Mother</SelectItem>
+                    <SelectItem value="Brother">Brother</SelectItem>
+                    <SelectItem value="Sister">Sister</SelectItem>
+                    <SelectItem value="Grandparent">Grandparent</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Age</Label>
+                <Input 
+                  type="number"
+                  placeholder="Age"
+                  value={newFamilyMember.age}
+                  onChange={(e) => setNewFamilyMember({...newFamilyMember, age: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select 
+                  value={newFamilyMember.gender} 
+                  onValueChange={(v) => setNewFamilyMember({...newFamilyMember, gender: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Occupation</Label>
+                <Input 
+                  placeholder="e.g., Student"
+                  value={newFamilyMember.occupation}
+                  onChange={(e) => setNewFamilyMember({...newFamilyMember, occupation: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddFamilyMember(false)}>Cancel</Button>
+            <Button onClick={handleAddFamilyMember}>Add Member</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Household Details Modal */}
+      <Dialog open={!!selectedHousehold} onOpenChange={() => setSelectedHousehold(null)}>
+        <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-base md:text-lg">Household Census</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              Complete household information and members
+            </DialogDescription>
+          </DialogHeader>
+          {selectedHousehold && (
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4">
+                {/* Household Info */}
+                <div className="grid gap-3 grid-cols-2">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Household Number</p>
+                    <p className="font-semibold">{selectedHousehold.householdNumber}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Head of Family</p>
+                    <p className="font-semibold">{selectedHousehold.headOfFamily}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                    <p className="text-xs text-muted-foreground">Address</p>
+                    <p className="font-semibold">{selectedHousehold.address}, {selectedHousehold.purok}</p>
+                  </div>
+                </div>
+
+                {/* Members Table */}
+                <div className="border rounded-lg">
+                  <div className="p-3 border-b bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-sm">Household Members</p>
+                      <Badge>{selectedHousehold.totalMembers} total</Badge>
+                    </div>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Name</TableHead>
+                        <TableHead className="text-xs">Relationship</TableHead>
+                        <TableHead className="text-xs">Age</TableHead>
+                        <TableHead className="text-xs">Gender</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Occupation</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedHousehold.members.map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell className="text-xs font-medium">{member.name}</TableCell>
+                          <TableCell className="text-xs">
+                            <Badge variant={member.relationship === "Head" ? "default" : "secondary"} className="text-[10px]">
+                              {member.relationship}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{member.age}</TableCell>
+                          <TableCell className="text-xs">{member.gender}</TableCell>
+                          <TableCell className="text-xs hidden sm:table-cell">{member.occupation || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Census Summary */}
+                <div className="grid gap-3 grid-cols-3">
+                  <div className="p-3 rounded-lg bg-blue-50 text-center">
+                    <p className="text-lg font-bold text-blue-700">
+                      {selectedHousehold.members.filter(m => m.gender === "Male").length}
+                    </p>
+                    <p className="text-xs text-blue-600">Male</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-pink-50 text-center">
+                    <p className="text-lg font-bold text-pink-700">
+                      {selectedHousehold.members.filter(m => m.gender === "Female").length}
+                    </p>
+                    <p className="text-xs text-pink-600">Female</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-50 text-center">
+                    <p className="text-lg font-bold text-emerald-700">{selectedHousehold.totalMembers}</p>
+                    <p className="text-xs text-emerald-600">Total</p>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedHousehold(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
+  )
+}
