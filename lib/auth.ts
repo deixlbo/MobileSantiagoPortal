@@ -151,11 +151,8 @@ export const signUpResident = async (data: any) => {
     documentFile,
   } = data
 
-  let idPath: string | null = null
-  let idType: string | null = null
-  let storagePath: string | null = null
-
   try {
+    // First, sign up the user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -174,6 +171,11 @@ export const signUpResident = async (data: any) => {
     if (!user) {
       return { data: null, error: new Error('Failed to create user') }
     }
+
+    // Prepare file upload if provided
+    let idPath: string | null = null
+    let idType: string | null = null
+    let storagePath: string | null = null
 
     if (documentFile) {
       idType = documentType || documentFile.name
@@ -196,45 +198,41 @@ export const signUpResident = async (data: any) => {
       idPath = publicUrl.publicUrl || null
     }
 
-    const profilePayload = {
-      id: user.id,
-      email,
-      role: 'resident',
-      first_name: firstName,
-      middle_name: middleName || null,
-      last_name: lastName,
-      suffix: suffix || null,
-      civil_status: civilStatus || null,
-      purok: purok || null,
-      gender: gender || null,
-      occupation: occupation || null,
-      contact_number: contactNumber || null,
-      address: address || null,
-      date_of_birth: dateOfBirth || null,
-      verification_status: 'pending',
-      id_type: idType,
-      id_path: idPath,
-      created_at: new Date().toISOString(),
-    }
+    // Call server API to create profile (uses service role, bypasses RLS)
+    const response = await fetch('/api/auth/register-resident', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        email,
+        firstName,
+        middleName,
+        lastName,
+        suffix,
+        civilStatus,
+        purok,
+        gender,
+        occupation,
+        contactNumber,
+        address,
+        dateOfBirth,
+        idType,
+        idPath,
+      }),
+    })
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .insert([profilePayload])
-      .select()
-      .single()
+    const result = await response.json()
 
-    if (profileError) {
+    if (!response.ok) {
+      // If profile creation fails, clean up the file upload
       if (storagePath) {
         await supabase.storage.from(RESIDENT_UPLOAD_BUCKET).remove([storagePath])
       }
-      return { data: null, error: profileError }
+      return { data: null, error: new Error(result.error || 'Failed to create profile') }
     }
 
-    return { data: { user, profile }, error: null }
+    return { data: { user, profile: result.profile }, error: null }
   } catch (error) {
-    if (storagePath) {
-      await supabase.storage.from(RESIDENT_UPLOAD_BUCKET).remove([storagePath])
-    }
     return { data: null, error: error as Error }
   }
 }

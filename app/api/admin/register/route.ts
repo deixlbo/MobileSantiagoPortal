@@ -91,7 +91,12 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('[v0] Profile insertion error:', profileError)
-      return NextResponse.json({ error: `Failed to create profile: ${profileError.message}` }, { status: 500 })
+      // Only show specific error if it's a meaningful one
+      let errorMsg = profileError.message
+      if (errorMsg.includes('schema cache')) {
+        errorMsg = 'Database schema cache is syncing. Please try again in a moment.'
+      }
+      return NextResponse.json({ error: `Failed to create profile: ${errorMsg}` }, { status: 500 })
     }
 
     console.log('[v0] Account created successfully:', { userId, email, role: authRole })
