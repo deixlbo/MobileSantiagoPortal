@@ -2,10 +2,6 @@ import { supabase } from './supabase'
 import { RESIDENT_UPLOAD_BUCKET, ID_STORAGE_PREFIX } from './storage'
 
 export async function signIn(email: string, password: string) {
-  if (!supabase) {
-    return { data: null, error: new Error('Supabase client not configured') }
-  }
-
   try {
     const result = await supabase.auth.signInWithPassword({ email, password })
     return { data: result.data, error: result.error }
@@ -15,10 +11,6 @@ export async function signIn(email: string, password: string) {
 }
 
 export const signOut = async () => {
-  if (!supabase) {
-    return { error: new Error('Supabase client not configured') }
-  }
-
   try {
     const res = await supabase.auth.signOut()
     return { error: res.error }
@@ -28,8 +20,6 @@ export const signOut = async () => {
 }
 
 export const getSession = async () => {
-  if (!supabase) return null
-
   try {
     const { data } = await supabase.auth.getSession()
     return data.session || null
@@ -39,8 +29,6 @@ export const getSession = async () => {
 }
 
 export const getCurrentUser = async () => {
-  if (!supabase) return null
-
   try {
     const { data } = await supabase.auth.getUser()
     return data?.user || null
@@ -55,23 +43,21 @@ export const getUserRole = async (user: any) => {
   const metadataRole = user.user_metadata?.role || user.app_metadata?.role
   if (metadataRole) return metadataRole
 
-  if (!supabase) return null
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (error || !profile) return null
-  return profile.role
+    if (error || !profile) return null
+    return profile.role
+  } catch {
+    return null
+  }
 }
 
 export const getProfile = async (userId?: string) => {
-  if (!supabase) {
-    return { profile: null, error: new Error('Supabase client not configured') }
-  }
-
   let uid = userId
   if (!uid) {
     const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -91,10 +77,6 @@ export const getProfile = async (userId?: string) => {
 }
 
 export async function getResidentDocument(residentId: string) {
-  if (!supabase) {
-    return null
-  }
-
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -151,10 +133,6 @@ export async function updatePassword(token: string, password: string) {
 }
 
 export const signUpResident = async (data: any) => {
-  if (!supabase) {
-    return { data: null, error: new Error('Supabase client not configured') }
-  }
-
   const {
     email,
     password,
