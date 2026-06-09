@@ -116,15 +116,21 @@ const itemVariants = {
 // Document Header Component with Logos - Only visible when printing
 function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
   return (
-    <div className={`flex items-center justify-between mb-4 p-4 border-b ${printOnly ? 'hidden print:flex' : ''}`}>
-      <Image src="/logos/santiago-logo.png" alt="AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 object-cover shrink-0" />
-      <div className="text-center flex-1 px-2">
+    <div className={`w-full flex items-center justify-between mb-4 p-6 border-b bg-white ${printOnly ? 'hidden print:flex' : ''}`}>
+      {/* Left Logo (saz-logo) */}
+      <Image src="/logos/saz-logo.png" alt="Municipality Seal" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
+      
+      {/* Center Text */}
+      <div className="text-center flex-1 px-4">
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">AI-Assisted Barangay Santiago Portal: Smart Document Processing and Resident Service Automation</p>
+        <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
+        <p className="text-xs md:text-sm font-semibold print:text-black">Office of the Barangay Captain</p>
       </div>
-      <Image src="/logos/saz-logo.png" alt="Municipality" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 object-cover shrink-0" />
+      
+      {/* Right Logo (santiago-logo) */}
+      <Image src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
     </div>
   )
 }
@@ -804,14 +810,14 @@ export default function OfficialBlottersPage() {
         <div className="rounded-3xl border-4 border-black bg-white p-8 text-black shadow-2xl">
           {/* Header with Logos */}
           <div className="flex items-center justify-between mb-4">
-            <img src="/logos/santiago-logo.png" alt="Barangay Santiago" className="w-16 h-16 object-cover" />
+            <img src="/logos/saz-logo.png" alt="Municipality Seal" className="w-16 h-16 object-cover" />
             <div className="text-center flex-1 px-4">
               <p className="text-xs">Republic of the Philippines</p>
               <p className="text-xs">Province of Zambales</p>
               <p className="text-xs">Municipality of San Antonio</p>
               <p className="text-sm font-bold mt-1">BARANGAY SANTIAGO</p>
             </div>
-            <img src="/logos/saz-logo.png" alt="Municipality Seal" className="w-16 h-16 object-cover" />
+            <img src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" className="w-16 h-16 object-cover" />
           </div>
           <div className="border-b-2 border-black mb-4"></div>
           <h2 className="text-lg font-bold text-center mb-6">BARANGAY BLOTTER REPORT</h2>

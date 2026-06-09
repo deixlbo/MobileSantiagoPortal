@@ -187,15 +187,21 @@ const itemVariants = {
 
 function OfficialDocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
   return (
-    <div className={`flex items-center justify-between mb-4 p-4 border-b ${printOnly ? 'hidden print:flex' : ''}`}>
-      <Image src="/logos/santiago-logo.png" alt="Barangay Santiago" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 object-cover shrink-0" />
-      <div className="text-center flex-1 px-2">
+    <div className={`w-full flex items-center justify-between mb-4 p-6 border-b bg-white ${printOnly ? 'hidden print:flex' : ''}`}>
+      {/* Left Logo (saz-logo) */}
+      <Image src="/logos/saz-logo.png" alt="Municipality Seal" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
+      
+      {/* Center Text */}
+      <div className="text-center flex-1 px-4">
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
         <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
         <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
+        <p className="text-xs md:text-sm font-semibold print:text-black">Office of the Barangay Captain</p>
       </div>
-      <Image src="/logos/saz-logo.png" alt="Office of the Municipal Mayor" width={60} height={60} className="w-12 h-12 md:w-16 md:h-16 object-cover shrink-0" />
+      
+      {/* Right Logo (santiago-logo) */}
+      <Image src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
     </div>
   )
 }
@@ -979,7 +985,7 @@ export default function OfficialDocumentsPage() {
           
           <div className="cert-container">
             <div className="cert-header">
-              <img src="/logos/santiago-logo.png" alt="Barangay Santiago" className="logo" />
+              <img src="/logos/saz-logo.png" alt="Municipality Seal" className="logo" />
               <div className="header-text">
                 <p><strong>Republic of the Philippines</strong></p>
                 <p>Province of Zambales</p>
@@ -987,7 +993,7 @@ export default function OfficialDocumentsPage() {
                 <p><strong>Barangay Santiago</strong></p>
                 <p style={{marginTop: '3px'}}><strong>Office of the Barangay Captain</strong></p>
               </div>
-              <img src="/logos/saz-logo.png" alt="Municipal Seal" className="logo" />
+              <img src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" className="logo" />
             </div>
 
             <div className="cert-title">
