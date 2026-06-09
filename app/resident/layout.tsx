@@ -214,7 +214,7 @@ export default function ResidentLayout({
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[75vw] flex-col md:hidden bg-white/95 border-r border-slate-200 shadow-lg"
           >
-            <MobileSidebarContent />
+            <SidebarContent />
           </motion.aside>
         )}
       </AnimatePresence>
@@ -253,6 +253,7 @@ export default function ResidentLayout({
             {children}
           </motion.main>
         </AnimatePresence>
+      </div>
       </div>
       
       {/* AI Chatbot */}
