@@ -46,6 +46,8 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
+        console.log("[v0] Fetching admin dashboard data...")
+        
         // Fetch total residents
         const { count: residentsCount } = await supabase
           .from('profiles')
@@ -77,6 +79,8 @@ export default function AdminDashboardPage() {
           .order('created_at', { ascending: false })
           .limit(5)
 
+        console.log("[v0] Admin dashboard data fetched successfully")
+
         setStats({
           totalResidents: residentsCount || 0,
           totalHouseholds: householdsCount || 0,
@@ -86,7 +90,15 @@ export default function AdminDashboardPage() {
 
         setActivities(activityData || [])
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
+        console.error('[v0] Error fetching admin dashboard data:', error)
+        // Set default values on error
+        setStats({
+          totalResidents: 0,
+          totalHouseholds: 0,
+          pendingVerifications: 0,
+          pendingDocuments: 0,
+        })
+        setActivities([])
       } finally {
         setLoading(false)
       }

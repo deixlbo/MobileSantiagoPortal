@@ -42,6 +42,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchDashboardStats() {
       try {
+        console.log("[v0] Starting dashboard stats fetch...")
+        
         // Fetch total residents
         const { count: residentsCount } = await supabase
           .from('profiles')
@@ -67,6 +69,8 @@ export default function AdminDashboard() {
           .eq('role', 'resident')
           .eq('verification_status', 'verified')
 
+        console.log("[v0] Dashboard stats fetched successfully")
+        
         setStats([
           { name: "Total Residents", value: (residentsCount || 0).toLocaleString(), change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
           { name: "Pending Documents", value: (pendingDocsCount || 0).toLocaleString(), change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
@@ -74,7 +78,13 @@ export default function AdminDashboard() {
           { name: "Verified Accounts", value: (verifiedCount || 0).toLocaleString(), change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
         ])
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error)
+        console.error('[v0] Error fetching dashboard stats:', error)
+        setStats([
+          { name: "Total Residents", value: "0", change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
+          { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
+          { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
+          { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
+        ])
       } finally {
         setLoading(false)
       }

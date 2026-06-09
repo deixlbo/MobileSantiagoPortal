@@ -331,7 +331,6 @@ export default function ResidentLayout({
       
       {/* AI Chatbot */}
       <ResidentChatbot />
-      </div>
     </div>
   )
 }

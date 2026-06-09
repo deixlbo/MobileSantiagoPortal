@@ -47,6 +47,8 @@ export default function ResidentDashboard() {
   async function fetchDashboardData() {
     setLoading(true)
     try {
+      console.log("[v0] Fetching resident dashboard data...")
+      
       const { data: announcementsData } = await supabase
         .from('announcements')
         .select('*')
@@ -88,9 +90,15 @@ export default function ResidentDashboard() {
       }
 
       setNotifications(notifs)
+      console.log("[v0] Dashboard data fetched successfully")
 
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('[v0] Error fetching dashboard data:', error)
+      // Set empty data on error instead of crashing
+      setAnnouncements([])
+      setProjects([])
+      setOrdinances([])
+      setNotifications([])
     } finally {
       setLoading(false)
     }
