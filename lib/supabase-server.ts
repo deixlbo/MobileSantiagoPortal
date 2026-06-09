@@ -10,18 +10,10 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   )
 }
 
-let supabaseServerInstance: any = null
-
-function getSupabaseServer() {
-  if (!supabaseServerInstance) {
-    supabaseServerInstance = createClient(supabaseUrl, supabaseServiceRoleKey)
-  }
-  return supabaseServerInstance
-}
-
-export const supabaseServer = new Proxy({}, {
-  get: (target, prop) => {
-    const instance = getSupabaseServer()
-    return (instance as any)[prop]
-  }
-}) as any
+// Create a single instance for server-side operations
+export const supabaseServer = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+})
