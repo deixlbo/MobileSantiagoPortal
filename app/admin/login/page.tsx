@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import Image from "next/image"
@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
                 />
                 Remember me
               </label>
-              <Link href="/forgot-password" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+              <Link href="/admin/forgot-password" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
                 Forgot password?
               </Link>
             </div>
