@@ -23,17 +23,65 @@ import {
 } from "lucide-react"
 
 import { useRouter } from "next/navigation"
-
-const trendsData: any[] = []
-const alertsData: any[] = []
-const recentActivities: any[] = []
+import { supabase } from "@/lib/supabase"
 
 export default function AdminDashboard() {
   const router = useRouter()
   const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
+  const [stats, setStats] = useState([
+    { name: "Total Residents", value: "0", change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
+    { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
+    { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
+    { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
+  ])
+  const [loading, setLoading] = useState(true)
   
   const unreadCount = notifications.filter(n => !n.read).length
+
+  useEffect(() => {
+    async function fetchDashboardStats() {
+      try {
+        // Fetch total residents
+        const { count: residentsCount } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'resident')
+
+        // Fetch pending documents
+        const { count: pendingDocsCount } = await supabase
+          .from('document_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
+
+        // Fetch active blotters
+        const { count: blottersCount } = await supabase
+          .from('blotters')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+
+        // Fetch verified accounts
+        const { count: verifiedCount } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'resident')
+          .eq('verification_status', 'verified')
+
+        setStats([
+          { name: "Total Residents", value: (residentsCount || 0).toLocaleString(), change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
+          { name: "Pending Documents", value: (pendingDocsCount || 0).toLocaleString(), change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
+          { name: "Active Blotters", value: (blottersCount || 0).toLocaleString(), change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
+          { name: "Verified Accounts", value: (verifiedCount || 0).toLocaleString(), change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
+        ])
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardStats()
+  }, [])
 
   const handleNotificationClick = (notification: any) => {
     // Mark as read
@@ -45,21 +93,14 @@ export default function AdminDashboard() {
     router.push("/official/documents")
   }
 
-  const [stats, setStats] = useState([
-    { name: "Total Residents", value: "1,245", change: "+12%", icon: Users, color: "bg-emerald-100 text-emerald-600" },
-    { name: "Pending Documents", value: "23", change: "-5%", icon: FileText, color: "bg-blue-100 text-blue-600" },
-    { name: "Active Blotters", value: "8", change: "+2%", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
-    { name: "Verified Accounts", value: "987", change: "+18%", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
-  ])
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 sm:mb-8 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Welcome, Juan</h1>
-            <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Official Dashboard</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Official Dashboard</h1>
+            <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Official Portal</p>
           </div>
           
           {/* Notification Bell */}

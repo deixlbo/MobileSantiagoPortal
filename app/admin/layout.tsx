@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { BarangayHeader } from "@/components/barangay-header"
 import {
   LayoutDashboard,
   Users,
@@ -175,6 +176,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <BarangayHeader />
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div

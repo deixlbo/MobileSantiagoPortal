@@ -5,6 +5,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { BarangayHeader } from "@/components/barangay-header"
 import {
   LayoutDashboard,
   Users,
@@ -189,6 +190,7 @@ export default function OfficialLayout({
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <BarangayHeader />
       {/* Mobile Sidebar Overlay - Click to close */}
       <AnimatePresence>
         {sidebarOpen && (

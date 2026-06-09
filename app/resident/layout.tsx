@@ -5,6 +5,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { BarangayHeader } from "@/components/barangay-header"
 import {
   LayoutDashboard,
   FileText,
@@ -251,8 +252,10 @@ export default function ResidentLayout({
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <BarangayHeader />
+      <div className="flex-1 flex">
+        {/* Desktop Sidebar */}
       <motion.aside 
         initial={{ x: -280 }}
         animate={{ x: 0 }}
@@ -328,6 +331,7 @@ export default function ResidentLayout({
       
       {/* AI Chatbot */}
       <ResidentChatbot />
+      </div>
     </div>
   )
 }
