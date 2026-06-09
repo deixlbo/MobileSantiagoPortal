@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
 
 // Mock officials data for when database is empty
 const MOCK_OFFICIALS = [
@@ -82,6 +88,22 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Try to fetch from Supabase
+    const supabase = getSupabaseClient()
+    
+    if (!supabase) {
+      // Return mock data if not configured
+      console.log('[v0] Using mock officials data - Supabase not configured')
+      const mockData = MOCK_OFFICIALS.slice(offset, offset + limit)
+      return NextResponse.json({
+        success: true,
+        data: mockData,
+        total: MOCK_OFFICIALS.length,
+        limit,
+        offset,
+        message: 'Using sample data - set up database to use real data'
+      })
+    }
+
     const { data: officials, error, count } = await supabase
       .from('officials')
       .select(`

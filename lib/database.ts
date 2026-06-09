@@ -1,9 +1,35 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+let supabaseInstance: any = null
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+function getSupabaseClient() {
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Return proxy to prevent errors at import time
+    return new Proxy({}, {
+      get: () => {
+        throw new Error('Supabase client is not configured')
+      }
+    })
+  }
+
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
+  return supabaseInstance
+}
+
+// Lazy-load the client
+export const supabase = new Proxy({}, {
+  get: (target, prop) => {
+    const instance = getSupabaseClient()
+    return (instance as any)[prop]
+  }
+}) as any
 
 // =====================================================
 // DATABASE TYPES AND SCHEMAS

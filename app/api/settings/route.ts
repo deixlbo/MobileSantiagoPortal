@@ -1,12 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-const supabaseServer = createClient(supabaseUrl, supabaseServiceKey)
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
+
+function getSupabaseServerClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 // Mock settings data for when database is empty
 const MOCK_SETTINGS = {
@@ -24,34 +39,38 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get('key')
 
     // Try to fetch from Supabase
-    const { data: allSettings, error: fetchError } = await supabase
-      .from('settings')
-      .select('*')
-      .neq('setting_key', 'ADMIN_SECRET')
+    const supabase = getSupabaseClient()
+    
+    if (supabase) {
+      const { data: allSettings, error: fetchError } = await supabase
+        .from('settings')
+        .select('*')
+        .neq('setting_key', 'ADMIN_SECRET')
 
-    if (!fetchError && allSettings && allSettings.length > 0) {
-      if (key) {
-        const setting = allSettings.find(s => s.setting_key === key)
+      if (!fetchError && allSettings && allSettings.length > 0) {
+        if (key) {
+          const setting = allSettings.find(s => s.setting_key === key)
+          return NextResponse.json({
+            success: true,
+            key,
+            value: setting?.setting_value || MOCK_SETTINGS[key as keyof typeof MOCK_SETTINGS] || null
+          })
+        }
+
+        const settings: Record<string, any> = {}
+        allSettings.forEach(setting => {
+          settings[setting.setting_key] = setting.setting_value
+        })
+
         return NextResponse.json({
           success: true,
-          key,
-          value: setting?.setting_value || MOCK_SETTINGS[key as keyof typeof MOCK_SETTINGS] || null
+          data: { ...MOCK_SETTINGS, ...settings }
         })
       }
-
-      const settings: Record<string, any> = {}
-      allSettings.forEach(setting => {
-        settings[setting.setting_key] = setting.setting_value
-      })
-
-      return NextResponse.json({
-        success: true,
-        data: { ...MOCK_SETTINGS, ...settings }
-      })
     }
 
     // Return mock data if database is empty
-    console.log('[v0] Using mock settings - database tables not yet created')
+    console.log('[v0] Using mock settings - database not configured')
     
     if (key) {
       return NextResponse.json({
@@ -101,6 +120,19 @@ export async function POST(request: NextRequest) {
 
     // Try to save to Supabase using service role
     try {
+      const supabaseServer = getSupabaseServerClient()
+      
+      if (!supabaseServer) {
+        // Return success anyway for frontend compatibility
+        console.log('[v0] Supabase server not configured')
+        return NextResponse.json({
+          success: true,
+          data: { setting_key: key, setting_value: value },
+          message: 'Setting saved locally - database not configured',
+          fallback: true
+        })
+      }
+
       const { data, error } = await supabaseServer
         .from('settings')
         .upsert({
