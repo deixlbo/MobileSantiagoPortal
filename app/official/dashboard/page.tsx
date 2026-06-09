@@ -10,7 +10,6 @@ import {
 } from "recharts"
 import Link from "next/link"
 import {
-  Users,
   FileText,
   AlertTriangle,
   TrendingUp,
@@ -30,7 +29,6 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const [stats, setStats] = useState([
-    { name: "Total Residents", value: "0", change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
     { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
     { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
     { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
@@ -67,12 +65,6 @@ export default function AdminDashboard() {
       try {
         console.log("[v0] Starting dashboard stats fetch...")
         
-        // Fetch total residents
-        const { count: residentsCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'resident')
-
         // Fetch pending documents
         const { count: pendingDocsCount } = await supabase
           .from('document_requests')
@@ -95,7 +87,6 @@ export default function AdminDashboard() {
         console.log("[v0] Dashboard stats fetched successfully")
         
         setStats([
-          { name: "Total Residents", value: (residentsCount || 0).toLocaleString(), change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
           { name: "Pending Documents", value: (pendingDocsCount || 0).toLocaleString(), change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
           { name: "Active Blotters", value: (blottersCount || 0).toLocaleString(), change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
           { name: "Verified Accounts", value: (verifiedCount || 0).toLocaleString(), change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
@@ -103,7 +94,6 @@ export default function AdminDashboard() {
       } catch (error) {
         console.error('[v0] Error fetching dashboard stats:', error)
         setStats([
-          { name: "Total Residents", value: "0", change: "", icon: Users, color: "bg-emerald-100 text-emerald-600" },
           { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
           { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
           { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },

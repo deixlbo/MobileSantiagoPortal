@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase-server'
+import { getSupabaseServer } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[v0] Creating resident profile for user:', userId)
+
+    const supabaseServer = getSupabaseServer()
+    if (!supabaseServer) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
 
     // Insert profile into database using service role (bypasses RLS)
     const { data: profile, error: profileError } = await supabaseServer

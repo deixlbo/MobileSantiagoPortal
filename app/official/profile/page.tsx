@@ -4,14 +4,12 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { getProfile } from "@/lib/auth"
 import {
   User,
   Mail,
   Calendar,
   Shield,
-  Clock,
   CheckCircle2,
   FileText,
   Users,
@@ -30,18 +28,6 @@ const defaultOfficialProfile = {
   status: "active",
   department: "Administration",
   termEnd: "2026",
-  logs: [
-    { action: "Logged in to the system", time: "Today at 2:30 PM", type: "login" },
-    { action: "Approved 3 document requests", time: "Today at 1:45 PM", type: "approval" },
-    { action: "Generated monthly report", time: "Today at 12:00 PM", type: "report" },
-    { action: "Updated project status for PRJ-2026-001", time: "Today at 11:30 AM", type: "update" },
-    { action: "Reviewed 5 blotter cases", time: "Today at 10:00 AM", type: "review" },
-    { action: "Approved resident verification", time: "Yesterday at 4:30 PM", type: "approval" },
-    { action: "Signed 3 barangay clearances", time: "Yesterday at 3:15 PM", type: "document" },
-    { action: "Logged in to the system", time: "Yesterday at 9:00 AM", type: "login" },
-    { action: "Approved budget allocation for road project", time: "2 days ago", type: "approval" },
-    { action: "Conducted barangay meeting", time: "3 days ago", type: "meeting" },
-  ]
 }
 
 const containerVariants = {
@@ -55,27 +41,6 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
-}
-
-function getLogIcon(type: string) {
-  switch (type) {
-    case "login":
-      return <User className="h-4 w-4 text-blue-500" />
-    case "approval":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-    case "report":
-      return <FileText className="h-4 w-4 text-purple-500" />
-    case "update":
-      return <Clock className="h-4 w-4 text-amber-500" />
-    case "review":
-      return <AlertTriangle className="h-4 w-4 text-orange-500" />
-    case "document":
-      return <FileText className="h-4 w-4 text-blue-500" />
-    case "meeting":
-      return <Users className="h-4 w-4 text-indigo-500" />
-    default:
-      return <Clock className="h-4 w-4 text-gray-500" />
-  }
 }
 
 export default function OfficialProfilePage() {
@@ -218,31 +183,6 @@ export default function OfficialProfilePage() {
             </div>
           </div>
 
-          {/* Activity Logs */}
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-lg font-semibold">Activity Logs</h3>
-              <p className="text-sm text-muted-foreground">Recent actions and system activity</p>
-            </div>
-            <ScrollArea className="h-[400px] pr-4 border rounded-lg">
-              <div className="space-y-3 p-4">
-                {officialProfile.logs.map((log, idx) => (
-                  <div 
-                    key={idx} 
-                    className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="mt-0.5 p-2 rounded-lg bg-muted">
-                      {getLogIcon(log.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{log.action}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{log.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
         </motion.div>
       </div>
     </motion.div>

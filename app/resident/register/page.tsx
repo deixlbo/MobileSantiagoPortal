@@ -381,18 +381,10 @@ export default function ResidentRegisterPage() {
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
                   <option value="">Select ID document</option>
-                  <option value="philsys_id">Philippine National ID (PhilSys ID)</option>
-                  <option value="passport">Passport</option>
-                  <option value="drivers_license">Driver's License</option>
-                  <option value="umid">UMID (Unified Multi-Purpose ID)</option>
-                  <option value="sss_id">SSS ID</option>
-                  <option value="gsis_ecard">GSIS eCard</option>
-                  <option value="prc_id">PRC ID (Professional Regulation Commission ID)</option>
-                  <option value="postal_id">Postal ID</option>
-                  <option value="voter_id">Voter's ID (where still accepted)</option>
-                  <option value="senior_citizen_id">Senior Citizen ID</option>
-                  <option value="birth_certificate">Birth Certificate</option>
-                  <option value="other">Other</option>
+                  <option value="valid_id">Valid ID</option>
+                  <option value="cedula">Cedula</option>
+                  <option value="proof_of_residency">Proof of Residency</option>
+                  <option value="business_registration">Business Registration</option>
                 </select>
               </div>
             </div>
