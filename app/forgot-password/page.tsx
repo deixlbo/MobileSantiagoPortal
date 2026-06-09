@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ShieldCheck } from "lucide-react"
@@ -10,14 +10,42 @@ import { Label } from "@/components/ui/label"
 import { sendPasswordResetEmail } from "@/lib/auth"
 import { getErrorMessage } from "@/lib/utils"
 import { toast } from "sonner"
+import { checkRateLimit, setRateLimit } from "@/lib/rate-limit"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
+  // Start cooldown timer if stored in localStorage
+  useEffect(() => {
+    const { secondsRemaining } = checkRateLimit('forgot-password', email || 'general')
+    if (secondsRemaining > 0) {
+      setCooldown(secondsRemaining)
+    }
+  }, [email])
+
+  // Update cooldown timer every second
+  useEffect(() => {
+    if (cooldown <= 0) return
+
+    const timer = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [cooldown])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check client-side rate limit
+    const { allowed, secondsRemaining } = checkRateLimit('forgot-password', email)
+    if (!allowed) {
+      toast.error(`Please wait ${secondsRemaining} seconds before trying again.`)
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -26,11 +54,25 @@ export default function ForgotPasswordPage() {
 
       if (error) {
         const message = getErrorMessage(error, "Unable to send reset email. Please try again.")
-        toast.error(message)
+        
+        // Check if it's a rate limit error
+        if (message.includes('Too many') || message.includes('rate')) {
+          // Set rate limit for 1 hour (3600 seconds)
+          setRateLimit('forgot-password', email, 3600)
+          setCooldown(3600)
+          toast.error('Too many attempts. Please try again in 1 hour.')
+        } else {
+          toast.error(message)
+        }
+        
         setIsLoading(false)
         return
       }
 
+      // Set rate limit for 5 minutes on success
+      setRateLimit('forgot-password', email, 300)
+      setCooldown(300)
+      
       toast.success("Password reset link sent. Check your email.")
       setEmail("")
     } catch (err) {
@@ -79,6 +121,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -97,7 +140,12 @@ export default function ForgotPasswordPage() {
               )}
             </Button>
             {cooldown > 0 && (
-              <p className="text-sm text-amber-700">You can request another link in {cooldown} seconds.</p>
+              <p className="text-sm text-amber-700">
+                {cooldown > 300 
+                  ? `Rate limited. Please try again in ${Math.ceil(cooldown / 60)} minutes.`
+                  : `You can request another link in ${cooldown} seconds.`
+                }
+              </p>
             )}
           </form>
 

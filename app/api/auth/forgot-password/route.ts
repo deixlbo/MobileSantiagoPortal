@@ -16,6 +16,38 @@ function getSupabaseClient() {
   return supabase
 }
 
+// Simple in-memory rate limiter for server-side (will reset on deploy)
+const rateLimitStore = new Map<string, { timestamp: number; count: number }>()
+
+function isRateLimited(email: string, maxAttempts = 3, windowSeconds = 3600): boolean {
+  const key = `forgot-password:${email.toLowerCase()}`
+  const now = Date.now()
+  
+  const entry = rateLimitStore.get(key)
+  
+  if (!entry) {
+    rateLimitStore.set(key, { timestamp: now, count: 1 })
+    return false
+  }
+  
+  const timePassed = (now - entry.timestamp) / 1000
+  
+  // Reset if window has passed
+  if (timePassed > windowSeconds) {
+    rateLimitStore.set(key, { timestamp: now, count: 1 })
+    return false
+  }
+  
+  // Check if max attempts exceeded
+  if (entry.count >= maxAttempts) {
+    return true
+  }
+  
+  // Increment counter
+  entry.count += 1
+  return false
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, redirectTo } = await request.json()
@@ -24,6 +56,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
+      )
+    }
+
+    // Check rate limit
+    if (isRateLimited(email)) {
+      return NextResponse.json(
+        { 
+          error: 'Too many password reset attempts. Please wait 1 hour before trying again.',
+          retryAfter: 3600,
+          rateLimited: true
+        },
+        { status: 429 }
       )
     }
 
@@ -44,13 +88,15 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('[v0] Forgot password lookup error:', profileError)
-      return NextResponse.json(
-        { error: 'Unable to process password reset' },
-        { status: 500 }
-      )
+      // Don't reveal if email exists or not
+      return NextResponse.json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.'
+      })
     }
 
     if (!profile) {
+      // Don't reveal if email exists or not - return success
       return NextResponse.json({
         success: true,
         message: 'If an account exists with this email, a password reset link has been sent.'
@@ -109,6 +155,20 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[v0] Forgot password error:', error)
+    
+    // Check if it's a Supabase rate limit error
+    const errorMessage = String(error)
+    if (errorMessage.includes('rate_limit') || errorMessage.includes('too many')) {
+      return NextResponse.json(
+        { 
+          error: 'Too many requests. Please wait a moment before trying again.',
+          rateLimited: true,
+          retryAfter: 300
+        },
+        { status: 429 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Failed to process reset request' },
       { status: 500 }
