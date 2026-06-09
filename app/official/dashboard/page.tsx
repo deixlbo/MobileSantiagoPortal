@@ -37,6 +37,29 @@ export default function AdminDashboard() {
   ])
   const [loading, setLoading] = useState(true)
   
+  // Sample data for charts
+  const [trendsData] = useState([
+    { date: "Jan", requests: 40, approvals: 24, declines: 4 },
+    { date: "Feb", requests: 30, approvals: 18, declines: 5 },
+    { date: "Mar", requests: 20, approvals: 15, declines: 3 },
+    { date: "Apr", requests: 50, approvals: 35, declines: 8 },
+    { date: "May", requests: 35, approvals: 25, declines: 4 },
+    { date: "Jun", requests: 45, approvals: 32, declines: 6 },
+  ])
+
+  const [alertsData] = useState([
+    { id: 1, message: "5 pending document verifications", priority: "high" },
+    { id: 2, message: "System maintenance scheduled for tomorrow", priority: "medium" },
+    { id: 3, message: "3 new complaints filed today", priority: "high" },
+  ])
+
+  const [recentActivities] = useState([
+    { id: 1, user: "John Doe", action: "submitted a new complaint", time: "2 hours ago" },
+    { id: 2, user: "Maria Santos", action: "verified a resident account", time: "4 hours ago" },
+    { id: 3, user: "Pedro Cruz", action: "requested a document", time: "6 hours ago" },
+    { id: 4, user: "Admin", action: "updated system settings", time: "8 hours ago" },
+  ])
+  
   const unreadCount = notifications.filter(n => !n.read).length
 
   useEffect(() => {
