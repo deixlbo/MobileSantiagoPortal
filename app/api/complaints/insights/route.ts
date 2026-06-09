@@ -5,15 +5,20 @@ import { openai } from '@ai-sdk/openai';
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch recent complaints
+    // Calculate date range
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const { data: complaints } = await supabase
+    const { data: complaints, error } = await supabase
       .from('complaints')
       .select('*')
       .gte('created_at', thirtyDaysAgo.toISOString())
       .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[Complaints Insights Error - Fetch]', error.message)
+      throw error
+    }
 
     if (!complaints || complaints.length === 0) {
       return NextResponse.json({
@@ -62,26 +67,30 @@ Provide:
 
 Format as JSON with fields: trend, commonIssues (array), recommendations (array)`;
 
-    const { text } = await generateText({
-      model: openai('gpt-4-turbo'),
-      prompt: analysisPrompt,
-      maxTokens: 600,
-    });
+    let aiAnalysis = {
+      trend: `Out of ${complaints.length} complaints in the last 30 days, ${resolved} have been resolved.`,
+      commonIssues: sortedCategories.slice(0, 3),
+      recommendations: [
+        'Improve response time for new complaints',
+        'Follow up on pending complaints more regularly',
+        'Document lessons learned for improvement',
+      ],
+    };
 
-    let aiAnalysis;
     try {
+      const { text } = await generateText({
+        model: openai('gpt-4-turbo'),
+        prompt: analysisPrompt,
+        maxTokens: 600,
+      });
+
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      aiAnalysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { trend: text, commonIssues: [], recommendations: [] };
-    } catch {
-      aiAnalysis = {
-        trend: text,
-        commonIssues: sortedCategories,
-        recommendations: [
-          'Implement proactive complaint tracking system',
-          'Schedule regular community feedback sessions',
-          'Train staff on complaint resolution procedures',
-        ],
-      };
+      if (jsonMatch) {
+        aiAnalysis = JSON.parse(jsonMatch[0]);
+      }
+    } catch (aiError) {
+      console.warn('[Complaints Insights] AI generation failed, using fallback:', aiError instanceof Error ? aiError.message : String(aiError));
+      // Continue with fallback analysis
     }
 
     // Calculate average resolution time
@@ -112,9 +121,9 @@ Format as JSON with fields: trend, commonIssues (array), recommendations (array)
       },
     });
   } catch (error: any) {
-    console.error('[Complaints Insights Error]', error);
+    console.error('[Complaints Insights Exception]', error.message || error);
     return NextResponse.json(
-      { error: 'Failed to generate insights' },
+      { error: 'Failed to generate insights', details: error.message || 'Unknown error' },
       { status: 500 }
     );
   }

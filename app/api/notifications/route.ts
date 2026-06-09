@@ -6,12 +6,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, title, message, type, link } = body
 
+    // Validate required fields
     if (!userId || !title || !message || !type) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: userId, title, message, type' },
         { status: 400 }
       )
     }
+
+    const now = new Date().toISOString()
 
     const { data: notification, error } = await supabaseServer
       .from('notifications')
@@ -23,20 +26,27 @@ export async function POST(request: NextRequest) {
           type,
           link: link || null,
           read: false,
-          created_at: new Date(),
+          created_at: now,
+          updated_at: now,
         },
       ])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[Notifications POST Error]', error.message)
+      return NextResponse.json(
+        { error: 'Failed to create notification' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       notification,
-    })
+    }, { status: 201 })
   } catch (error) {
-    console.error('Error creating notification:', error)
+    console.error('[Notifications POST Exception]', error)
     return NextResponse.json(
       { error: 'Failed to create notification' },
       { status: 500 }
@@ -52,18 +62,29 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'userId is required' },
+        { error: 'userId query parameter is required' },
         { status: 400 }
       )
     }
 
     let query = supabaseServer.from('notifications').select('*').eq('user_id', userId)
-    if (unreadOnly) query = query.eq('read', false)
+    if (unreadOnly) {
+      query = query.eq('read', false)
+    }
+
     const { data: userNotifications, error } = await query.order('created_at', { ascending: false })
-    if (error) throw error
-    return NextResponse.json(userNotifications)
+
+    if (error) {
+      console.error('[Notifications GET Error]', error.message)
+      return NextResponse.json(
+        { error: 'Failed to fetch notifications' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(userNotifications || [])
   } catch (error) {
-    console.error('Error fetching notifications:', error)
+    console.error('[Notifications GET Exception]', error)
     return NextResponse.json(
       { error: 'Failed to fetch notifications' },
       { status: 500 }
@@ -76,18 +97,38 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, read } = body
 
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Notification ID is required' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof read !== 'boolean') {
+      return NextResponse.json(
+        { error: 'read field must be a boolean' },
+        { status: 400 }
+      )
+    }
+
     const { data: notification, error } = await supabaseServer
       .from('notifications')
-      .update({ read })
+      .update({ read, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single()
+
     if (error) {
-      return NextResponse.json({ error: error.message || 'Notification not found' }, { status: 404 })
+      console.error('[Notifications PUT Error]', error.message)
+      return NextResponse.json(
+        { error: 'Notification not found or update failed' },
+        { status: 404 }
+      )
     }
+
     return NextResponse.json({ success: true, notification })
   } catch (error) {
-    console.error('Error updating notification:', error)
+    console.error('[Notifications PUT Exception]', error)
     return NextResponse.json(
       { error: 'Failed to update notification' },
       { status: 500 }

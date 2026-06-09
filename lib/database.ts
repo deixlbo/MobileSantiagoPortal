@@ -439,37 +439,65 @@ export const settings = {
 }
 
 // =====================================================
+// UTILITY FUNCTIONS
+// =====================================================
+function getCurrentTimestamp(): string {
+  return new Date().toISOString()
+}
+
+function validateRequired(data: Record<string, any>, fields: string[]): void {
+  const missing = fields.filter(field => !data[field])
+  if (missing.length > 0) {
+    throw new Error(`Missing required fields: ${missing.join(', ')}`)
+  }
+}
+
+// =====================================================
 // AUDIT LOGS FUNCTIONS
 // =====================================================
 export const auditLogs = {
   async log(userId: string, action: string, entityType: string, entityId?: string, changes?: Record<string, any>) {
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .insert([{
-        user_id: userId,
-        action,
-        entity_type: entityType,
-        entity_id: entityId,
-        changes: changes || {},
-        ip_address: 'N/A',
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'
-      }])
-      .select()
-      .single()
-    
-    if (error) console.error(`Failed to log audit: ${error.message}`)
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .insert([{
+          user_id: userId,
+          action,
+          entity_type: entityType,
+          entity_id: entityId,
+          changes: changes || {},
+          ip_address: 'N/A',
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+          created_at: getCurrentTimestamp()
+        }])
+        .select()
+        .single()
+      
+      if (error) {
+        console.error(`[Audit Log Error] ${action} on ${entityType}:`, error.message)
+        return null
+      }
+      return data
+    } catch (err) {
+      console.error('[Audit Log Exception]', err)
+      return null
+    }
   },
 
   async getLogs(userId?: string, limit = 50, offset = 0) {
-    let query = supabase.from('audit_logs').select('*')
-    if (userId) query = query.eq('user_id', userId)
-    
-    const { data, error } = await query
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw new Error(`Failed to fetch audit logs: ${error.message}`)
-    return data
+    try {
+      let query = supabase.from('audit_logs').select('*')
+      if (userId) query = query.eq('user_id', userId)
+      
+      const { data, error } = await query
+        .range(offset, offset + limit - 1)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw new Error(`Failed to fetch audit logs: ${error.message}`)
+      return data || []
+    } catch (err) {
+      console.error('[Audit Logs Fetch Error]', err)
+      throw err
+    }
   }
 }

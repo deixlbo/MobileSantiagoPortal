@@ -16,12 +16,24 @@ export async function POST(request: NextRequest) {
       contactNumber,
     } = body
 
+    // Validate required fields
     if (!email || !firstName || !lastName) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: email, firstName, lastName' },
         { status: 400 }
       )
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    const now = new Date().toISOString()
 
     const { data: resident, error } = await supabaseServer
       .from('profiles')
@@ -34,22 +46,30 @@ export async function POST(request: NextRequest) {
           purok: purok || 'Unknown',
           gender: gender || 'other',
           address: address || '',
-          date_of_birth: dateOfBirth ? new Date(dateOfBirth) : null,
+          date_of_birth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
           contact_number: contactNumber || '',
           verification_status: 'pending',
+          created_at: now,
+          updated_at: now,
         },
       ])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[Residents POST Error]', error.message)
+      return NextResponse.json(
+        { error: 'Failed to create resident: ' + error.message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       resident,
-    })
+    }, { status: 201 })
   } catch (error) {
-    console.error('Error creating resident:', error)
+    console.error('[Residents POST Exception]', error)
     return NextResponse.json(
       { error: 'Failed to create resident' },
       { status: 500 }
@@ -72,8 +92,9 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (error) {
+        console.error('[Residents GET by ID Error]', error.message)
         return NextResponse.json(
-          { error: error.message || 'Resident not found' },
+          { error: 'Resident not found' },
           { status: 404 }
         )
       }
@@ -88,21 +109,31 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (error) {
-        return NextResponse.json(null)
+        // Not found is expected for email queries
+        return NextResponse.json(null, { status: 200 })
       }
       return NextResponse.json(resident)
     }
 
-    let query = supabaseServer.from('profiles').select('*')
+    // Fetch all residents, optionally filtered by status
+    let query = supabaseServer.from('profiles').select('*').eq('role', 'resident')
     if (status) {
       query = query.eq('verification_status', status)
     }
 
-    const { data: allResidents, error } = await query
-    if (error) throw error
-    return NextResponse.json(allResidents)
+    const { data: allResidents, error } = await query.order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('[Residents GET All Error]', error.message)
+      return NextResponse.json(
+        { error: 'Failed to fetch residents' },
+        { status: 500 }
+      )
+    }
+    
+    return NextResponse.json(allResidents || [])
   } catch (error) {
-    console.error('Error fetching residents:', error)
+    console.error('[Residents GET Exception]', error)
     return NextResponse.json(
       { error: 'Failed to fetch residents' },
       { status: 500 }
@@ -115,10 +146,18 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, verificationStatus, ...updates } = body
 
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Resident ID is required' },
+        { status: 400 }
+      )
+    }
+
     const updateBody: any = { ...updates }
     if (verificationStatus) {
       updateBody.verification_status = verificationStatus
     }
+    updateBody.updated_at = new Date().toISOString()
 
     const { data: resident, error } = await supabaseServer
       .from('profiles')
@@ -128,8 +167,9 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
+      console.error('[Residents PUT Error]', error.message)
       return NextResponse.json(
-        { error: error.message || 'Resident not found' },
+        { error: 'Resident not found or update failed' },
         { status: 404 }
       )
     }
@@ -139,7 +179,7 @@ export async function PUT(request: NextRequest) {
       resident,
     })
   } catch (error) {
-    console.error('Error updating resident:', error)
+    console.error('[Residents PUT Exception]', error)
     return NextResponse.json(
       { error: 'Failed to update resident' },
       { status: 500 }

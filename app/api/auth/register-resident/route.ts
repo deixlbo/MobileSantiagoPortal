@@ -22,8 +22,12 @@ export async function POST(request: NextRequest) {
       idPath,
     } = body
 
+    // Validate required fields
     if (!userId || !email || !firstName || !lastName) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing required fields: userId, email, firstName, lastName' },
+        { status: 400 }
+      )
     }
 
     console.log('[v0] Creating resident profile for user:', userId)
@@ -32,6 +36,8 @@ export async function POST(request: NextRequest) {
     if (!supabaseServer) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
+
+    const now = new Date().toISOString()
 
     // Insert profile into database using service role (bypasses RLS)
     const { data: profile, error: profileError } = await supabaseServer
@@ -55,20 +61,28 @@ export async function POST(request: NextRequest) {
           verification_status: 'pending',
           id_type: idType || null,
           id_path: idPath || null,
+          created_at: now,
+          updated_at: now,
         },
       ])
       .select()
       .single()
 
     if (profileError) {
-      console.error('[v0] Profile creation error:', profileError)
-      return NextResponse.json({ error: `Failed to create profile: ${profileError.message}` }, { status: 500 })
+      console.error('[v0] Profile creation error:', profileError.message)
+      return NextResponse.json(
+        { error: `Failed to create profile: ${profileError.message}` },
+        { status: 500 }
+      )
     }
 
     console.log('[v0] Resident profile created successfully:', userId)
     return NextResponse.json({ success: true, profile }, { status: 201 })
   } catch (error) {
-    console.error('[v0] Error:', error)
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    console.error('[v0] Register Resident Exception:', error)
+    return NextResponse.json(
+      { error: (error as Error).message || 'Failed to create resident account' },
+      { status: 500 }
+    )
   }
 }
