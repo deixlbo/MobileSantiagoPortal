@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-import { useToast } from "@/hooks/use-toast"
-=======
 'use client'
 
 import { useToast } from '@/hooks/use-toast'
->>>>>>> 733e160 (Initial commit - Mobile Santiago Portal)
 import {
   Toast,
   ToastClose,
@@ -12,11 +8,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-<<<<<<< HEAD
-} from "@/components/ui/toast"
-=======
 } from '@/components/ui/toast'
->>>>>>> 733e160 (Initial commit - Mobile Santiago Portal)
 
 export function Toaster() {
   const { toasts } = useToast()

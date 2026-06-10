@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-"use client"
-
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
-
-const Collapsible = CollapsiblePrimitive.Root
-
-const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
-
-const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent
-=======
 'use client'
 
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
@@ -40,6 +29,5 @@ function CollapsibleContent({
     />
   )
 }
->>>>>>> 733e160 (Initial commit - Mobile Santiago Portal)
 
 export { Collapsible, CollapsibleTrigger, CollapsibleContent }
