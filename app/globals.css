@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 * {
   margin: 0;
   padding: 0;
@@ -88,7 +87,8 @@ input, textarea, select {
   display: flex;
   align-items: center;
   justify-content: center;
-=======
+}
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -263,5 +263,4 @@ input, textarea, select {
 
 .animate-progress {
   animation: progressFill 0.8s ease-out;
->>>>>>> 733e160 (Initial commit - Mobile Santiago Portal)
 }
