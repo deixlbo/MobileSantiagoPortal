@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ChangeEvent } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,11 +47,15 @@ interface Announcement {
   priority: AnnouncementPriority
   status: AnnouncementStatus
   category: string
-  publish_date: string
-  expiry_date: string
+  publish_date: string | null
+  expiry_date: string | null
+  publishDate?: string | null
+  expiryDate?: string | null
   author: string
   views: number
   created_at?: string
+  image_url?: string | null
+  imageUrl?: string | null
 }
 
 const priorityConfig: Record<AnnouncementPriority, { label: string; variant: "destructive" | "default" | "secondary"; icon: typeof AlertCircle }> = {
@@ -68,6 +72,25 @@ const statusConfig: Record<AnnouncementStatus, { label: string; variant: "defaul
 
 const categories = ["Events", "Utilities", "Health", "Governance", "Social Services", "Safety", "Education", "Environment"]
 
+function normalizeAnnouncement(announcement: any): Announcement {
+  return {
+    ...announcement,
+    title: String(announcement?.title ?? ""),
+    content: String(announcement?.content ?? ""),
+    priority: announcement?.priority ?? "normal",
+    status: announcement?.status ?? "draft",
+    category: announcement?.category ?? "Events",
+    author: announcement?.author ?? "Current Official",
+    views: Number(announcement?.views ?? 0),
+    publish_date: announcement?.publish_date ?? announcement?.publishDate ?? "",
+    expiry_date: announcement?.expiry_date ?? announcement?.expiryDate ?? "",
+    publishDate: announcement?.publishDate ?? announcement?.publish_date ?? "",
+    expiryDate: announcement?.expiryDate ?? announcement?.expiry_date ?? "",
+    image_url: announcement?.image_url ?? announcement?.imageUrl ?? null,
+    imageUrl: announcement?.imageUrl ?? announcement?.image_url ?? null,
+  }
+}
+
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,6 +105,9 @@ export default function AnnouncementsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [showPrintPreview, setShowPrintPreview] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState("")
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
@@ -90,11 +116,39 @@ export default function AnnouncementsPage() {
     category: "Events",
     publishDate: "",
     expiryDate: "",
+    imageUrl: "",
   })
 
   useEffect(() => {
     fetchAnnouncements()
   }, [])
+
+  async function uploadAnnouncementImage(file: File) {
+    const timestamp = Date.now()
+    const safeName = file.name.replace(/\s+/g, "-")
+    const storagePath = `announcements/${timestamp}-${safeName}`
+
+    setIsUploadingImage(true)
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('resident-uploads')
+        .upload(storagePath, file, {
+          contentType: file.type || 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: publicUrlData } = supabase.storage
+        .from('resident-uploads')
+        .getPublicUrl(storagePath)
+
+      return publicUrlData.publicUrl
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
 
   async function fetchAnnouncements() {
     try {
@@ -104,7 +158,9 @@ export default function AnnouncementsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setAnnouncements(data || [])
+
+      const normalizedAnnouncements = (data || []).map(normalizeAnnouncement)
+      setAnnouncements(normalizedAnnouncements)
     } catch (error) {
       const dumpError = (e: any) => {
         try { return JSON.stringify(e, Object.getOwnPropertyNames(e), 2) } catch { return String(e) }
@@ -117,16 +173,29 @@ export default function AnnouncementsPage() {
   }
 
   const filteredAnnouncements = announcements.filter((ann) => {
-    const matchesSearch =
-      ann.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ann.content.toLowerCase().includes(searchTerm.toLowerCase())
+    const searchValue = searchTerm.toLowerCase()
+    const title = String(ann?.title ?? "").toLowerCase()
+    const content = String(ann?.content ?? "").toLowerCase()
+    const matchesSearch = title.includes(searchValue) || content.includes(searchValue)
     const matchesPriority = priorityFilter === "all" || ann.priority === priorityFilter
     const matchesStatus = statusFilter === "all" || ann.status === statusFilter
     return matchesSearch && matchesPriority && matchesStatus
   })
 
+  const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   const handleAddAnnouncement = async (asDraft: boolean) => {
     try {
+      const imageUrl = imageFile
+        ? await uploadAnnouncementImage(imageFile)
+        : (newAnnouncement.imageUrl ? newAnnouncement.imageUrl : undefined)
+
       const created = await createAnnouncement({
         title: newAnnouncement.title,
         content: newAnnouncement.content,
@@ -136,9 +205,10 @@ export default function AnnouncementsPage() {
         publishDate: newAnnouncement.publishDate || new Date().toISOString().split("T")[0],
         expiryDate: newAnnouncement.expiryDate || null,
         author: "Current Official",
+        imageUrl,
       })
 
-      setAnnouncements([created, ...announcements])
+      setAnnouncements([normalizeAnnouncement(created), ...announcements])
       setNewAnnouncement({
         title: "",
         content: "",
@@ -146,7 +216,10 @@ export default function AnnouncementsPage() {
         category: "Events",
         publishDate: "",
         expiryDate: "",
+        imageUrl: "",
       })
+      setImageFile(null)
+      setImagePreview("")
       setIsAddDialogOpen(false)
       toast.success(asDraft ? 'Draft saved' : 'Announcement published')
     } catch (error) {
@@ -241,9 +314,11 @@ export default function AnnouncementsPage() {
       content: announcement.content,
       priority: announcement.priority,
       category: announcement.category,
-      publishDate: announcement.publish_date,
-      expiryDate: announcement.expiry_date,
+      publishDate: announcement.publishDate ?? announcement.publish_date ?? "",
+      expiryDate: announcement.expiryDate ?? announcement.expiry_date ?? "",
+      imageUrl: announcement.imageUrl ?? announcement.image_url ?? "",
     })
+    setImagePreview(announcement.imageUrl ?? announcement.image_url ?? "")
     setIsEditDialogOpen(true)
   }
 
@@ -251,16 +326,22 @@ export default function AnnouncementsPage() {
     if (!editingAnnouncement) return
 
     try {
-      const updated = await updateAnnouncement(editingAnnouncement.id, {
+      const updates: Record<string, any> = {
         title: newAnnouncement.title,
         content: newAnnouncement.content,
         priority: newAnnouncement.priority,
         category: newAnnouncement.category,
         publishDate: newAnnouncement.publishDate || null,
         expiryDate: newAnnouncement.expiryDate || null,
-      })
+      }
 
-      setAnnouncements(announcements.map((a) => (a.id === editingAnnouncement.id ? updated : a)))
+      if (imageFile) {
+        updates.imageUrl = await uploadAnnouncementImage(imageFile)
+      }
+
+      const updated = await updateAnnouncement(editingAnnouncement.id, updates)
+
+      setAnnouncements(announcements.map((a) => (a.id === editingAnnouncement.id ? normalizeAnnouncement(updated) : a)))
       setIsEditDialogOpen(false)
       setEditingAnnouncement(null)
       setNewAnnouncement({
@@ -270,7 +351,10 @@ export default function AnnouncementsPage() {
         category: "Events",
         publishDate: "",
         expiryDate: "",
+        imageUrl: "",
       })
+      setImageFile(null)
+      setImagePreview("")
       toast.success('Announcement updated')
     } catch (error) {
       let errorMessage = 'Unknown error'
@@ -327,6 +411,22 @@ export default function AnnouncementsPage() {
                   placeholder="Write your announcement here..."
                   rows={5}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="announcement-image">Announcement Image (optional)</Label>
+                <Input
+                  id="announcement-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelection}
+                />
+                {(imagePreview || newAnnouncement.imageUrl) && (
+                  <img
+                    src={imagePreview || newAnnouncement.imageUrl}
+                    alt="Announcement preview"
+                    className="h-32 w-full rounded-md object-cover border"
+                  />
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -554,12 +654,17 @@ export default function AnnouncementsPage() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1">
+              <CardContent className="flex-1 space-y-3">
+                {announcement.imageUrl ? (
+                  <div className="overflow-hidden rounded-md border">
+                    <Image src={announcement.imageUrl} alt={announcement.title} width={640} height={360} className="h-40 w-full object-cover" />
+                  </div>
+                ) : null}
                 <p className="line-clamp-3 text-sm text-muted-foreground">{announcement.content}</p>
               </CardContent>
               <CardContent className="border-t pt-4">
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Published: {new Date(announcement.publishDate).toLocaleDateString()}</span>
+                  <span>Published: {announcement.publishDate ? new Date(announcement.publishDate).toLocaleDateString() : "Not scheduled"}</span>
                   {announcement.expiryDate && (
                     <span>Expires: {new Date(announcement.expiryDate).toLocaleDateString()}</span>
                   )}
@@ -600,7 +705,7 @@ export default function AnnouncementsPage() {
                 <div>
                   <p className="text-muted-foreground">Published</p>
                   <p className="font-medium">
-                    {new Date(selectedAnnouncement.publishDate).toLocaleDateString()}
+                    {selectedAnnouncement.publishDate ? new Date(selectedAnnouncement.publishDate).toLocaleDateString() : "Not scheduled"}
                   </p>
                 </div>
                 <div>
@@ -724,6 +829,7 @@ export default function AnnouncementsPage() {
                 category: "Events",
                 publishDate: "",
                 expiryDate: "",
+                imageUrl: "",
               })
             }}>
               Cancel
@@ -788,7 +894,7 @@ export default function AnnouncementsPage() {
                   <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground font-medium">Published:</p>
-                      <p>{new Date(selectedAnnouncement.publishDate).toLocaleDateString()}</p>
+                      <p>{selectedAnnouncement.publishDate ? new Date(selectedAnnouncement.publishDate).toLocaleDateString() : "Not scheduled"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground font-medium">Expires:</p>

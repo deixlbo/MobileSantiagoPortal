@@ -13,8 +13,8 @@ import {
   FolderKanban,
   Megaphone,
   User,
-  MessageSquare,
   Menu,
+  Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -26,12 +26,12 @@ import { getCurrentUser, getUserRole, signOut } from "@/lib/auth"
 
 const navigation = [
   { name: "Dashboard", href: "/resident/dashboard", icon: LayoutDashboard },
+  { name: "Blotters", href: "/resident/blotter", icon: AlertTriangle },
   { name: "Documents", href: "/resident/documents", icon: FileText },
-  { name: "Blotter", href: "/resident/blotter", icon: AlertTriangle },
+  { name: "Announcements", href: "/resident/announcements", icon: Megaphone },
   { name: "Ordinances", href: "/resident/ordinances", icon: Scroll },
   { name: "Projects", href: "/resident/projects", icon: FolderKanban },
-  { name: "Announcements", href: "/resident/announcements", icon: Megaphone },
-  { name: "Feedback", href: "/resident/feedback", icon: MessageSquare },
+  { name: "Assets", href: "/resident/assets", icon: Package },
   { name: "Profile", href: "/resident/profile", icon: User },
 ]
 
@@ -253,9 +253,11 @@ export default function ResidentLayout({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 w-full px-3 sm:px-4 md:px-6 py-4 sm:py-6 overflow-x-hidden"
+            className="flex-1 w-full overflow-x-hidden"
           >
-            {children}
+            <div className="mx-auto w-full max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+              {children}
+            </div>
           </motion.main>
         </AnimatePresence>
       </div>

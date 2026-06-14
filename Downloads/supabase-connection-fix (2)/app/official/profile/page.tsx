@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getProfile } from "@/lib/auth"
@@ -40,6 +41,54 @@ const itemVariants = {
 
 export default function OfficialProfilePage() {
   const [officialProfile, setOfficialProfile] = useState(defaultOfficialProfile)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+
+  const handleProfilePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload a valid image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Profile photo must be less than 5MB')
+      return
+    }
+
+    if (!officialProfile.id) {
+      toast.error('Your profile is not ready yet')
+      return
+    }
+
+    setIsUploadingPhoto(true)
+    try {
+      const formData = new FormData()
+      formData.append('userId', officialProfile.id)
+      formData.append('file', file)
+      const response = await fetch('/api/profile/photo', {
+        method: 'POST',
+        body: formData,
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to upload profile photo')
+      }
+
+      setOfficialProfile((prev) => ({
+        ...prev,
+        avatar: result.fileUrl || prev.avatar,
+      }))
+      toast.success('Profile photo updated successfully')
+    } catch (error) {
+      console.error('Profile photo upload failed:', error)
+      toast.error(error instanceof Error ? error.message : 'Unable to upload profile photo')
+    } finally {
+      setIsUploadingPhoto(false)
+      event.target.value = ''
+    }
+  }
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -57,6 +106,7 @@ export default function OfficialProfilePage() {
             email: profile.email ?? prev.email,
             position: profile.position || prev.position,
             createdAt: profile.created_at || prev.createdAt,
+            avatar: profile.avatar_url || profile.profile_image_url || profile.avatar || prev.avatar,
           }))
         }
       } catch (err) {
@@ -85,12 +135,19 @@ export default function OfficialProfilePage() {
         <motion.div variants={itemVariants} className="lg:col-span-1">
           <div className="border rounded-lg p-6">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="h-24 w-24 ring-4 ring-emerald-100">
-                <AvatarImage src={officialProfile.avatar} alt={officialProfile.name} />
-                <AvatarFallback className="bg-emerald-700 text-white text-2xl font-bold">
-                  {officialProfile.name.split(" ").map(n => n[0]).join("")}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-24 w-24 ring-4 ring-emerald-100">
+                  <AvatarImage src={officialProfile.avatar} alt={officialProfile.name} />
+                  <AvatarFallback className="bg-emerald-700 text-white text-2xl font-bold">
+                    {officialProfile.name.split(" ").map(n => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <label className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 shadow-sm hover:bg-emerald-50">
+                  <input type="file" accept="image/*" className="sr-only" onChange={handleProfilePhotoUpload} />
+                  <span className="text-sm font-semibold">+</span>
+                </label>
+              </div>
+              {isUploadingPhoto && <p className="mt-2 text-xs text-emerald-700">Uploading profile photo…</p>}
               <h2 className="mt-4 text-xl font-bold">{officialProfile.name}</h2>
               <p className="text-muted-foreground">{officialProfile.position}</p>
               <Badge className="mt-2 bg-emerald-100 text-emerald-700">

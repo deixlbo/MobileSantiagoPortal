@@ -106,7 +106,27 @@ export const getProfile = async (userId?: string) => {
       return { profile: null, error: new Error(errorMessage) }
     }
 
-    return { profile, error: null }
+    try {
+      const { data: photoRow } = await supabase
+        .from('document_uploads')
+        .select('file_url')
+        .eq('uploaded_by', uid)
+        .eq('requirement_name', 'profile_photo')
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      return {
+        profile: {
+          ...profile,
+          avatar_url: profile.avatar_url || profile.profile_image_url || profile.avatar || photoRow?.file_url || null,
+          profile_image_url: profile.profile_image_url || profile.avatar_url || profile.avatar || photoRow?.file_url || null,
+        },
+        error: null,
+      }
+    } catch {
+      return { profile, error: null }
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : JSON.stringify(err)
     return { profile: null, error: new Error(`Profile fetch failed: ${errorMessage}`) }
@@ -146,6 +166,7 @@ export async function sendPasswordResetEmail(email: string, redirectTo: string) 
     return {
       data: response.ok ? result : null,
       error: response.ok ? null : new Error(result.error || 'Failed to send reset link'),
+      retryAfter: response.ok ? null : result.retryAfter ?? null,
     }
   } catch (err) {
     return { data: null, error: err as Error }
@@ -186,6 +207,7 @@ export const signUpResident = async (data: any) => {
     dateOfBirth,
     documentType,
     documentFile,
+    profileImageFile,
   } = data
 
   try {
@@ -236,6 +258,42 @@ export const signUpResident = async (data: any) => {
     }
 
     // Call server API to create profile (uses service role, bypasses RLS)
+    if (profileImageFile) {
+      const formData = new FormData()
+      formData.append('userId', user.id)
+      formData.append('email', email)
+      formData.append('firstName', firstName)
+      formData.append('middleName', middleName || '')
+      formData.append('lastName', lastName)
+      formData.append('suffix', suffix || '')
+      formData.append('civilStatus', civilStatus || '')
+      formData.append('purok', purok || '')
+      formData.append('gender', gender || '')
+      formData.append('occupation', occupation || '')
+      formData.append('contactNumber', contactNumber || '')
+      formData.append('address', address || '')
+      formData.append('dateOfBirth', dateOfBirth || '')
+      formData.append('idType', idType || '')
+      formData.append('idPath', idPath || '')
+      formData.append('profileImage', profileImageFile)
+
+      const response = await fetch('/api/auth/register-resident', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (storagePath) {
+          await supabase.storage.from(RESIDENT_UPLOAD_BUCKET).remove([storagePath])
+        }
+        return { data: null, error: new Error(result.error || 'Failed to create profile') }
+      }
+
+      return { data: { user, profile: result.profile }, error: null }
+    }
+
     const response = await fetch('/api/auth/register-resident', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

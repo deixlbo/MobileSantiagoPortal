@@ -7,6 +7,9 @@ interface A4PrintTemplateProps {
   title?: string;
   children?: React.ReactNode;
   showLogos?: boolean;
+  issuedDate?: Date;
+  controlNumber?: string;
+  requestNumber?: string;
 }
 
 export default function A4PrintTemplate({
@@ -14,7 +17,15 @@ export default function A4PrintTemplate({
   title = 'Certification',
   children,
   showLogos = true,
+  issuedDate = new Date(),
+  controlNumber = '______',
+  requestNumber = '______',
 }: A4PrintTemplateProps) {
+  const formattedIssuedDate = issuedDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
   return (
     <div className="w-full h-full flex items-center justify-center bg-gray-100 p-4">
       <div
@@ -92,42 +103,39 @@ export default function A4PrintTemplate({
 
               <div className="w-full flex-1 flex flex-col justify-center">
                 {children || (
-                  <div className="space-y-4 text-sm leading-relaxed">
-                    <p className="text-center italic">To whom it may concern</p>
+                  <div className="space-y-4 text-sm leading-relaxed text-center">
+                    <p className="text-center italic">To whom it may concern:</p>
                     <p>
-                      THIS IS TO CERTIFY that _______________ born on ________ in ________ is a bonafide resident of Barangay Santiago, San Antonio, Zambales.
+                      This is to certify that <span className="font-semibold">________________________</span>, a bonafide resident of Barangay Santiago, San Antonio, Zambales, is residing at <span className="font-semibold">________________________</span>.
                     </p>
                     <p>
-                      This certifies further that the above mentioned name has been living in this barangay for more than __________ years.
+                      This certification is issued upon the request of the above-mentioned person for the purpose of <span className="font-semibold">________________________</span>.
                     </p>
                     <p>
-                      This certificate is issued upon the request of ________________ for any legal purpose it may serve.
+                      Issued this <span className="font-semibold">{issuedDate.getDate()}</span> day of <span className="font-semibold">{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</span>, <span className="font-semibold">{issuedDate.getFullYear()}</span>.
                     </p>
-                    <div className="pt-4">
-                      <p>Issued this ______ day of ________________</p>
-                    </div>
                   </div>
                 )}
               </div>
 
               <div className="w-full mt-6 pt-4 border-t border-gray-300">
                 <div className="text-center mb-6">
-                  <p className="text-sm font-semibold">KGWD RIGELA B. FOTOTAR</p>
-                  <p className="text-xs">Barangay Health Midwifery</p>
+                  <p className="text-sm font-semibold">ROLANDO C. BORJA</p>
+                  <p className="text-xs">Punong Barangay</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 text-xs">
                   <div className="text-center">
-                    <p className="font-semibold mb-6">BARANGAY No. _</p>
-                    <p className="text-xs">Signature</p>
+                    <p className="font-semibold mb-6">Control No. {controlNumber}</p>
+                    <p className="text-xs">Document Number</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold mb-6">Date:</p>
-                    <p className="text-xs">Position</p>
+                    <p className="font-semibold mb-6">Date Issued: {formattedIssuedDate}</p>
+                    <p className="text-xs">Issued Date</p>
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold mb-6">Place Issued:</p>
-                    <p className="text-xs">Barangay Seal</p>
+                    <p className="font-semibold mb-6">Request No. {requestNumber}</p>
+                    <p className="text-xs">Request Number</p>
                   </div>
                 </div>
               </div>

@@ -45,11 +45,10 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   <p style="margin-bottom: 20px;">TO WHOM IT MAY CONCERN:</p>
   
   <div class="content">
-    <p>This is to certify that <b>${data.residentName}</b>, of legal age, a resident of <u>${data.address}</u>, Barangay Santiago, San Antonio, Zambales, is of good moral character and has no derogatory record on file in this barangay.</p>
-    <p>Issued upon request for whatever legal purpose it may serve.</p>
+    <p>This is to certify that <b>[NAME]</b> is a resident of Barangay Santiago and has no pending derogatory record on file in this office.</p>
+    <p>This clearance is issued upon request for whatever lawful purpose it may serve.</p>
+    <p>Issued this _____ day of __________, 20____ at Barangay Santiago, San Antonio, Zambales.</p>
   </div>
-  
-  <p>Issued this _____ day of __________, 20____.</p>
   
   <div class="signature">
     <p style="margin-top: 60px;">________________________________</p>
@@ -58,13 +57,9 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   </div>
   
   <div class="footer">
-    <p style="margin: 5px 0;">O.R. No.: ${data.orNumber || '____________________'}</p>
+    <p style="margin: 5px 0;">Control No.: ${data.controlNumber || '________'}</p>
+    <p style="margin: 5px 0;">Request No.: ${data.orNumber || '________'}</p>
     <p style="margin: 5px 0;">Date Issued: ${data.issuedDate.toLocaleDateString()}</p>
-    <p style="margin: 5px 0;">Doc. Stamp: Paid</p>
-  </div>
-  
-  <div class="control-number">
-    <p>Control Number: ${data.controlNumber}</p>
   </div>
 </body>
 </html>
@@ -97,11 +92,10 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   <p style="margin-bottom: 20px;">TO WHOM IT MAY CONCERN:</p>
   
   <div class="content">
-    <p>This is to certify that <b>${data.residentName}</b> is a bonafide resident of Barangay Santiago, San Antonio, Zambales.</p>
-    <p>Issued upon request for ${data.purpose || '____________________________'}.</p>
+    <p>This is to certify that <b>[NAME]</b> is a bona fide resident of Barangay Santiago, San Antonio, Zambales and is residing at <b>[PUROK/ADDRESS]</b>.</p>
+    <p>This certification is issued upon request for whatever lawful purpose it may serve.</p>
+    <p>Issued this _____ day of __________, 20____ at Barangay Santiago, San Antonio, Zambales.</p>
   </div>
-  
-  <p>Issued this _____ day of __________, 20____.</p>
   
   <div class="signature">
     <p style="margin-top: 60px;">________________________________</p>
@@ -110,9 +104,9 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   </div>
   
   <div class="footer">
-    <p style="margin: 5px 0;">O.R. No.: ${data.orNumber || '____________________'}</p>
+    <p style="margin: 5px 0;">Control No.: ${data.controlNumber || '________'}</p>
+    <p style="margin: 5px 0;">Request No.: ${data.orNumber || '________'}</p>
     <p style="margin: 5px 0;">Date Issued: ${data.issuedDate.toLocaleDateString()}</p>
-    <p style="margin: 5px 0;">Doc. Stamp: Paid</p>
   </div>
 </body>
 </html>
@@ -145,11 +139,10 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   <p style="margin-bottom: 20px;">TO WHOM IT MAY CONCERN:</p>
   
   <div class="content">
-    <p>This is to certify that <b>${data.residentName}</b> is a resident of Barangay Santiago and belongs to an indigent family.</p>
-    <p>Issued upon request for ${data.purpose || '____________________________'}.</p>
+    <p>This is to certify that <b>[NAME]</b> belongs to an indigent family and is financially incapable of meeting the expenses related to <b>[PURPOSE]</b>.</p>
+    <p>This certification is issued upon request for whatever lawful purpose it may serve.</p>
+    <p>Issued this _____ day of __________, 20____ at Barangay Santiago, San Antonio, Zambales.</p>
   </div>
-  
-  <p>Issued this _____ day of __________, 20____.</p>
   
   <div class="signature">
     <p style="margin-top: 60px;">________________________________</p>
@@ -158,9 +151,9 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   </div>
   
   <div class="footer">
-    <p style="margin: 5px 0;">O.R. No.: ${data.orNumber || '____________________'}</p>
+    <p style="margin: 5px 0;">Control No.: ${data.controlNumber || '________'}</p>
+    <p style="margin: 5px 0;">Request No.: ${data.orNumber || '________'}</p>
     <p style="margin: 5px 0;">Date Issued: ${data.issuedDate.toLocaleDateString()}</p>
-    <p style="margin: 5px 0;">Doc. Stamp: Paid</p>
   </div>
 </body>
 </html>
@@ -241,11 +234,10 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   <p style="margin-bottom: 20px;">TO WHOM IT MAY CONCERN:</p>
   
   <div class="content">
-    <p>This is to certify that <b>${data.businessOwner}</b>, owner of <b>${data.businessName}</b>, located at Barangay Santiago, has complied with barangay requirements.</p>
-    <p>Issued in support of business permit application.</p>
+    <p>This is to certify that <b>[OWNER NAME]</b>, owner/proprietor of <b>[BUSINESS NAME]</b>, located at <b>[BUSINESS ADDRESS]</b>, Barangay Santiago, San Antonio, Zambales, has complied with the requirements of this Barangay and is hereby granted a Barangay Business Clearance.</p>
+    <p>This clearance is issued to support the application/renewal of a Business Permit and for whatever lawful purpose it may serve.</p>
+    <p>Issued this _____ day of __________, 20____ at Barangay Santiago, San Antonio, Zambales.</p>
   </div>
-  
-  <p>Issued this _____ day of __________, 20____.</p>
   
   <div class="signature">
     <p style="margin-top: 60px;">________________________________</p>
@@ -254,9 +246,9 @@ const documentTemplates: Record<DocumentType, (data: DocumentData) => string> = 
   </div>
   
   <div class="footer">
-    <p style="margin: 5px 0;">O.R. No.: ${data.orNumber || '____________________'}</p>
+    <p style="margin: 5px 0;">Control No.: ${data.controlNumber || '________'}</p>
+    <p style="margin: 5px 0;">Request No.: ${data.orNumber || '________'}</p>
     <p style="margin: 5px 0;">Date Issued: ${data.issuedDate.toLocaleDateString()}</p>
-    <p style="margin: 5px 0;">Doc. Stamp: Paid</p>
   </div>
 </body>
 </html>

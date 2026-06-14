@@ -54,17 +54,17 @@ export default function ForgotPasswordPage() {
 
       if (error) {
         const message = getErrorMessage(error, "Unable to send reset email. Please try again.")
-        
+        const retrySeconds = Number((error as Error & { retryAfter?: number }).retryAfter) || 600
+
         // Check if it's a rate limit error
         if (message.includes('Too many') || message.includes('rate')) {
-          // Set rate limit for 1 hour (3600 seconds)
-          setRateLimit('forgot-password', email, 3600)
-          setCooldown(3600)
-          toast.error('Too many attempts. Please try again in 1 hour.')
+          setRateLimit('forgot-password', email, retrySeconds)
+          setCooldown(retrySeconds)
+          toast.error(`Too many attempts. Please try again in ${Math.ceil(retrySeconds / 60)} minutes.`)
         } else {
           toast.error(message)
         }
-        
+
         setIsLoading(false)
         return
       }

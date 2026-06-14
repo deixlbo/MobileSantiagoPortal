@@ -1,292 +1,89 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from "recharts"
-import Link from "next/link"
-import {
-  FileText,
-  AlertTriangle,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  Activity,
-  ArrowUp,
-  Bell,
-  X,
-} from "lucide-react"
+import { Briefcase, ClipboardList, FileText, ShieldCheck, Users } from "lucide-react"
 
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+const officialRoles = [
+  {
+    title: "Document Verifier",
+    description: "Reviews and approves resident document requests.",
+    icon: FileText,
+  },
+  {
+    title: "Complaint Reviewer",
+    description: "Handles blotter reports and case follow-ups.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Resident Support Officer",
+    description: "Assists residents with account and service requests.",
+    icon: Users,
+  },
+]
 
-export default function AdminDashboard() {
-  const router = useRouter()
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [stats, setStats] = useState([
-    { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
-    { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
-    { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
-  ])
-  const [loading, setLoading] = useState(true)
-  
-  // Sample data for charts
-  const [trendsData] = useState([
-    { date: "Jan", requests: 40, approvals: 24, declines: 4 },
-    { date: "Feb", requests: 30, approvals: 18, declines: 5 },
-    { date: "Mar", requests: 20, approvals: 15, declines: 3 },
-    { date: "Apr", requests: 50, approvals: 35, declines: 8 },
-    { date: "May", requests: 35, approvals: 25, declines: 4 },
-    { date: "Jun", requests: 45, approvals: 32, declines: 6 },
-  ])
+const officialToDo = [
+  "Verify pending document requests",
+  "Review new complaints and blotters",
+  "Update resident records and verification status",
+  "Follow up on official tasks and requests",
+]
 
-  const [alertsData] = useState([
-    { id: 1, message: "5 pending document verifications", priority: "high" },
-    { id: 2, message: "System maintenance scheduled for tomorrow", priority: "medium" },
-    { id: 3, message: "3 new complaints filed today", priority: "high" },
-  ])
-
-  const [recentActivities] = useState([
-    { id: 1, user: "John Doe", action: "submitted a new complaint", time: "2 hours ago" },
-    { id: 2, user: "Maria Santos", action: "verified a resident account", time: "4 hours ago" },
-    { id: 3, user: "Pedro Cruz", action: "requested a document", time: "6 hours ago" },
-    { id: 4, user: "Admin", action: "updated system settings", time: "8 hours ago" },
-  ])
-  
-  const unreadCount = notifications.filter(n => !n.read).length
-
-  useEffect(() => {
-    async function fetchDashboardStats() {
-      try {
-        console.log("[v0] Starting dashboard stats fetch...")
-        
-        // Fetch pending documents
-        const { count: pendingDocsCount } = await supabase
-          .from('document_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
-
-        // Fetch active blotters
-        const { count: blottersCount } = await supabase
-          .from('blotters')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active')
-
-        // Fetch verified accounts
-        const { count: verifiedCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'resident')
-          .eq('verification_status', 'verified')
-
-        console.log("[v0] Dashboard stats fetched successfully")
-        
-        setStats([
-          { name: "Pending Documents", value: (pendingDocsCount || 0).toLocaleString(), change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
-          { name: "Active Blotters", value: (blottersCount || 0).toLocaleString(), change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
-          { name: "Verified Accounts", value: (verifiedCount || 0).toLocaleString(), change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
-        ])
-      } catch (error) {
-        console.error('[v0] Error fetching dashboard stats:', error)
-        setStats([
-          { name: "Pending Documents", value: "0", change: "", icon: FileText, color: "bg-blue-100 text-blue-600" },
-          { name: "Active Blotters", value: "0", change: "", icon: AlertTriangle, color: "bg-amber-100 text-amber-600" },
-          { name: "Verified Accounts", value: "0", change: "", icon: CheckCircle2, color: "bg-green-100 text-green-600" },
-        ])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardStats()
-  }, [])
-
-  const handleNotificationClick = (notification: any) => {
-    // Mark as read
-    setNotifications(prev => 
-      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-    )
-    setShowNotifications(false)
-    // Navigate to documents page
-    router.push("/official/documents")
-  }
-
+export default function OfficialDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">Official Dashboard</h1>
-            <p className="text-sm sm:text-base text-slate-600">Barangay Santiago Official Portal</p>
-          </div>
-          
-          {/* Notification Bell */}
-          <div className="relative">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="relative"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-            
-            {/* Notification Dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
-                <div className="p-3 border-b flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Document Requests</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-500 text-center">No notifications</p>
-                  ) : (
-                    notifications.map((notif) => (
-                      <button
-                        key={notif.id}
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`w-full text-left p-3 hover:bg-slate-50 border-b last:border-b-0 transition-colors ${
-                          !notif.read ? "bg-blue-50" : ""
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <FileText className={`h-4 w-4 mt-0.5 ${!notif.read ? "text-blue-600" : "text-slate-400"}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${!notif.read ? "font-medium" : ""}`}>{notif.message}</p>
-                            <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
-                          </div>
-                          {!notif.read && (
-                            <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-                          )}
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8">
+          <h1 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">Official Dashboard</h1>
+          <p className="text-sm text-slate-600 sm:text-base">Barangay Santiago Official Portal</p>
         </div>
 
-        {/* Key Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon
-            return (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4 sm:pt-6 sm:px-6">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm text-slate-600 truncate">{stat.name}</p>
-                        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mt-1 sm:mt-2">{stat.value}</p>
-                        <p className="text-xs text-emerald-600 mt-1 sm:mt-2 font-semibold">{stat.change}</p>
-                      </div>
-                      <div className={`p-2 sm:p-3 rounded-lg ${stat.color} shrink-0`}>
-                        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Charts and Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Trends Chart */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">Request Trends</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Requests, approvals, and declines over time</CardDescription>
-            </CardHeader>
-            <CardContent className="px-2 sm:px-6">
-              <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
-                <LineChart data={trendsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="requests" stroke="#3b82f6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="approvals" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="declines" stroke="#ef4444" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Alerts */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">Alerts</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3">
-              {alertsData.map((alert) => (
-                <div
-                  key={alert.id}
-                  className={`p-2 sm:p-3 rounded-lg border-l-4 ${
-                    alert.priority === "high"
-                      ? "bg-red-50 border-red-500"
-                      : "bg-yellow-50 border-yellow-500"
-                  }`}
-                >
-                  <p className="text-xs font-semibold text-slate-900">{alert.message}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="grid gap-4 sm:gap-6">
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">Recent Activities</CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Briefcase className="h-5 w-5 text-blue-600" />
+                Official Roles
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {officialRoles.map((role) => {
+                const Icon = role.icon
+                return (
+                  <div key={role.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="rounded-full bg-blue-100 p-2 text-blue-600">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900">{role.title}</h3>
+                    </div>
+                    <p className="text-sm text-slate-600">{role.description}</p>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ClipboardList className="h-5 w-5 text-emerald-600" />
+                To Do
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 sm:space-y-4">
-                {recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start gap-3 sm:gap-4 pb-3 sm:pb-4 border-b last:border-b-0"
-                  >
-                    <div className="p-1.5 sm:p-2 rounded-full bg-blue-100 shrink-0">
-                      <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 text-sm sm:text-base">
-                        <span className="truncate">{activity.user}</span> <span className="text-slate-600 font-normal">{activity.action}</span>
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
-                    </div>
+              <div className="space-y-3">
+                {officialToDo.map((task) => (
+                  <div key={task} className="flex items-start gap-3 rounded-lg border border-slate-200 p-3">
+                    <Badge variant="secondary" className="mt-0.5 bg-emerald-100 text-emerald-700">
+                      •
+                    </Badge>
+                    <p className="text-sm text-slate-700">{task}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-
-
         </div>
       </div>
     </div>

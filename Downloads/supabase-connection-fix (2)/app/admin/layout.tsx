@@ -10,12 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   LayoutDashboard,
   Users,
-  FileText,
   Layers,
   ShieldCheck,
   UserCheck,
-  Clock3,
-  Settings,
   LogOut,
   Menu,
 } from "lucide-react"
@@ -25,10 +22,10 @@ import { getCurrentUser, getUserRole, signOut } from "@/lib/auth"
 
 const navigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Resident Verification", href: "/admin/resident-verification", icon: Users },
+  { name: "Household", href: "/admin/households", icon: Layers },
   { name: "Resident Management", href: "/admin/resident-management", icon: UserCheck },
-  { name: "Household Management", href: "/admin/households", icon: Layers },
-  { name: "Official Accounts", href: "/admin/official-accounts", icon: ShieldCheck },
+  { name: "Resident Verification", href: "/admin/resident-verification", icon: Users },
+  { name: "Create Official Account", href: "/admin/official-accounts", icon: ShieldCheck },
 ]
 
 export default function AdminLayout({

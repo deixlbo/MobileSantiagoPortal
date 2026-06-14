@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 // Project CRUD Operations
 
 interface Project {
@@ -20,11 +22,34 @@ interface Project {
   createdBy?: string
 }
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+    } catch {
+      const token = window.localStorage.getItem('auth_token')
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+    }
+  }
+
+  return headers
+}
+
 export async function createProject(project: Omit<Project, 'id'>): Promise<Project> {
   try {
     const response = await fetch('/api/projects', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(project),
     })
     const result = await response.json().catch(() => null)
@@ -43,11 +68,15 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
   try {
     const response = await fetch('/api/projects', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await getAuthHeaders(),
       body: JSON.stringify({ id, ...updates }),
     })
-    if (!response.ok) throw new Error('Failed to update project')
-    return response.json()
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      const message = result?.error || result?.message || `Failed to update project (status ${response.status})`
+      throw new Error(message)
+    }
+    return result.project || result
   } catch (error) {
     console.error('Error updating project:', error)
     throw error
@@ -58,8 +87,13 @@ export async function deleteProject(id: string): Promise<void> {
   try {
     const response = await fetch('/api/projects?id=' + id, {
       method: 'DELETE',
+      headers: await getAuthHeaders(),
     })
-    if (!response.ok) throw new Error('Failed to delete project')
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      const message = result?.error || result?.message || `Failed to delete project (status ${response.status})`
+      throw new Error(message)
+    }
   } catch (error) {
     console.error('Error deleting project:', error)
     throw error

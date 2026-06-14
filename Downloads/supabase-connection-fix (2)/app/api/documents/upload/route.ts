@@ -1,6 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServer } from '@/lib/supabase-server'
 import { RESIDENT_UPLOAD_BUCKET, DOCUMENT_STORAGE_PREFIX } from '@/lib/storage'
+
+async function insertUploadRecord(payload: Record<string, any>) {
+  const timestamp = payload.uploaded_at || payload.upload_date || new Date().toISOString()
+  const candidatePayloads = [
+    {
+      document_id: payload.document_id ?? payload.document_request_id,
+      resident_id: payload.resident_id ?? payload.uploaded_by,
+      requirement_name: payload.requirement_name,
+      file_url: payload.file_url ?? payload.file_path ?? '',
+      file_name: payload.file_name,
+      file_type: payload.file_type,
+      file_size: payload.file_size,
+      storage_path: payload.storage_path ?? payload.file_path ?? '',
+      upload_date: timestamp,
+      created_at: timestamp,
+      updated_at: timestamp,
+      is_verified: false,
+    },
+    {
+      document_id: payload.document_id ?? payload.document_request_id,
+      resident_id: payload.resident_id ?? payload.uploaded_by,
+      requirement_name: payload.requirement_name,
+      file_name: payload.file_name,
+      file_url: payload.file_url ?? payload.file_path ?? '',
+      file_path: payload.file_path ?? payload.storage_path ?? '',
+      file_size: payload.file_size,
+      file_type: payload.file_type,
+      uploaded_by: payload.uploaded_by ?? payload.resident_id,
+      uploaded_at: timestamp,
+      upload_status: payload.upload_status ?? 'uploaded',
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    {
+      document_request_id: payload.document_request_id ?? payload.document_id,
+      resident_id: payload.resident_id ?? payload.uploaded_by,
+      requirement_name: payload.requirement_name,
+      file_name: payload.file_name,
+      file_path: payload.file_path ?? payload.storage_path ?? '',
+      file_url: payload.file_url ?? payload.file_path ?? '',
+      file_size: payload.file_size,
+      file_type: payload.file_type,
+      uploaded_by: payload.uploaded_by ?? payload.resident_id,
+      uploaded_at: timestamp,
+      upload_status: payload.upload_status ?? 'uploaded',
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+  ]
+
+  for (const attempt of candidatePayloads) {
+    const { data, error } = await supabaseServer
+      .from('document_uploads')
+      .insert([attempt])
+      .select()
+      .single()
+
+    if (!error) {
+      return { data, error: null }
+    }
+
+    const message = String(error?.message || error?.details || '')
+    if (!message.includes('column') && !message.includes('does not exist') && !message.includes('violates')) {
+      return { data: null, error }
+    }
+  }
+
+  return { data: null, error: new Error('Unable to record upload in document_uploads table') }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +94,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to buffer
     const buffer = await file.arrayBuffer()
     const fileName = `${Date.now()}-${file.name}`
     const storagePath = `${DOCUMENT_STORAGE_PREFIX}/${residentId}/${documentId}/${fileName}`
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabaseServer.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .upload(storagePath, buffer, {
         contentType: file.type,
@@ -47,17 +114,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get public URL
-    const { data: publicUrl } = supabase.storage
+    const { data: publicUrl } = supabaseServer.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .getPublicUrl(storagePath)
 
-    // Record upload in database
-    // The document_uploads table uses document_request_id, not document_id
     const uploadPayload = {
       document_request_id: documentId,
+      document_id: documentId,
+      resident_id: residentId,
+      requirement_name: requirementName,
       file_name: file.name,
       file_path: storagePath,
+      file_url: publicUrl.publicUrl,
       file_size: file.size,
       file_type: file.type,
       uploaded_by: residentId,
@@ -65,22 +133,14 @@ export async function POST(request: NextRequest) {
       upload_status: 'uploaded',
     }
 
-    const result = await supabase
-      .from('document_uploads')
-      .insert([uploadPayload])
-      .select()
-      .single()
-
-    const uploadRecord = result.data
-    const dbError = result.error
+    const { data: uploadRecord, error: dbError } = await insertUploadRecord(uploadPayload)
 
     if (dbError) {
       console.error('[v0] Database error:', dbError)
-      // Clean up storage if database insert/update fails
-      await supabase.storage
+      await supabaseServer.storage
         .from(RESIDENT_UPLOAD_BUCKET)
         .remove([storagePath])
-      
+
       return NextResponse.json(
         { error: 'Failed to record upload' },
         { status: 500 }

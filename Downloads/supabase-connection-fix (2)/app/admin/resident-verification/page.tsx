@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, UserCheck, XCircle, Search, FileImage, Download } from "lucide-react"
+import { CheckCircle2, UserCheck, XCircle, Search, FileImage, Download, Loader2 } from "lucide-react"
 import { getResidentDocument } from "@/lib/auth"
 
 type ResidentStatus = "Pending" | "Verified" | "Declined"
@@ -17,6 +17,8 @@ export default function AdminResidentVerificationPage() {
   const [residents, setResidents] = useState<any[]>([])
   const [selectedResident, setSelectedResident] = useState<any | null>(null)
   const [residentDocument, setResidentDocument] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingDocument, setLoadingDocument] = useState(false)
 
   useEffect(() => {
     const fetchResidents = async () => {
@@ -36,12 +38,16 @@ export default function AdminResidentVerificationPage() {
           setResidents(mapped)
           if (mapped.length > 0) {
             setSelectedResident(mapped[0])
+            setLoadingDocument(true)
             const doc = await getResidentDocument(mapped[0].id)
             setResidentDocument(doc)
+            setLoadingDocument(false)
           }
         }
       } catch (error) {
         console.error('Failed to load pending residents:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -51,12 +57,14 @@ export default function AdminResidentVerificationPage() {
   const filteredResidents = useMemo(
     () =>
       residents.filter((resident) => {
-        const fullName = `${resident.first_name} ${resident.last_name}`.toLowerCase()
-        return (
-          fullName.includes(query.toLowerCase()) ||
-          resident.email.toLowerCase().includes(query.toLowerCase()) ||
-          resident.purok.toLowerCase().includes(query.toLowerCase())
-        )
+        const search = query.toLowerCase().trim()
+        if (!search) return true
+
+        const fullName = `${resident.first_name || ''} ${resident.last_name || ''}`.toLowerCase()
+        const email = `${resident.email || ''}`.toLowerCase()
+        const purok = `${resident.purok || ''}`.toLowerCase()
+
+        return fullName.includes(search) || email.includes(search) || purok.includes(search)
       }),
     [query, residents]
   )
@@ -86,17 +94,33 @@ export default function AdminResidentVerificationPage() {
     }
   }
 
-  const handleSelectResident = (resident: any) => {
+  const handleSelectResident = async (resident: any) => {
     setSelectedResident(resident)
-    // Load document for selected resident
-    const doc = getResidentDocument(resident.id)
-    setResidentDocument(doc)
+    setLoadingDocument(true)
+    setResidentDocument(null)
+    try {
+      const doc = await getResidentDocument(resident.id)
+      setResidentDocument(doc)
+    } catch (error) {
+      console.error('Failed to load resident document:', error)
+      setResidentDocument(null)
+    } finally {
+      setLoadingDocument(false)
+    }
   }
 
   const statusColors: Record<ResidentStatus, string> = {
     Pending: "bg-amber-100 text-amber-800",
     Verified: "bg-emerald-100 text-emerald-800",
     Declined: "bg-red-100 text-red-800",
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+      </div>
+    )
   }
 
   return (
@@ -133,12 +157,17 @@ export default function AdminResidentVerificationPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredResidents.map((resident) => (
-              <div
-                key={resident.id}
-                className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300"
-              >
+          {filteredResidents.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              No pending residents match your search.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredResidents.map((resident) => (
+                <div
+                  key={resident.id}
+                  className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-300"
+                >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm text-slate-500">{resident.purok}</p>
@@ -149,16 +178,17 @@ export default function AdminResidentVerificationPage() {
                     {resident.status}
                   </span>
                 </div>
-                <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center">
-                  <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => handleSelectResident(resident)}>
-                    View profile
-                  </Button>
-                  <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={() => updateStatus(resident.id, "Verified")}>Approve</Button>
-                  <Button size="sm" variant="destructive" className="w-full sm:w-auto" onClick={() => updateStatus(resident.id, "Declined")}>Decline</Button>
+                  <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => handleSelectResident(resident)}>
+                      View profile
+                    </Button>
+                    <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={() => updateStatus(resident.id, "Verified")}>Approve</Button>
+                    <Button size="sm" variant="destructive" className="w-full sm:w-auto" onClick={() => updateStatus(resident.id, "Declined")}>Decline</Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
 
         <CardContent className="space-y-4 bg-slate-50 p-6">
@@ -184,27 +214,36 @@ export default function AdminResidentVerificationPage() {
                 </div>
 
                 {/* Display Uploaded ID Document */}
-                {residentDocument && (
+                {loadingDocument ? (
+                  <div className="mt-4 flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading document...
+                  </div>
+                ) : residentDocument ? (
                   <div className="mt-4 space-y-3">
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3">
-                      <p className="text-xs font-semibold text-emerald-900 flex items-center gap-2 mb-3">
+                      <p className="mb-3 flex items-center gap-2 text-xs font-semibold text-emerald-900">
                         <FileImage className="h-4 w-4" />
                         Uploaded ID Document
                       </p>
-                      
-                      {residentDocument.data.startsWith('data:image') && (
+
+                      {residentDocument.data?.startsWith('data:image') ? (
                         <img
                           src={residentDocument.data}
                           alt="Uploaded ID"
-                          className="w-full rounded-xl border border-slate-200 object-cover max-h-48"
+                          className="max-h-48 w-full rounded-xl border border-slate-200 object-cover"
                         />
+                      ) : (
+                        <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+                          Preview not available. You can still download the file.
+                        </div>
                       )}
-                      
+
                       <div className="mt-2 space-y-2 text-xs text-slate-600">
                         <p><span className="font-semibold">File:</span> {residentDocument.fileName}</p>
-                        <p><span className="font-semibold">Uploaded:</span> {new Date(residentDocument.uploadedAt).toLocaleDateString()}</p>
+                        <p><span className="font-semibold">Uploaded:</span> {residentDocument.uploadedAt ? new Date(residentDocument.uploadedAt).toLocaleDateString() : 'N/A'}</p>
                       </div>
-                      
+
                       <a
                         href={residentDocument.data}
                         download={residentDocument.fileName}
@@ -215,11 +254,9 @@ export default function AdminResidentVerificationPage() {
                       </a>
                     </div>
                   </div>
-                )}
-                
-                {!residentDocument && (
+                ) : (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-3">
-                    <p className="text-xs font-semibold text-amber-900 flex items-center gap-2">
+                    <p className="flex items-center gap-2 text-xs font-semibold text-amber-900">
                       <FileImage className="h-4 w-4" />
                       No ID document uploaded
                     </p>

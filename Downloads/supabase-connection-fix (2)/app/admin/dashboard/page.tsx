@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle,
@@ -15,8 +14,6 @@ import {
   FileText,
   Loader2,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
-
 interface DashboardStats {
   totalResidents: number
   totalHouseholds: number
@@ -36,43 +33,20 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        console.log("[v0] Fetching admin dashboard data...")
-        
-        // Fetch total residents
-        const { count: residentsCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'resident')
+        const response = await fetch('/api/admin/dashboard')
+        if (!response.ok) {
+          throw new Error('Failed to load dashboard stats')
+        }
 
-        // Fetch total households
-        const { count: householdsCount } = await supabase
-          .from('households')
-          .select('*', { count: 'exact', head: true })
-
-        // Fetch pending verifications
-        const { count: pendingVerifications } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'resident')
-          .eq('verification_status', 'pending')
-
-        // Fetch pending document requests
-        const { count: pendingDocuments } = await supabase
-          .from('document_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
-
-        console.log("[v0] Admin dashboard data fetched successfully")
-
+        const data = await response.json()
         setStats({
-          totalResidents: residentsCount || 0,
-          totalHouseholds: householdsCount || 0,
-          pendingVerifications: pendingVerifications || 0,
-          pendingDocuments: pendingDocuments || 0,
+          totalResidents: data.totalResidents || 0,
+          totalHouseholds: data.totalHouseholds || 0,
+          pendingVerifications: data.pendingVerifications || 0,
+          pendingDocuments: data.pendingDocuments || 0,
         })
       } catch (error) {
         console.error('[v0] Error fetching admin dashboard data:', error)
-        // Set default values on error
         setStats({
           totalResidents: 0,
           totalHouseholds: 0,
@@ -116,9 +90,6 @@ export default function AdminDashboardPage() {
           <Button asChild className="w-full sm:w-auto">
             <Link href="/admin/register">Create Admin Account</Link>
           </Button>
-          <Button variant="secondary" asChild className="w-full sm:w-auto">
-            <Link href="/official/login-form">Official Portal</Link>
-          </Button>
         </div>
       </div>
 
@@ -132,7 +103,6 @@ export default function AdminDashboardPage() {
                   <div className={"rounded-2xl p-3 shadow-sm " + item.color}>
                     <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <Badge variant="outline" className="text-xs">Live</Badge>
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm text-slate-500">{item.label}</p>
@@ -196,13 +166,6 @@ export default function AdminDashboardPage() {
                 <span className="rounded-full bg-amber-100 px-2 sm:px-3 py-1 text-xs font-semibold text-amber-800 shrink-0">{stats.pendingVerifications} pending</span>
               </div>
               <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600">Review valid IDs, confirm identity, and update verification status.</p>
-            </div>
-            <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-medium text-slate-800">Requested Documents</span>
-                <span className="rounded-full bg-violet-100 px-2 sm:px-3 py-1 text-xs font-semibold text-violet-800 shrink-0">{stats.pendingDocuments} active</span>
-              </div>
-              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600">Approve requests, change statuses, and track ready-to-print items.</p>
             </div>
           </CardContent>
         </Card>

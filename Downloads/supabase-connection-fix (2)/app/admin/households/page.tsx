@@ -32,6 +32,7 @@ interface Household {
   address: string
   member_count: number
   head_of_household_id?: string
+  head_id?: string
 }
 
 export default function AdminHouseholdsPage() {
@@ -68,10 +69,15 @@ export default function AdminHouseholdsPage() {
         throw new Error(result.error || 'Failed to load households')
       }
 
-      setHouseholds(result || [])
+      const normalizedHouseholds = (result || []).map((household: Household) => ({
+        ...household,
+        head_of_household_id: household.head_of_household_id || household.head_id,
+      }))
+
+      setHouseholds(normalizedHouseholds)
       
       // Fetch all members from all households
-      await fetchAllHouseholdMembers(result || [])
+      await fetchAllHouseholdMembers(normalizedHouseholds)
     } catch (error: any) {
       const message = error?.message || JSON.stringify(error) || 'Unknown error'
       console.error('Failed to load households:', message, error)
@@ -288,8 +294,9 @@ export default function AdminHouseholdsPage() {
     
     households.forEach((household) => {
       // Add head of household
-      if (household.head_of_household_id) {
-        residentIds.add(household.head_of_household_id)
+      const householdHeadId = household.head_of_household_id || household.head_id
+      if (householdHeadId) {
+        residentIds.add(householdHeadId)
       }
     })
 

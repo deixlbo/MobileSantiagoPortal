@@ -80,7 +80,7 @@ export default function OfficialOrdinancesPage() {
       setIsConfirmOpen(false)
     } catch (error) {
       console.error('Failed to delete ordinance:', error)
-      alert('Failed to delete ordinance')
+      alert(`Failed to delete ordinance: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

@@ -84,15 +84,8 @@ function getStatusBadge(status: string) {
 export default function BlotterPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [residentId, setResidentId] = useState<string | null>(null)
-  const [incidentTypes] = useState<string[]>([
-    'Theft',
-    'Assault',
-    'Vandalism',
-    'Dispute',
-    'Noise Complaint',
-    'Traffic Violation',
-    'Other',
-  ])
+  const [residentDisplayName, setResidentDisplayName] = useState('')
+  const [incidentTypes, setIncidentTypes] = useState<string[]>(['Other'])
   const [selectedIncidentType, setSelectedIncidentType] = useState('')
   const [otherIncidentDetails, setOtherIncidentDetails] = useState('')
   const [description, setDescription] = useState('')
@@ -136,8 +129,10 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
       const { profile, error } = await getProfile()
       if (profile?.id) {
         setResidentId(profile.id)
-        if (profile.first_name || profile.last_name) {
-          setComplainant(`${profile.first_name || ''} ${profile.last_name || ''}`.trim())
+        const fullName = [profile.first_name || '', profile.last_name || ''].filter(Boolean).join(' ').trim()
+        setResidentDisplayName(fullName)
+        if (fullName) {
+          setComplainant(fullName)
         }
         await fetchBlotters(profile.id)
       } else {
@@ -145,10 +140,16 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
         const user = await getCurrentUser()
         if (user?.id) {
           setResidentId(user.id)
+          const fallbackName = user.user_metadata?.full_name || user.email || ''
+          setResidentDisplayName(fallbackName)
+          if (fallbackName) {
+            setComplainant(fallbackName)
+          }
           await fetchBlotters(user.id)
         }
       }
       setProfileLoaded(true)
+      await fetchBlotterTypes()
     }
 
     loadResidentData()
@@ -168,6 +169,25 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
     }
   }
 
+  const fetchBlotterTypes = async () => {
+    try {
+      const response = await fetch('/api/blotters/types?active=true')
+      if (!response.ok) throw new Error('Failed to load blotter types')
+      const data = await response.json()
+
+      const fetchedTypes = Array.isArray(data)
+        ? data
+            .map((type: any) => type?.name?.trim())
+            .filter(Boolean)
+        : []
+
+      setIncidentTypes(fetchedTypes.length > 0 ? [...new Set([...fetchedTypes, 'Other'])] : ['Other'])
+    } catch (error) {
+      console.error('Error fetching blotter types:', error)
+      setIncidentTypes(['Other'])
+    }
+  }
+
   const handleLocationChange = (newLocation: string, coords?: { lat: number; lng: number }) => {
     setLocation(newLocation)
     if (coords) {
@@ -175,8 +195,24 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
     }
   }
 
+  const openBlotterDialog = (type?: string) => {
+    setIsDialogOpen(true)
+    if (type) {
+      setSelectedIncidentType(type)
+    }
+    if (residentDisplayName && !complainant.trim()) {
+      setComplainant(residentDisplayName)
+    }
+  }
+
   const handleDialogClose = () => {
     setIsDialogOpen(false)
+    setSelectedIncidentType('')
+    setOtherIncidentDetails('')
+    setDescription('')
+    setComplainant('')
+    setRespondent('')
+    setFiledDate(new Date().toISOString().slice(0, 10))
     setLocation("")
     setLocationCoords(null)
   }
@@ -230,12 +266,14 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           residentId,
+          resident_id: residentId,
           type: selectedIncidentType === 'Other' ? otherIncidentDetails.trim() : selectedIncidentType,
           description: description.trim(),
           location,
           complainant: complainant.trim(),
-          respondent: respondent.trim() || null,
+          respondent: respondent.trim() || '',
           filedDate,
+          filed_date: filedDate,
         }),
       })
 
@@ -244,7 +282,7 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
         throw new Error(data.error || 'Failed to submit blotter report')
       }
 
-      const newReport = data.report
+      const newReport = data.report || data.blotter || null
       if (newReport) {
         setBlotters((prev) => [newReport, ...(prev || [])])
       }
@@ -287,17 +325,24 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Blotter Reports</h1>
-          <p className="text-sm text-muted-foreground">File and track incident reports</p>
-        </div>
+        <button
+          type="button"
+          className="text-left"
+          onClick={() => openBlotterDialog()}
+        >
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Blotter Reports</h1>
+            <p className="text-sm text-muted-foreground">File and track incident reports</p>
+          </div>
+        </button>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          if (!open) handleDialogClose()
-          else setIsDialogOpen(open)
+          if (!open) {
+            handleDialogClose()
+            return
+          }
+
+          openBlotterDialog()
         }}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">Report Blotter</Button>
-          </DialogTrigger>
           <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-lg">
             <DialogHeader>
               <DialogTitle>File Blotter Report</DialogTitle>
@@ -403,9 +448,28 @@ function CreatedByInfo({ blotter }: { blotter: any }) {
               Blotter reports are official records of incidents reported to the barangay. 
               After filing, officials will review and process your report. You will be notified of any updates.
             </p>
+            <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
+              Click the title above to open the report form and submit your incident details.
+            </p>
           </div>
         </CardContent>
       </Card>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Choose a report type</p>
+        <div className="flex flex-wrap gap-2">
+          {incidentTypes.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => openBlotterDialog(type)}
+              className="rounded-full border bg-background px-3 py-2 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Reports List */}
       <Card>

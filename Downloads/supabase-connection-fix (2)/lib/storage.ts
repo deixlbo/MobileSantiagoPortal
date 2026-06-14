@@ -1,10 +1,19 @@
 import { supabase } from './supabase'
+import { getSupabaseServer } from './supabase-server'
 
 export const RESIDENT_UPLOAD_BUCKET = 'resident-uploads'
 export const ASSETS_BUCKET = 'assets'
 export const DOCUMENT_STORAGE_PREFIX = 'documents'
 export const ID_STORAGE_PREFIX = 'ids'
 export const ASSETS_IMAGES_PREFIX = 'images'
+
+function getStorageClient() {
+  if (typeof window === 'undefined') {
+    return getSupabaseServer()
+  }
+
+  return supabase
+}
 
 /**
  * Initialize storage buckets if they don't exist
@@ -68,7 +77,8 @@ export async function initializeStorageBuckets() {
  * Generate public URL for a storage object
  */
 export function getPublicUrl(path: string): string {
-  const { data } = supabase.storage
+  const client = getStorageClient()
+  const { data } = client.storage
     .from(RESIDENT_UPLOAD_BUCKET)
     .getPublicUrl(path)
   
@@ -84,7 +94,8 @@ export async function uploadFile(
   options?: { contentType?: string; upsert?: boolean }
 ) {
   try {
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .upload(path, file, {
         contentType: options?.contentType,
@@ -108,7 +119,8 @@ export async function uploadFile(
  */
 export async function downloadFile(path: string) {
   try {
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .download(path)
 
@@ -128,7 +140,8 @@ export async function downloadFile(path: string) {
  */
 export async function deleteFile(path: string) {
   try {
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .remove([path])
 
@@ -148,7 +161,8 @@ export async function deleteFile(path: string) {
  */
 export async function deleteFiles(paths: string[]) {
   try {
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .remove(paths)
 
@@ -168,7 +182,8 @@ export async function deleteFiles(paths: string[]) {
  */
 export async function listFiles(path: string) {
   try {
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(RESIDENT_UPLOAD_BUCKET)
       .list(path, {
         limit: 100,
@@ -193,16 +208,17 @@ export async function listFiles(path: string) {
 export async function uploadAssetImage(
   assetId: string,
   file: File | ArrayBuffer,
-  options?: { contentType?: string; upsert?: boolean }
+  options?: { contentType?: string; upsert?: boolean; fileName?: string }
 ) {
   try {
     await initializeStorageBuckets()
 
-    const fileName = `${Date.now()}-${file instanceof File ? file.name : 'image'}`
+    const fileName = options?.fileName ?? `${Date.now()}-${file instanceof File ? file.name : 'image'}`
     const storagePath = `${ASSETS_IMAGES_PREFIX}/${assetId}/${fileName}`
     const uploadFile = file instanceof File ? file : new Uint8Array(file)
 
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(ASSETS_BUCKET)
       .upload(storagePath, uploadFile, {
         contentType: options?.contentType || (file instanceof File ? file.type : 'image/jpeg'),
@@ -215,11 +231,11 @@ export async function uploadAssetImage(
     }
 
     // Get public URL
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = client.storage
       .from(ASSETS_BUCKET)
       .getPublicUrl(storagePath)
 
-    return { data, publicUrl: publicUrlData.publicUrl, error: null }
+    return { data, publicUrl: publicUrlData.publicUrl, storagePath, error: null }
   } catch (error) {
     console.error('[Storage] Asset image upload error:', error)
     return { data: null, publicUrl: null, error }
@@ -231,7 +247,8 @@ export async function uploadAssetImage(
  */
 export function getAssetImageUrl(assetId: string, fileName: string): string {
   const storagePath = `${ASSETS_IMAGES_PREFIX}/${assetId}/${fileName}`
-  const { data } = supabase.storage
+  const client = getStorageClient()
+  const { data } = client.storage
     .from(ASSETS_BUCKET)
     .getPublicUrl(storagePath)
   
@@ -244,7 +261,8 @@ export function getAssetImageUrl(assetId: string, fileName: string): string {
 export async function deleteAssetImage(assetId: string, fileName: string) {
   try {
     const storagePath = `${ASSETS_IMAGES_PREFIX}/${assetId}/${fileName}`
-    const { data, error } = await supabase.storage
+    const client = getStorageClient()
+    const { data, error } = await client.storage
       .from(ASSETS_BUCKET)
       .remove([storagePath])
 

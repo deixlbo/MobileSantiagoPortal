@@ -1,5 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
+import { buildDocumentRequestInsertPayload } from '@/lib/document-request-payload'
+
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  'barangay_clearance',
+  'certificate_of_residency',
+  'certificate_of_indigency',
+  'certificate_of_solo_parent',
+  'barangay_business_clearance',
+  'business_permit',
+  'certificate_of_business_closure',
+  'certificate_to_file_action',
+  'medical_assistance_certificate',
+  'blotter_report',
+  'settlement_agreement',
+])
+
+function normalizeDocumentType(rawType: string) {
+  const value = String(rawType || '').trim()
+  if (!value) return null
+
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+
+  const aliases: Record<string, string> = {
+    barangay_clearance: 'barangay_clearance',
+    clearances: 'barangay_clearance',
+    clearance: 'barangay_clearance',
+    certificate_of_residency: 'certificate_of_residency',
+    residency: 'certificate_of_residency',
+    residence: 'certificate_of_residency',
+    certificate_of_indigency: 'certificate_of_indigency',
+    indigency: 'certificate_of_indigency',
+    certificate_of_solo_parent: 'certificate_of_solo_parent',
+    solo_parent: 'certificate_of_solo_parent',
+    barangay_business_clearance: 'barangay_business_clearance',
+    business_clearance: 'barangay_business_clearance',
+    business_permit: 'business_permit',
+    business_permits: 'business_permit',
+    permit: 'business_permit',
+    certificate_of_business_closure: 'certificate_of_business_closure',
+    business_closure: 'certificate_of_business_closure',
+    certificate_to_file_action: 'certificate_to_file_action',
+    file_action: 'certificate_to_file_action',
+    medical_assistance_certificate: 'medical_assistance_certificate',
+    medical_assistance: 'medical_assistance_certificate',
+    blotter_report: 'blotter_report',
+    blotter: 'blotter_report',
+    settlement_agreement: 'settlement_agreement',
+    settlement: 'settlement_agreement',
+  }
+
+  return aliases[normalized] || (ALLOWED_DOCUMENT_TYPES.has(normalized) ? normalized : null)
+}
+
+function isMissingColumnError(error: any) {
+  const message = String(error?.message || error?.details || '')
+  return error?.code === '42703' || /column .* does not exist|could not find the column|undefined column/i.test(message)
+}
+
+function getSupabaseErrorMessage(error: any) {
+  if (!error) return null
+
+  const parts = [error?.message, error?.details, error?.hint].filter(Boolean)
+  const suffix = error?.code ? ` [${error.code}]` : ''
+  return parts.length > 0 ? `${parts.join(' | ')}${suffix}` : `Unknown Supabase error${suffix}`
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,11 +143,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { residentId, documentType, purpose } = body
+    const { residentId, documentType, purpose, businessPermitDetails } = body
 
     if (!residentId || !documentType) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedDocumentType = normalizeDocumentType(documentType)
+    if (!normalizedDocumentType) {
+      return NextResponse.json(
+        { error: 'Unsupported document type' },
         { status: 400 }
       )
     }
@@ -115,25 +191,87 @@ export async function POST(request: NextRequest) {
 
     const controlNumber = `${documentType.substring(0, 2).toUpperCase()}-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`
 
-    const insertBody = {
-      resident_id: residentId,
-      document_type: documentType,
-      status: 'pending',
-      control_number: controlNumber,
-      purpose: purpose || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    const { data: inserted, error: insertError } = await supabaseServer
-      .from('document_requests')
-      .insert([insertBody])
-      .select()
+    const { data: residentProfile, error: residentProfileError } = await supabaseServer
+      .from('profiles')
+      .select('first_name, middle_name, last_name, suffix, purok, civil_status, email')
+      .eq('id', residentId)
       .single()
 
-    if (insertError) {
+    if (residentProfileError) {
+      console.warn('Unable to fetch full resident profile for document request:', residentProfileError)
+    }
+
+    const createdAt = new Date().toISOString()
+    const normalizedBusinessPermitDetails = businessPermitDetails && typeof businessPermitDetails === 'object' ? businessPermitDetails : {}
+    const compatibleDocumentType = normalizedDocumentType === 'business_permit' ? 'barangay_business_clearance' : normalizedDocumentType
+
+    const insertPayloads = [
+      buildDocumentRequestInsertPayload({
+        residentId,
+        documentType: normalizedDocumentType,
+        purpose,
+        residentProfile: residentProfile || undefined,
+        controlNumber,
+        createdAt,
+        businessPermitDetails: normalizedBusinessPermitDetails,
+      }),
+      buildDocumentRequestInsertPayload({
+        residentId,
+        documentType: compatibleDocumentType,
+        purpose,
+        residentProfile: residentProfile || undefined,
+        controlNumber,
+        createdAt,
+        includeRequesterFields: false,
+        businessPermitDetails: normalizedBusinessPermitDetails,
+      }),
+      buildDocumentRequestInsertPayload({
+        residentId,
+        documentType: compatibleDocumentType,
+        purpose,
+        residentProfile: residentProfile || undefined,
+        controlNumber,
+        createdAt,
+        includeRequesterFields: false,
+        includeBusinessFields: false,
+        businessPermitDetails: normalizedBusinessPermitDetails,
+      }),
+    ]
+
+    let inserted: any = null
+    let insertError: any = null
+    let lastInsertErrorMessage: string | null = null
+
+    for (const insertBody of insertPayloads) {
+      const result = await supabaseServer
+        .from('document_requests')
+        .insert([insertBody])
+        .select()
+        .single()
+
+      inserted = result.data
+      insertError = result.error
+      lastInsertErrorMessage = getSupabaseErrorMessage(insertError)
+
+      if (!insertError) {
+        break
+      }
+
+      if (!isMissingColumnError(insertError)) {
+        break
+      }
+
+      console.warn('Retrying document request insert with a simpler payload due to schema mismatch:', lastInsertErrorMessage)
+    }
+
+    if (insertError || !inserted) {
       console.error('Error inserting document request:', insertError)
-      return NextResponse.json({ error: 'Failed to create document request' }, { status: 500 })
+      return NextResponse.json({
+        error: 'Failed to create document request',
+        message: lastInsertErrorMessage || 'The document request could not be created.',
+        details: insertError?.details || null,
+        code: insertError?.code || null,
+      }, { status: 500 })
     }
 
     return NextResponse.json({

@@ -1,47 +1,26 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { getProfile, getResidentDocument } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  User,
+  MapPin,
   Calendar,
   CheckCircle2,
   Shield,
   FileText,
-  Users,
-  Search,
-  UserPlus,
   Clock,
-  Trash2,
   AlertTriangle,
   Eye,
-  AlertCircle
 } from "lucide-react"
-
-type ResidentDocument = {
-  id: string
-  control_number?: string
-  document_type: string
-  status: string
-  purpose?: string
-  pickup_time?: string | null
-  release_date?: string | null
-  created_at?: string
-}
 
 type ResidentProfile = {
   id: string
@@ -63,35 +42,6 @@ type ResidentProfile = {
   validId: string
   idType?: string
   idPath?: string
-}
-
-interface FamilyMember {
-  id: string
-  name: string
-  relationship: string
-  status: string
-  avatar: string | null
-  firstName: string
-  middleName: string
-  lastName: string
-  suffix: string
-  birthDate: string
-  gender: string
-  civilStatus: string
-}
-
-interface FamilyRequest {
-  id: string
-  name: string
-  relationship: string
-  requestedBy: string
-  status: string
-}
-
-interface ResidentSearchResult {
-  id: string
-  name: string
-  address: string
 }
 
 export default function ProfilePage() {
@@ -116,16 +66,8 @@ export default function ProfilePage() {
   })
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false)
   const [showDocumentPreview, setShowDocumentPreview] = useState<string | null>(null)
   const [registrationDocument, setRegistrationDocument] = useState<any | null>(null)
-  const [familySearch, setFamilySearch] = useState("")
-  const [searchResults, setSearchResults] = useState<ResidentSearchResult[]>([])
-  const [selectedRelationship, setSelectedRelationship] = useState("")
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
-  const [pendingRequests, setPendingRequests] = useState<FamilyRequest[]>([])
-  const [documents, setDocuments] = useState<ResidentDocument[]>([])
-  const [selectedFamilyMember, setSelectedFamilyMember] = useState<FamilyMember | null>(null)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -148,6 +90,7 @@ export default function ProfilePage() {
             : prev.gender,
           birthDate: profile.date_of_birth ?? prev.birthDate,
           verificationStatus: profile.verification_status ?? prev.verificationStatus,
+          avatar: profile.avatar_url || profile.profile_image_url || profile.avatar || prev.avatar,
           registrationDate: profile.created_at
             ? new Date(profile.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -170,8 +113,6 @@ export default function ProfilePage() {
       if (profile?.id) {
         const doc = await getResidentDocument(profile.id)
         setRegistrationDocument(doc)
-        await fetchDocuments(profile.id)
-        await fetchHouseholdMembers()
       }
     }
 
@@ -179,72 +120,10 @@ export default function ProfilePage() {
 
     // Real-time polling for verification status updates (every 5 seconds)
     const pollingInterval = setInterval(loadProfile, 5000)
-    // also fetch documents periodically
-    const docInterval = setInterval(fetchDocuments, 5000)
-    // fetch household members periodically
-    const householdInterval = setInterval(fetchHouseholdMembers, 5000)
     return () => {
       clearInterval(pollingInterval)
-      clearInterval(docInterval)
-      clearInterval(householdInterval)
     }
   }, [])
-
-  async function fetchDocuments(residentId?: string) {
-    const id = residentId || formData.id
-    if (!id) return
-    try {
-      const res = await fetch(`/api/documents?residentId=${encodeURIComponent(id)}`)
-      if (!res.ok) throw new Error('Failed to load documents')
-      const data = await res.json()
-      setDocuments(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error('Error fetching resident documents:', err)
-    }
-  }
-
-  async function fetchHouseholdMembers() {
-    try {
-      const res = await fetch('/api/resident/household')
-      if (!res.ok) throw new Error('Failed to load household members')
-      const data = await res.json()
-      
-      if (data.members && Array.isArray(data.members)) {
-        const members: FamilyMember[] = data.members.map((member: any) => ({
-          id: member.id,
-          name: `${member.first_name} ${member.last_name}`,
-          relationship: member.relationship || 'Family Member',
-          status: 'Connected',
-          avatar: null,
-          firstName: member.first_name,
-          middleName: '',
-          lastName: member.last_name,
-          suffix: '',
-          birthDate: member.date_of_birth || '',
-          gender: member.gender || '',
-          civilStatus: '',
-        }))
-        setFamilyMembers(members)
-      }
-    } catch (err) {
-      console.error('Error fetching household members:', err)
-    }
-  }
-
-  const handleFamilySearch = () => {
-    if (familySearch.trim()) {
-      // TODO: replace with real search / backend lookup
-      setSearchResults([])
-    }
-  }
-
-  const handleSendFamilyRequest = (residentId: string) => {
-    // Handle sending family request
-    setShowAddFamilyDialog(false)
-    setFamilySearch("")
-    setSearchResults([])
-    setSelectedRelationship("")
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -331,12 +210,8 @@ export default function ProfilePage() {
 
       {/* Profile Details */}
       <Tabs defaultValue="personal" className="w-full">
-        <TabsList className="w-full grid grid-cols-5">
+        <TabsList className="w-full grid grid-cols-1">
           <TabsTrigger value="personal" className="text-xs sm:text-sm">Personal</TabsTrigger>
-          <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact</TabsTrigger>
-          <TabsTrigger value="employment" className="text-xs sm:text-sm">Employment</TabsTrigger>
-          <TabsTrigger value="family" className="text-xs sm:text-sm">Family</TabsTrigger>
-          <TabsTrigger value="documents" className="text-xs sm:text-sm">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="personal" className="mt-4">
@@ -370,10 +245,10 @@ export default function ProfilePage() {
                   <Label className="text-xs sm:text-sm">Birth Date</Label>
                   <p className="text-sm font-medium p-2 bg-muted rounded-md flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {new Date(formData.birthDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {new Date(formData.birthDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </p>
                 </div>
@@ -387,7 +262,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Uploaded Documents */}
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
@@ -423,209 +297,6 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">My Document Requests</CardTitle>
-              <CardDescription className="text-xs">Track requests, pickup and release status.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm table-auto">
-                  <thead>
-                    <tr className="text-left">
-                      <th className="px-2 py-2">Control #</th>
-                      <th className="px-2 py-2">Type</th>
-                      <th className="px-2 py-2">Purpose</th>
-                      <th className="px-2 py-2">Status</th>
-                      <th className="px-2 py-2">Pickup</th>
-                      <th className="px-2 py-2">Released</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {documents.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-2 py-4 text-muted-foreground">No document requests found.</td>
-                      </tr>
-                    )}
-                    {documents.map((d) => (
-                      <tr key={d.id} className="border-t">
-                        <td className="px-2 py-3">{d.control_number || d.id}</td>
-                        <td className="px-2 py-3">{d.document_type}</td>
-                        <td className="px-2 py-3">{d.purpose || '—'}</td>
-                        <td className="px-2 py-3">
-                          <Badge className={
-                            d.status === 'released' ? 'bg-blue-100 text-blue-700' :
-                            d.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                            d.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-muted'
-                          }>
-                            {d.status.charAt(0).toUpperCase() + d.status.slice(1)}
-                          </Badge>
-                        </td>
-                        <td className="px-2 py-3">{d.pickup_time ? new Date(d.pickup_time).toLocaleString() : '—'}</td>
-                        <td className="px-2 py-3">{d.release_date ? new Date(d.release_date).toLocaleString() : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="contact" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-                Contact Information
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Your contact details and address</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm">Email Address</Label>
-                  <p className="text-sm font-medium p-2 bg-muted rounded-md flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    {formData.email}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm">Phone Number</Label>
-                  <p className="text-sm font-medium p-2 bg-muted rounded-md flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    {formData.phone}
-                  </p>
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-xs sm:text-sm">Complete Address</Label>
-                  <p className="text-sm font-medium p-2 bg-muted rounded-md flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    {formData.address}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="employment" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-                Employment Information
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Your work and occupation details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm">Occupation</Label>
-                  <p className="text-sm font-medium p-2 bg-muted rounded-md">{formData.occupation}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="family" className="mt-4 space-y-4">
-          {/* Add Family Button */}
-          <div className="flex justify-end">
-            <Button onClick={() => setShowAddFamilyDialog(true)}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Family Member
-            </Button>
-          </div>
-
-          {/* Pending Requests */}
-          {pendingRequests.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
-                  Pending Requests
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Family connection requests awaiting your approval</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {pendingRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 rounded-lg border bg-amber-50">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{request.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{request.name}</p>
-                          <p className="text-xs text-muted-foreground">Wants to add you as: {request.relationship}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="text-xs">
-                          Decline
-                        </Button>
-                        <Button size="sm" className="text-xs">
-                          Accept
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Family Members */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5" />
-                Family Members
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Your connected family members in the barangay database
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {familyMembers.length > 0 ? (
-                <div className="space-y-3">
-                  {familyMembers.map((member) => (
-                    <button
-                      key={member.id} 
-                      className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
-                      onClick={() => setSelectedFamilyMember(member)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.relationship}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-emerald-100 text-emerald-700">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Connected
-                        </Badge>
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No family members connected yet</p>
-                  <p className="text-xs">Search and add family members from the barangay database</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Account Actions Section */}
@@ -720,101 +391,6 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Family Member Dialog */}
-      <Dialog open={showAddFamilyDialog} onOpenChange={(open) => {
-        setShowAddFamilyDialog(open)
-        if (!open) {
-          setFamilySearch("")
-          setSearchResults([])
-          setSelectedRelationship("")
-        }
-      }}>
-        <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Add Family Member
-            </DialogTitle>
-            <DialogDescription>
-              Search for a registered resident to add as a family member
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Search Resident</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Enter name..." 
-                    value={familySearch}
-                    onChange={(e) => setFamilySearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFamilySearch()}
-                  />
-                  <Button variant="outline" onClick={handleFamilySearch}>
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {searchResults.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Search Results</Label>
-                  <div className="space-y-2">
-                    {searchResults.map((result) => (
-                      <div 
-                        key={result.id}
-                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback>{result.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{result.name}</p>
-                            <p className="text-xs text-muted-foreground">{result.address}</p>
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm"
-                          onClick={() => handleSendFamilyRequest(result.id)}
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {familySearch && searchResults.length === 0 && (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Search className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No residents found</p>
-                  <p className="text-xs">Try a different search term</p>
-                </div>
-              )}
-
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Note:</strong> When you send a family request, the other resident will receive a 
-                  notification. Once they accept, you will be able to see their basic information (name, 
-                  relationship) but not their complete personal details.
-                </p>
-              </div>
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowAddFamilyDialog(false)
-              setFamilySearch("")
-              setSearchResults([])
-            }} className="w-full">
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Document Preview Dialog */}
       <Dialog open={!!showDocumentPreview} onOpenChange={() => setShowDocumentPreview(null)}>
         <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-2xl">
@@ -867,74 +443,6 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Family Member Info Dialog */}
-      <Dialog open={!!selectedFamilyMember} onOpenChange={() => setSelectedFamilyMember(null)}>
-        <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Personal Information
-            </DialogTitle>
-            <DialogDescription>Basic personal details</DialogDescription>
-          </DialogHeader>
-          {selectedFamilyMember && (
-            <div className="space-y-4 py-4">
-              <div className="flex items-center gap-4 pb-4 border-b">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                    {selectedFamilyMember.firstName[0]}{selectedFamilyMember.lastName[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-lg">{selectedFamilyMember.name}</p>
-                  <Badge variant="outline">{selectedFamilyMember.relationship}</Badge>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">First Name</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.firstName}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Middle Name</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.middleName}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Last Name</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.lastName}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Suffix</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.suffix || "N/A"}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Birth Date</Label>
-                  <p className="text-sm font-medium">
-                    {new Date(selectedFamilyMember.birthDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Gender</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.gender}</p>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <Label className="text-xs text-muted-foreground">Civil Status</Label>
-                  <p className="text-sm font-medium">{selectedFamilyMember.civilStatus}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedFamilyMember(null)} className="w-full">
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

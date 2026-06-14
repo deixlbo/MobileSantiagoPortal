@@ -19,33 +19,43 @@ function getSupabaseClient() {
 // Simple in-memory rate limiter for server-side (will reset on deploy)
 const rateLimitStore = new Map<string, { timestamp: number; count: number }>()
 
-function isRateLimited(email: string, maxAttempts = 3, windowSeconds = 3600): boolean {
-  const key = `forgot-password:${email.toLowerCase()}`
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+function getRateLimitKey(email: string, request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  const ip = forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown'
+  return `forgot-password:${normalizeEmail(email)}:${ip}`
+}
+
+function isRateLimited(email: string, request: NextRequest, maxAttempts = 5, windowSeconds = 900): { limited: boolean; retryAfter: number } {
+  const key = getRateLimitKey(email, request)
   const now = Date.now()
-  
+
   const entry = rateLimitStore.get(key)
-  
+
   if (!entry) {
     rateLimitStore.set(key, { timestamp: now, count: 1 })
-    return false
+    return { limited: false, retryAfter: 0 }
   }
-  
+
   const timePassed = (now - entry.timestamp) / 1000
-  
-  // Reset if window has passed
+
   if (timePassed > windowSeconds) {
     rateLimitStore.set(key, { timestamp: now, count: 1 })
-    return false
+    return { limited: false, retryAfter: 0 }
   }
-  
-  // Check if max attempts exceeded
+
   if (entry.count >= maxAttempts) {
-    return true
+    return {
+      limited: true,
+      retryAfter: Math.max(1, Math.ceil(windowSeconds - timePassed)),
+    }
   }
-  
-  // Increment counter
+
   entry.count += 1
-  return false
+  return { limited: false, retryAfter: 0 }
 }
 
 export async function POST(request: NextRequest) {
@@ -59,12 +69,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const normalizedEmail = normalizeEmail(email)
+
     // Check rate limit
-    if (isRateLimited(email)) {
+    const { limited, retryAfter } = isRateLimited(normalizedEmail, request)
+    if (limited) {
       return NextResponse.json(
-        { 
-          error: 'Too many password reset attempts. Please wait 1 hour before trying again.',
-          retryAfter: 3600,
+        {
+          error: 'Too many password reset requests. Please wait a few minutes before trying again.',
+          retryAfter,
           rateLimited: true
         },
         { status: 429 }
@@ -83,7 +96,7 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('id, email')
-      .eq('email', email.toLowerCase())
+      .eq('email', normalizedEmail)
       .single()
 
     if (profileError) {

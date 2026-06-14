@@ -12,9 +12,11 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
 import { printElementById } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { getErrorMessage } from '@/lib/utils'
+import { formatResidentName } from '@/lib/document-request-profile'
 
 import { 
   Search, 
@@ -42,16 +44,25 @@ type DocumentType = {
 type DocumentRequest = {
   id: string
   request_number: string
+  control_number?: string
   type: string
   purpose: string
   requester_id: string | null
+  resident_id?: string | null
   requester_name: string
   requester_email: string
   purok: string
+  requester_first_name?: string | null
+  requester_middle_name?: string | null
+  requester_last_name?: string | null
+  requester_suffix?: string | null
+  requester_purok?: string | null
+  requester_civil_status?: string | null
   status: string
   fee: string
   pickup_time: string | null
   release_date: string | null
+  rejection_reason?: string | null
   documents_uploaded: boolean
   missing_documents: string[] | null
   document_path?: Array<{ requirement?: string; name?: string; url?: string }>
@@ -70,6 +81,87 @@ const REQUIREMENT_CHOICES = [
   "Photo ID",
   "Letter of Intent",
 ]
+
+const REQUIREMENT_FALLBACKS: Record<string, string[]> = {
+  barangay_clearance: ['Valid ID', 'Letter of Intent'],
+  certificate_of_residency: ['Valid ID', 'Proof of Residency'],
+  certificate_of_indigency: ['Valid ID', 'Proof of Low Income'],
+  barangay_business_clearance: ['Valid ID', 'Business Registration', 'Barangay Clearance Form'],
+  certificate_of_solo_parent: ['Valid ID', 'Proof of Solo Parent'],
+  certificate_of_business_closure: ['Valid ID', 'Business Registration'],
+  certificate_to_file_action: ['Valid ID', 'Letter of Intent'],
+  medical_assistance_certificate: ['Valid ID', 'Medical Certificate'],
+  blotter_report: ['Valid ID', 'Letter of Intent'],
+  settlement_agreement: ['Valid ID', 'Letter of Intent'],
+}
+
+function getDocumentPreviewTemplate(type: string, issuedDate: Date) {
+  const normalizedType = (type || '').toLowerCase()
+
+  if (normalizedType.includes('business') || normalizedType.includes('barangay_business_clearance')) {
+    return {
+      title: 'BARANGAY BUSINESS CLEARANCE',
+      paragraphs: [
+        <p key="business-1">This is to certify that <strong>[OWNER NAME]</strong>, owner/proprietor of <strong>[BUSINESS NAME]</strong>, located at <strong>[BUSINESS ADDRESS]</strong>, Barangay Santiago, San Antonio, Zambales, has complied with the requirements of this Barangay and is hereby granted a Barangay Business Clearance.</p>,
+        <p key="business-2">This clearance is issued to support the application/renewal of a Business Permit and for whatever lawful purpose it may serve.</p>,
+        <p key="business-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong> at Barangay Santiago, San Antonio, Zambales.</p>,
+      ],
+    }
+  }
+
+  if (normalizedType.includes('residency') || normalizedType.includes('certificate_of_residency')) {
+    return {
+      title: 'CERTIFICATE OF RESIDENCY',
+      paragraphs: [
+        <p key="residency-1">This is to certify that <strong>[NAME]</strong> is a bona fide resident of Barangay Santiago, San Antonio, Zambales and is residing at <strong>[PUROK/ADDRESS]</strong>.</p>,
+        <p key="residency-2">This certification is issued upon request for whatever lawful purpose it may serve.</p>,
+        <p key="residency-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong> at Barangay Santiago, San Antonio, Zambales.</p>,
+      ],
+    }
+  }
+
+  if (normalizedType.includes('indigency') || normalizedType.includes('certificate_of_indigency')) {
+    return {
+      title: 'CERTIFICATE OF INDIGENCY',
+      paragraphs: [
+        <p key="indigency-1">This is to certify that <strong>[NAME]</strong> belongs to an indigent family and is financially incapable of meeting the expenses related to <strong>[PURPOSE]</strong>.</p>,
+        <p key="indigency-2">This certification is issued upon request for whatever lawful purpose it may serve.</p>,
+        <p key="indigency-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong> at Barangay Santiago, San Antonio, Zambales.</p>,
+      ],
+    }
+  }
+
+  if (normalizedType.includes('clearance') || normalizedType.includes('barangay_clearance')) {
+    return {
+      title: 'BARANGAY CLEARANCE',
+      paragraphs: [
+        <p key="clearance-1">This is to certify that <strong>[NAME]</strong> is a resident of Barangay Santiago and has no pending derogatory record on file in this office.</p>,
+        <p key="clearance-2">This clearance is issued upon request for whatever lawful purpose it may serve.</p>,
+        <p key="clearance-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong> at Barangay Santiago, San Antonio, Zambales.</p>,
+      ],
+    }
+  }
+
+  if (normalizedType.includes('building')) {
+    return {
+      title: 'BUILDING PERMIT CLEARANCE',
+      paragraphs: [
+        <p key="building-1">This is to certify that the Barangay has no objection to the proposed construction of <strong>[STRUCTURE TYPE]</strong> located at <strong>[PROPERTY ADDRESS]</strong>, subject to existing laws and regulations.</p>,
+        <p key="building-2">This certification is issued upon request for whatever lawful purpose it may serve.</p>,
+        <p key="building-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong> at Barangay Santiago, San Antonio, Zambales.</p>,
+      ],
+    }
+  }
+
+  return {
+    title: type || 'Resident Request',
+    paragraphs: [
+      <p key="default-1">This is to certify that <strong>[NAME]</strong>, a bonafide resident of Barangay Santiago, San Antonio, Zambales, is residing at <strong>[ADDRESS]</strong>.</p>,
+      <p key="default-2">This certification is issued upon the request of the above-mentioned person for the purpose of <strong>[PURPOSE]</strong>.</p>,
+      <p key="default-3">Issued this <strong>{issuedDate.getDate()}</strong> day of <strong>{issuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{issuedDate.getFullYear()}</strong>.</p>,
+    ],
+  }
+}
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -154,6 +246,8 @@ export default function OfficialDocumentsPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([])
   const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false)
+  const [declineReason, setDeclineReason] = useState("")
   const [showManageTypes, setShowManageTypes] = useState(false)
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>(defaultDocumentTypes)
   const [loading, setLoading] = useState(true)
@@ -165,6 +259,8 @@ export default function OfficialDocumentsPage() {
   const [requirementInput, setRequirementInput] = useState("")
   const [selectedPreviewDoc, setSelectedPreviewDoc] = useState<{ requirement?: string; name?: string; url?: string } | null>(null)
   const [savingType, setSavingType] = useState(false)
+  const [selectedRequestUploads, setSelectedRequestUploads] = useState<any[]>([])
+  const [loadingRequestUploads, setLoadingRequestUploads] = useState(false)
 
   const getAuthHeaders = async () => {
     try {
@@ -212,6 +308,44 @@ export default function OfficialDocumentsPage() {
     fetchRequests()
     fetchDocumentTypes()
   }, [])
+
+  const loadRequestUploads = async (request: DocumentRequest | null = selectedRequest) => {
+    if (!request) {
+      setSelectedRequestUploads([])
+      return
+    }
+
+    setLoadingRequestUploads(true)
+    try {
+      const residentId = request.resident_id || request.requester_id || ''
+      const params = new URLSearchParams({ documentId: request.id })
+      if (residentId) {
+        params.set('residentId', residentId)
+      }
+
+      const response = await fetch(`/api/documents/uploads?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to load resident uploads')
+      }
+
+      const payload = await response.json()
+      setSelectedRequestUploads(payload.uploads || [])
+    } catch (error) {
+      console.error('Error loading request uploads:', error)
+      setSelectedRequestUploads([])
+    } finally {
+      setLoadingRequestUploads(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedRequest) {
+      setSelectedRequestUploads([])
+      return
+    }
+
+    loadRequestUploads(selectedRequest)
+  }, [selectedRequest])
 
   function parseDocumentPath(raw: any) {
     if (!raw) return []
@@ -416,38 +550,157 @@ export default function OfficialDocumentsPage() {
     setRequirementInput("")
   }
 
+  const getFileExtensionFromUrl = (url?: string) => {
+    if (!url) return ''
+
+    try {
+      const parsed = new URL(url)
+      const match = parsed.pathname.match(/\.([a-z0-9]+)(?:$|\?)/i)
+      return match?.[1]?.toLowerCase() || ''
+    } catch {
+      const cleanUrl = url.split('?')[0].split('#')[0]
+      const match = cleanUrl.match(/\.([a-z0-9]+)$/i)
+      return match?.[1]?.toLowerCase() || ''
+    }
+  }
+
   const isPreviewableFile = (url?: string) => {
-    if (!url) return false
-    const extension = url.toLowerCase().split('.').pop()
-    return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')
+    const extension = getFileExtensionFromUrl(url)
+    return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)
   }
 
   const getFileType = (url?: string) => {
-    if (!url) return 'unknown'
-    const extension = url.toLowerCase().split('.').pop()
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) return 'image'
+    const extension = getFileExtensionFromUrl(url)
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image'
     if (extension === 'pdf') return 'pdf'
     return 'file'
   }
+
+  const formatDocumentType = (type?: string | null) => {
+    switch (type) {
+      case 'barangay_clearance':
+        return 'Barangay Clearance'
+      case 'certificate_of_indigency':
+        return 'Certificate of Indigency'
+      case 'barangay_business_clearance':
+        return 'Barangay Business Clearance'
+      case 'certificate_of_residency':
+        return 'Certificate of Residency'
+      case 'certificate_of_solo_parent':
+        return 'Certificate of Solo Parent'
+      case 'certificate_of_business_closure':
+        return 'Certificate of Business Closure'
+      case 'certificate_to_file_action':
+        return 'Certificate to File Action'
+      case 'medical_assistance_certificate':
+        return 'Medical Assistance Certificate'
+      case 'blotter_report':
+        return 'Blotter Report'
+      case 'settlement_agreement':
+        return 'Settlement Agreement'
+      default:
+        return type || 'Document Request'
+    }
+  }
+
+  const getRequirementsForRequest = (request: DocumentRequest | null) => {
+    if (!request) return []
+
+    const documentTypeName = (request as any).document_type || request.type || ''
+    const normalizedType = String(documentTypeName).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+
+    const fromDocumentTypes = (documentTypes.find((type) => type.name === request.type || type.name === formatDocumentType(documentTypeName))?.requirements || [])
+    if (fromDocumentTypes.length > 0) return fromDocumentTypes
+
+    return REQUIREMENT_FALLBACKS[normalizedType] || ['Valid ID']
+  }
+
+  const getResidentDisplayName = (profile: any, fallback = 'Resident') => {
+    if (!profile) return fallback
+
+    const nameParts = [profile.first_name, profile.middle_name, profile.last_name, profile.suffix].filter(Boolean)
+    if (nameParts.length > 0) {
+      return nameParts.join(' ').trim()
+    }
+
+    const fullName = [profile.full_name, profile.name].find((value) => String(value || '').trim())
+    return String(fullName || '').trim() || fallback
+  }
+
   async function fetchRequests() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('document_requests')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const response = await fetch('/api/documents')
+      if (!response.ok) {
+        throw new Error(`Failed to load document requests (${response.status})`)
+      }
 
-      if (error) throw error
+      const data = await response.json()
+      const requestsData = Array.isArray(data) ? data : data?.documents || []
 
-      if (!data || data.length === 0) {
+      if (!requestsData || requestsData.length === 0) {
         setRequests([])
         return
       }
 
-      setRequests((data || []).map((request: any) => ({
-        ...request,
-        document_path: parseDocumentPath(request.document_path),
-      })))
+      const residentIds = Array.from(new Set(
+        requestsData.flatMap((request: any) => [request.resident_id, request.requester_id].filter(Boolean))
+      ))
+      const profileMap = new Map<string, any>()
+
+      if (residentIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, middle_name, last_name, suffix, full_name, email, purok, civil_status')
+          .in('id', residentIds)
+
+        if (!profilesError && Array.isArray(profilesData)) {
+          profilesData.forEach((profile: any) => profileMap.set(profile.id, profile))
+        }
+      }
+
+      const mappedRequests = requestsData.map((request: any) => {
+        const parsedDocumentPath = parseDocumentPath(request.document_path)
+        const requesterUid = request.resident_id || request.requester_id || null
+        const residentProfile = requesterUid ? profileMap.get(requesterUid) : null
+        const rawPurpose = String(request.purpose || request.notes || request.request_purpose || '').trim()
+        const controlNumber = request.control_number || request.request_number || request.id
+        const residentName = formatResidentName(
+          residentProfile || {
+            first_name: request.requester_first_name,
+            middle_name: request.requester_middle_name,
+            last_name: request.requester_last_name,
+            suffix: request.requester_suffix,
+            full_name: request.requester_name || request.full_name || request.name,
+          },
+          String(request.requester_name || request.full_name || request.name || '').trim() || 'Resident'
+        )
+
+        return {
+          ...request,
+          request_number: controlNumber,
+          control_number: controlNumber,
+          type: formatDocumentType(request.document_type || request.type || request.documentType || ''),
+          purpose: rawPurpose || 'No purpose provided',
+          requester_id: request.resident_id ?? request.requester_id ?? null,
+          resident_id: request.resident_id ?? request.requester_id ?? null,
+          requester_name: residentName,
+          requester_email: residentProfile?.email || request.requester_email || 'N/A',
+          purok: request.requester_purok || residentProfile?.purok || request.purok || 'N/A',
+          requester_first_name: request.requester_first_name || residentProfile?.first_name || null,
+          requester_middle_name: request.requester_middle_name || residentProfile?.middle_name || null,
+          requester_last_name: request.requester_last_name || residentProfile?.last_name || null,
+          requester_suffix: request.requester_suffix || residentProfile?.suffix || null,
+          requester_purok: request.requester_purok || residentProfile?.purok || null,
+          requester_civil_status: request.requester_civil_status || residentProfile?.civil_status || null,
+          fee: '0',
+          documents_uploaded: parsedDocumentPath.length > 0 || Boolean(request.document_path),
+          missing_documents: [],
+          document_path: parsedDocumentPath,
+        }
+      })
+
+      setRequests(mappedRequests)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error))
       console.error('Error fetching document requests:', errorMessage)
@@ -460,18 +713,14 @@ export default function OfficialDocumentsPage() {
 
   async function fetchDocumentTypes() {
     try {
-      const headers = await getAuthHeaders()
-      const response = await fetch('/api/admin/document-types', {
-        method: 'GET',
-        headers,
-      })
-
+      const response = await fetch('/api/documents/types?active=true')
       const payload = await response.json()
-      if (!response.ok || payload.error) {
+      const data = Array.isArray(payload) ? payload : payload?.data || []
+
+      if (!response.ok && !Array.isArray(data)) {
         throw new Error(payload.error || 'Failed to load document types')
       }
 
-      const data = payload.data
       setDocumentTypes((data || []).map((type: any) => ({
         id: type.id,
         name: type.name,
@@ -481,8 +730,27 @@ export default function OfficialDocumentsPage() {
       })))
     } catch (error) {
       console.error('Error fetching document types:', error)
-      toast.error('Failed to load document types')
-      setDocumentTypes([])
+      try {
+        const headers = await getAuthHeaders()
+        const fallbackResponse = await fetch('/api/admin/document-types', {
+          method: 'GET',
+          headers,
+        })
+        const fallbackPayload = await fallbackResponse.json()
+        const fallbackData = fallbackPayload?.data || []
+
+        setDocumentTypes((fallbackData || []).map((type: any) => ({
+          id: type.id,
+          name: type.name,
+          requirements: normalizeRequirements(type.requirements),
+          fee: type.fee || '',
+          isActive: type.is_active ?? true,
+        })))
+      } catch (fallbackError) {
+        console.error('Fallback document type fetch failed:', fallbackError)
+        toast.error('Failed to load document types')
+        setDocumentTypes([])
+      }
     }
   }
 
@@ -502,25 +770,66 @@ export default function OfficialDocumentsPage() {
     try {
       const pickupDate = new Date()
       pickupDate.setDate(pickupDate.getDate() + 2)
-      
-      const { error } = await supabase
-        .from('document_requests')
-        .update({ 
-          status: 'approved',
-          pickup_time: pickupDate.toISOString()
-        })
-        .eq('id', requestId)
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/documents/approve', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          documentRequestId: requestId,
+          action: 'approve',
+          approvedBy: request?.requester_id || request?.resident_id || null,
+        }),
+      })
 
-      if (error) throw error
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || payload?.error) {
+        throw new Error(payload?.error || 'Failed to approve request')
+      }
 
       setRequests(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'approved', pickup_time: pickupDate.toISOString() } : r
+        r.id === requestId ? { ...r, status: 'approved', pickup_time: pickupDate.toISOString(), rejection_reason: null } : r
       ))
       setShowApproveDialog(false)
+      setSelectedRequest(null)
       toast.success('Request approved successfully')
     } catch (error) {
       console.error('Error approving request:', error)
-      toast.error('Failed to approve request')
+      toast.error(error instanceof Error ? error.message : 'Failed to approve request')
+    }
+  }
+
+  const handleDeclineRequest = async (requestId: string) => {
+    const request = requests.find(r => r.id === requestId)
+    const reason = declineReason.trim() || 'No reason provided.'
+
+    try {
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/documents/approve', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          documentRequestId: requestId,
+          action: 'decline',
+          reason,
+          approvedBy: request?.requester_id || request?.resident_id || null,
+        }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || payload?.error) {
+        throw new Error(payload?.error || 'Failed to decline request')
+      }
+
+      setRequests(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'declined', pickup_time: null, rejection_reason: reason } : r
+      ))
+      setShowDeclineDialog(false)
+      setSelectedRequest(null)
+      setDeclineReason('')
+      toast.success('Request declined successfully')
+    } catch (error) {
+      console.error('Error declining request:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to decline request')
     }
   }
 
@@ -611,6 +920,12 @@ export default function OfficialDocumentsPage() {
       day: 'numeric'
     })
   }
+
+  const selectedRequestRequirements = getRequirementsForRequest(selectedRequest)
+  const printIssuedDate = new Date()
+  const certificatePreview = selectedPrintRequest
+    ? getDocumentPreviewTemplate(selectedPrintRequest.type, printIssuedDate)
+    : null
 
   if (loading) {
     return (
@@ -740,10 +1055,12 @@ export default function OfficialDocumentsPage() {
                 <TabsContent value="pending" className="mt-3 md:mt-4">
                   <RequestsTable 
                     requests={filteredRequests.filter(r => r.status === "pending")}
-                    onView={setSelectedRequest}
-                    onApprove={(r) => { setSelectedRequest(r); setShowApproveDialog(true); }}
+                    onView={(r) => { setSelectedRequest(r); setShowApproveDialog(false); setShowDeclineDialog(false); }}
+                    onApprove={(r) => { setSelectedRequest(r); setShowApproveDialog(true); setShowDeclineDialog(false); }}
+                    onDecline={(r) => { setSelectedRequest(r); setDeclineReason(''); setShowApproveDialog(false); setShowDeclineDialog(true); }}
                     formatDate={formatDate}
                     showApproveButton
+                    showDeclineButton
                   />
                 </TabsContent>
 
@@ -775,7 +1092,7 @@ export default function OfficialDocumentsPage() {
       </motion.div>
 
       {/* Request Details Modal */}
-      <Dialog open={!!selectedRequest && !showApproveDialog} onOpenChange={() => setSelectedRequest(null)}>
+      <Dialog open={!!selectedRequest && !showApproveDialog && !showDeclineDialog} onOpenChange={() => setSelectedRequest(null)}>
         <DialogContent className="w-[95vw] sm:w-full max-w-lg">
           <DialogHeader>
             <DialogTitle>Request Details</DialogTitle>
@@ -787,73 +1104,56 @@ export default function OfficialDocumentsPage() {
                 <h3 className="font-semibold">{selectedRequest.type}</h3>
                 {getStatusBadge(selectedRequest.status)}
               </div>
-              <div className="grid gap-3 grid-cols-2">
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground">Requester</p>
-                  <p className="font-medium text-sm">{selectedRequest.requester_name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedRequest.requester_email}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground">Purok</p>
-                  <p className="font-medium text-sm">{selectedRequest.purok}</p>
-                </div>
+              <div className="grid gap-3 grid-cols-1">
                 <div className="p-3 rounded-lg bg-muted/50">
                   <p className="text-xs text-muted-foreground">Purpose</p>
                   <p className="font-medium text-sm">{selectedRequest.purpose}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground">Fee</p>
-                  <p className="font-medium text-sm">PHP {selectedRequest.fee}</p>
+                  <p className="text-xs text-muted-foreground">Resident Uploads</p>
+                  {loadingRequestUploads ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading uploads...
+                    </div>
+                  ) : selectedRequestUploads.length > 0 ? (
+                    <div className="mt-1 space-y-2">
+                      {selectedRequestUploads.map((upload: any) => {
+                        const uploadStatus = String(upload.upload_status || upload.status || upload.uploadState || 'uploaded').toLowerCase()
+                        const statusLabel = uploadStatus === 'uploaded' ? 'Uploaded' : uploadStatus === 'pending' ? 'Pending' : uploadStatus === 'failed' ? 'Failed' : uploadStatus
+                        const filePath = upload.file_path || upload.storage_path || ''
+                        const fileName = upload.file_name || upload.file_path || 'Uploaded file'
+                        const isImage = ['jpg','jpeg','png','gif','webp'].includes(String(fileName).split('.').pop()?.toLowerCase() || '')
+                        const resolvedFileUrl = upload.file_url || (filePath ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/resident-uploads/${encodeURIComponent(filePath)}` : '')
+
+                        return (
+                          <div key={upload.id} className="rounded-md border border-slate-200 bg-white px-2 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-slate-700 truncate">{fileName}</p>
+                              {isImage && resolvedFileUrl ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => setSelectedPreviewDoc({ requirement: upload.requirement_name || 'Uploaded file', name: fileName, url: resolvedFileUrl })}
+                                >
+                                  View
+                                </Button>
+                              ) : null}
+                            </div>
+                            <p className="text-[11px] text-slate-500 break-all">{upload.file_path || 'No file path available'}</p>
+                            <Badge variant={uploadStatus === 'uploaded' ? 'default' : uploadStatus === 'pending' ? 'secondary' : 'outline'} className="mt-1 text-[10px]">
+                              {statusLabel}
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-slate-500">No uploads found for this request.</p>
+                  )}
                 </div>
               </div>
-
-
-              {selectedRequest.document_path && selectedRequest.document_path.length > 0 ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900 mb-3">📄 Uploaded Documents</p>
-                  <div className="space-y-3 max-h-[200px] overflow-y-auto">
-                    {selectedRequest.document_path.map((doc, index) => {
-                      const previewable = isPreviewableFile(doc.url)
-                      return (
-                        <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-white p-3 border border-slate-200 hover:border-blue-300 transition-colors">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{doc.requirement || doc.name || `Document ${index + 1}`}</p>
-                            <p className="text-xs text-slate-500 truncate">{doc.name ?? 'Uploaded file'}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            {previewable && doc.url ? (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700"
-                                onClick={() => setSelectedPreviewDoc(doc)}
-                              >
-                                👁️ Preview
-                              </Button>
-                            ) : null}
-                            {doc.url ? (
-                              <a
-                                href={doc.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-xs font-semibold text-primary hover:underline"
-                              >
-                                Download
-                              </a>
-                            ) : (
-                              <span className="text-xs text-slate-500">No file</span>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-                  <p className="text-xs text-slate-500">No documents uploaded yet</p>
-                </div>
-              )}
             </div>
           )}
           <DialogFooter>
@@ -863,7 +1163,12 @@ export default function OfficialDocumentsPage() {
       </Dialog>
 
       {/* Approve Dialog */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+      <Dialog open={showApproveDialog} onOpenChange={(open) => {
+        setShowApproveDialog(open)
+        if (!open) {
+          setSelectedRequest(null)
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Approve Request</DialogTitle>
@@ -883,6 +1188,44 @@ export default function OfficialDocumentsPage() {
               onClick={() => selectedRequest && handleApproveRequest(selectedRequest.id)}
             >
               Approve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Decline Dialog */}
+      <Dialog open={showDeclineDialog} onOpenChange={(open) => {
+        setShowDeclineDialog(open)
+        if (!open) {
+          setSelectedRequest(null)
+          setDeclineReason('')
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Decline Request</DialogTitle>
+            <DialogDescription>
+              Decline document request from {selectedRequest?.requester_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <p className="text-sm">
+              Please provide a reason for declining this {selectedRequest?.type} request.
+            </p>
+            <Textarea
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              placeholder="Example: Incomplete requirements or invalid supporting documents."
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeclineDialog(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedRequest && handleDeclineRequest(selectedRequest.id)}
+            >
+              Decline
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1044,129 +1387,118 @@ export default function OfficialDocumentsPage() {
 
 
 
-      {/* Print Content - Professional Certification Template */}
+      {/* Print Content - Residency Certificate Template */}
       {selectedPrintRequest && (
-        <div id="print-certification-content" className="hidden print:block border-4 border-yellow-500 rounded-3xl">
+        <div id="print-certification-content" className="hidden print:block bg-white">
           <style>{`
             @page {
-              size: 8.5in 11in;
-              margin: 0.5in;
+              size: A4 portrait;
+              margin: 0;
             }
             #print-certification-content {
-              width: 8.5in;
-              height: 11in;
+              width: 210mm;
+              min-height: 297mm;
               margin: 0 auto;
-              padding: 0.5in;
-              font-family: 'Segoe UI', Arial, sans-serif;
+              padding: 10mm;
+              font-family: 'Times New Roman', Georgia, serif;
               color: #000;
-              position: relative;
-              overflow: hidden;
               background-color: #fff;
-            }
-            #print-certification-content::before {
-              content: "";
-              position: absolute;
-              inset: 0;
-              background-image: url('/logos/santiago-logo.png');
-              background-repeat: no-repeat;
-              background-position: center;
-              background-size: 40%;
-              opacity: 0.08;
-              pointer-events: none;
+              box-sizing: border-box;
             }
             .cert-container {
+              width: 100%;
+              min-height: 277mm;
+              border: 2px solid #000;
+              padding: 8mm;
+              box-sizing: border-box;
               display: flex;
               flex-direction: column;
-              height: 100%;
-              border: 5px solid #FBBF24;
-              border-radius: 16px;
-              padding: 1in;
-              background: rgba(255, 255, 255, 0.94);
-              box-sizing: border-box;
-              position: relative;
-              z-index: 1;
             }
             .cert-header {
               display: flex;
               align-items: center;
-              justify-content: space-between;
-              border-bottom: 2px solid #F59E0B;
-              padding-bottom: 0.3in;
-              margin-bottom: 0.3in;
+              justify-content: center;
+              gap: 6mm;
+              border-bottom: 1px solid #000;
+              padding-bottom: 3mm;
+              margin-bottom: 4mm;
               text-align: center;
             }
             .logo {
-              width: 1in;
-              height: 1in;
-              border-radius: 0;
-              object-fit: cover;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              background: #f0f0f0;
+              width: 16mm;
+              height: 16mm;
+              object-fit: contain;
             }
             .header-text {
               flex: 1;
-              margin: 0 0.3in;
-              font-size: 9px;
+              font-size: 10pt;
               line-height: 1.3;
-            }
-            .header-text p {
-              margin: 2px 0;
             }
             .cert-title {
               text-align: center;
-              font-size: 20px;
+              font-size: 18pt;
               font-weight: bold;
-              margin: 0.2in 0;
-              text-decoration: underline;
-              letter-spacing: 2px;
+              letter-spacing: 0.12em;
+              margin: 4mm 0 3mm;
+              text-transform: uppercase;
             }
             .cert-subtitle {
               text-align: center;
-              font-size: 11px;
-              color: #666;
-              margin-bottom: 0.3in;
+              font-size: 11pt;
+              margin-bottom: 6mm;
+              font-weight: 600;
             }
             .cert-content {
               flex: 1;
-              font-size: 12px;
+              font-size: 12pt;
               line-height: 1.8;
               text-align: justify;
-              margin: 0.3in 0;
+              padding: 0 6mm;
             }
             .cert-content p {
-              margin: 0.15in 0;
+              margin: 0 0 4mm;
+            }
+            .blank-line {
+              display: inline-block;
+              min-width: 36mm;
+              border-bottom: 1px solid #000;
+              margin: 0 1mm;
+              vertical-align: bottom;
             }
             .cert-footer {
-              margin-top: 0.5in;
-              text-align: center;
+              margin-top: 10mm;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 3mm;
             }
             .signature-line {
-              display: inline-block;
-              border-top: 1px solid #000;
-              width: 2in;
-              margin: 0.1in 0;
-              font-size: 10px;
+              display: none;
             }
             .officer-title {
-              font-size: 10px;
-              margin-top: 0.05in;
-              font-weight: bold;
-            }
-            .date-issued {
-              font-size: 10px;
-              margin-top: 0.3in;
-              text-align: right;
-            }
-            .request-number {
-              font-size: 9px;
+              font-size: 11pt;
+              font-weight: 700;
               text-align: center;
-              margin-top: 0.2in;
-              color: #666;
+            }
+            .officer-role {
+              font-size: 10pt;
+              text-align: center;
+            }
+            .details-row {
+              width: 100%;
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: 3mm;
+              font-size: 9pt;
+              margin-top: 6mm;
+            }
+            .detail-box {
+              border-top: none;
+              padding-top: 2mm;
+              text-align: center;
             }
           `}</style>
-          
+
           <div className="cert-container">
             <div className="cert-header">
               <img src="/logos/saz-logo.png" alt="Municipality Seal" className="logo" />
@@ -1175,13 +1507,13 @@ export default function OfficialDocumentsPage() {
                 <p>Province of Zambales</p>
                 <p>Municipality of San Antonio</p>
                 <p><strong>Barangay Santiago</strong></p>
-                <p style={{marginTop: '3px'}}><strong>Office of the Barangay Captain</strong></p>
+                <p><strong>Office of the Barangay Captain</strong></p>
               </div>
               <img src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" className="logo" />
             </div>
 
             <div className="cert-title">
-              CERTIFICATION
+              {certificatePreview?.title || selectedPrintRequest.type || 'Resident Request'}
             </div>
 
             <div className="cert-subtitle">
@@ -1189,37 +1521,72 @@ export default function OfficialDocumentsPage() {
             </div>
 
             <div className="cert-content">
-              <p>
-                This is to certify that <strong>{selectedPrintRequest.requester_name}</strong>, of legal age, a bona fide resident of <strong>{selectedPrintRequest.purok}</strong>, Barangay Santiago, San Antonio, Zambales, has requested this <strong>{selectedPrintRequest.type}</strong> for the purpose of <strong>{selectedPrintRequest.purpose}</strong>.
-              </p>
-              
-              <p>
-                This certification is issued upon the request of the above-mentioned resident and is valid for any legal purpose it may serve.
-              </p>
+              {certificatePreview?.paragraphs || (
+                <>
+                  <p>
+                    This is to certify that <strong>{selectedPrintRequest.requester_name || '________________________'}</strong>, a bonafide resident of Barangay Santiago, San Antonio, Zambales, is residing at <strong>{selectedPrintRequest.purok || '________________________'}</strong>.
+                  </p>
 
-              <p style={{marginTop: '0.3in'}}>
-                Issued this _____ day of __________, 20______.
-              </p>
+                  <p>
+                    This certification is issued upon the request of the above-mentioned person for the purpose of <strong>{selectedPrintRequest.purpose || '________________________'}</strong>.
+                  </p>
+
+                  <p>
+                    Issued this <strong>{printIssuedDate.getDate()}</strong> day of <strong>{printIssuedDate.toLocaleDateString('en-US', { month: 'long' })}</strong>, <strong>{printIssuedDate.getFullYear()}</strong>.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="cert-footer">
-              <p style={{marginBottom: '0.5in'}}>
-                <span className="signature-line"></span>
-              </p>
+              <div className="signature-line" />
               <p className="officer-title">ROLANDO C. BORJA</p>
-              <p style={{fontSize: '10px', fontWeight: 'bold', marginTop: '3px'}}>Punong Barangay</p>
-              
-              <div className="date-issued">
-                <strong>Date Processed:</strong> {formatDate(new Date().toISOString())}
-              </div>
-            </div>
+              <p className="officer-role">Punong Barangay</p>
 
-            <div className="request-number">
-              Request No: {selectedPrintRequest.request_number} | Control No: {Math.random().toString(36).substr(2, 9).toUpperCase()}
+              <div className="details-row">
+                <div className="detail-box">Control No.: {selectedPrintRequest.control_number || selectedPrintRequest.request_number || '________'}</div>
+                <div className="detail-box">Request No.: {selectedPrintRequest.request_number || '________'}</div>
+                <div className="detail-box">Date Issued: {formatDate(printIssuedDate.toISOString())}</div>
+              </div>
             </div>
           </div>
         </div>
       )}
+      <div id="print-requirement-summary-content" className="hidden print:block">
+        <div className="p-6 text-black">
+          <h1 className="text-xl font-bold mb-2">Document Requirement Summary</h1>
+          <p className="text-sm text-slate-600 mb-4">Request #{selectedPrintRequest?.request_number || selectedRequest?.request_number || 'N/A'}</p>
+          <div className="space-y-3">
+            {(() => {
+              const requirementDefinitions = getRequirementsForRequest(selectedRequest)
+              const uploadedRequirementNames = Array.from(new Set(selectedRequestUploads.map((upload: any) => String(upload.requirement_name || '')).filter(Boolean)))
+              const requirementsToShow = requirementDefinitions.length > 0 ? requirementDefinitions : uploadedRequirementNames
+
+              return requirementsToShow.map((requirement: string) => {
+                const uploads = selectedRequestUploads.filter(
+                  (upload: any) => String(upload.requirement_name || '').toLowerCase() === requirement.toLowerCase()
+                )
+
+                return (
+                  <div key={requirement} className="border rounded-lg p-3">
+                    <p className="font-semibold">{requirement}</p>
+                    {uploads.length > 0 ? (
+                      <ul className="mt-2 list-disc pl-5 text-sm">
+                        {uploads.map((upload: any) => (
+                          <li key={upload.id}>{upload.file_name || upload.file_path || 'Uploaded file'}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-500">No files uploaded for this requirement yet.</p>
+                    )}
+                  </div>
+                )
+              })
+            })()}
+          </div>
+        </div>
+      </div>
+
       {/* Document Preview Modal */}
       <Dialog open={!!selectedPreviewDoc} onOpenChange={() => setSelectedPreviewDoc(null)}>
         <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col">
@@ -1294,20 +1661,24 @@ function RequestsTable({
   requests, 
   onView,
   onApprove,
+  onDecline,
   onPrint,
   onRelease,
   formatDate,
   showApproveButton,
+  showDeclineButton,
   showPrintButton,
   showReleaseButton
 }: { 
   requests: DocumentRequest[]
   onView: (r: DocumentRequest) => void
   onApprove?: (r: DocumentRequest) => void
+  onDecline?: (r: DocumentRequest) => void
   onPrint?: (r: DocumentRequest) => void
   onRelease?: (id: string) => void
   formatDate: (d: string | null) => string
   showApproveButton?: boolean
+  showDeclineButton?: boolean
   showPrintButton?: boolean
   showReleaseButton?: boolean
 }) {
@@ -1341,6 +1712,9 @@ function RequestsTable({
               <Button variant="outline" size="sm" className="flex-1" onClick={() => onView(request)}>View</Button>
               {showApproveButton && onApprove && (
                 <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => onApprove(request)}>Approve</Button>
+              )}
+              {showDeclineButton && onDecline && (
+                <Button size="sm" variant="destructive" className="flex-1" onClick={() => onDecline(request)}>Decline</Button>
               )}
               {showPrintButton && onPrint && canPrintRequest(request.status) && (
                 <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => onPrint(request)}>Print</Button>
@@ -1384,6 +1758,12 @@ function RequestsTable({
                     <Button size="sm" className="h-7 md:h-8 px-2 md:px-3 text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => onApprove(request)}>
                       <CheckCircle2 className="h-3 w-3 md:mr-1" />
                       <span className="hidden md:inline">Approve</span>
+                    </Button>
+                  )}
+                  {showDeclineButton && onDecline && (
+                    <Button size="sm" variant="destructive" className="h-7 md:h-8 px-2 md:px-3 text-xs" onClick={() => onDecline(request)}>
+                      <XCircle className="h-3 w-3 md:mr-1" />
+                      <span className="hidden md:inline">Decline</span>
                     </Button>
                   )}
                   {showPrintButton && onPrint && canPrintRequest(request.status) && (

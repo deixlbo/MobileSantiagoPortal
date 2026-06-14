@@ -7,13 +7,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  Users,
   FileText,
   AlertTriangle,
-  Scroll,
   FolderKanban,
   Megaphone,
   Package,
+  Scroll,
   LogOut,
   Menu,
 } from "lucide-react"
@@ -27,12 +26,11 @@ import { getCurrentUser, getUserRole, getProfile, signOut } from "@/lib/auth"
 
 const navigation = [
   { name: "Dashboard", href: "/official/dashboard", icon: LayoutDashboard },
-  { name: "Residents", href: "/official/residents", icon: Users },
   { name: "Documents", href: "/official/documents", icon: FileText },
-  { name: "Blotters", href: "/official/blotters", icon: AlertTriangle },
   { name: "Ordinances", href: "/official/ordinances", icon: Scroll },
-  { name: "Projects", href: "/official/projects", icon: FolderKanban },
+  { name: "Blotters", href: "/official/blotters", icon: AlertTriangle },
   { name: "Announcements", href: "/official/announcements", icon: Megaphone },
+  { name: "Projects", href: "/official/projects", icon: FolderKanban },
   { name: "Assets", href: "/official/assets", icon: Package },
 ]
 
@@ -56,7 +54,7 @@ export default function OfficialLayout({
         if (pathname === "/official/login" || pathname === "/official/login-form" || pathname === "/official/register") {
           const currentUser = await getCurrentUser()
           const role = await getUserRole(currentUser)
-          if (currentUser && (role === 'official' || role === 'admin')) {
+          if (currentUser && role === 'official') {
             router.push('/official/dashboard')
             return
           }
@@ -66,7 +64,7 @@ export default function OfficialLayout({
 
         const currentUser = await getCurrentUser()
         const role = await getUserRole(currentUser)
-        if (currentUser && (role === 'official' || role === 'admin')) {
+        if (currentUser && role === 'official') {
           setUser(currentUser)
           setIsAuthorized(true)
 

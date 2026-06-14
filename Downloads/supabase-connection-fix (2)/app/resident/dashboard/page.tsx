@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/lib/supabase"
 import {
   Megaphone,
   ArrowRight,
@@ -49,35 +48,33 @@ export default function ResidentDashboard() {
     try {
       console.log("[v0] Fetching resident dashboard data...")
       
-      const { data: announcementsData } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(3)
+      const announcementsResponse = await fetch('/api/announcements')
+      if (!announcementsResponse.ok) throw new Error('Failed to load announcements')
+      const announcementsPayload = await announcementsResponse.json()
+      const announcementsData = Array.isArray(announcementsPayload)
+        ? announcementsPayload.filter((item: any) => String(item.status || '').toLowerCase() === 'published')
+        : []
 
-      setAnnouncements(announcementsData || [])
+      setAnnouncements(announcementsData.slice(0, 3))
 
-      const { data: projectsData } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(3)
+      const projectsResponse = await fetch('/api/projects')
+      if (!projectsResponse.ok) throw new Error('Failed to load projects')
+      const projectsPayload = await projectsResponse.json()
+      const projectsData = Array.isArray(projectsPayload) ? projectsPayload : []
 
-      setProjects(projectsData || [])
+      setProjects(projectsData.slice(0, 3))
 
-      const { data: ordinancesData } = await supabase
-        .from('ordinances')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(3)
+      const ordinancesResponse = await fetch('/api/ordinances?published=true')
+      if (!ordinancesResponse.ok) throw new Error('Failed to load ordinances')
+      const ordinancesPayload = await ordinancesResponse.json()
+      const ordinancesData = Array.isArray(ordinancesPayload) ? ordinancesPayload : []
 
-      setOrdinances(ordinancesData || [])
+      setOrdinances(ordinancesData.slice(0, 3))
 
       const notifs: any[] = []
       
       if (announcementsData && announcementsData.length > 0) {
-        announcementsData.slice(0, 2).forEach((ann, idx) => {
+        announcementsData.slice(0, 2).forEach((ann: any, idx: number) => {
           notifs.push({
             id: `ann-${idx}`,
             type: "announcement",
@@ -304,25 +301,25 @@ export default function ResidentDashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 resident-page-shell">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-        <div className="flex-1">
+      <div className="flex flex-row justify-between items-start gap-3 sm:items-center sm:gap-4">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">Welcome, Resident</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">Barangay Santiago Resident Dashboard</p>
         </div>
         
         {/* Notification Bell */}
-        <div className="relative w-full sm:w-auto">
+        <div className="relative shrink-0">
           <Button 
             variant="outline" 
             size="icon" 
-            className="relative w-full sm:w-auto"
+            className="relative h-8 w-8 rounded-full sm:h-10 sm:w-10"
             onClick={() => setShowNotifications(!showNotifications)}
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-bold sm:h-5 sm:w-5">
                 {unreadCount}
               </span>
             )}
@@ -386,8 +383,8 @@ export default function ResidentDashboard() {
                     setCurrentSlide(idx)
                     if (slideInterval.current) clearInterval(slideInterval.current)
                   }}
-                  className={`h-2 rounded-full transition-all ${
-                    currentSlide === idx ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"
+                  className={`h-1 rounded-full transition-all ${
+                    currentSlide === idx ? "w-3 bg-primary" : "w-1 bg-muted-foreground/30"
                   }`}
                 />
               ))}
@@ -399,57 +396,22 @@ export default function ResidentDashboard() {
         </CardContent>
       </Card>
 
-      {/* Barangay Information */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-4">
-          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-            <Image
-              src="/logos/santiago-logo.png"
-              alt="Barangay Santiago"
-              width={24}
-              height={24}
-              className="rounded-full w-6 h-6"
-            />
-            About Barangay Santiago
-          </CardTitle>
+      <Card className="resident-page-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">What’s happening</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Punong Barangay</p>
-                <p className="font-medium">{barangayInfo?.punongBarangay || ""}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Location</p>
-                <p className="font-medium">{barangayInfo ? `${barangayInfo.municipality}, ${barangayInfo.province}` : ""}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Region</p>
-                <p className="font-medium">{barangayInfo?.region || ""}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <p className="text-xs">{barangayInfo?.address || ""}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo?.phone || ""}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo?.email || ""}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs">{barangayInfo?.officeHours || ""}</p>
-              </div>
-            </div>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <div className="rounded-lg bg-muted/50 p-3">
+            <p className="font-medium text-foreground">{announcements.length > 0 ? announcements[0].title : 'Stay updated'}</p>
+            <p className="mt-1">Latest barangay updates and public notices.</p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3">
+            <p className="font-medium text-foreground">{projects.length > 0 ? projects[0].title : 'Community projects'}</p>
+            <p className="mt-1">Track ongoing and completed barangay initiatives.</p>
           </div>
         </CardContent>
       </Card>
+
     </div>
   )
 }

@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getErrorMessage } from '@/lib/utils'
 import { getProfile } from '@/lib/auth'
 import { toast } from 'sonner'
 import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import DocumentUpload from '@/components/document-upload'
 
 export default function DocumentsPage() {
@@ -23,6 +23,17 @@ export default function DocumentsPage() {
   const [selectedDocumentType, setSelectedDocumentType] = useState<any | null>(null)
   const [documentRequest, setDocumentRequest] = useState<any | null>(null)
   const [requestPurpose, setRequestPurpose] = useState('')
+  const [businessPermitDetails, setBusinessPermitDetails] = useState<Record<string, string>>({
+    businessName: '',
+    businessAddress: '',
+    ownerName: '',
+    homeAddress: '',
+    contactNumber: '',
+    typeOfBusiness: '',
+    natureOfBusiness: '',
+    capitalizationAmount: '',
+    tin: '',
+  })
   const [isRequestSubmitting, setIsRequestSubmitting] = useState(false)
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false)
   const [profileName, setProfileName] = useState('')
@@ -30,6 +41,60 @@ export default function DocumentsPage() {
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [qrGeneratingId, setQrGeneratingId] = useState<string | null>(null)
+  const [requestUploads, setRequestUploads] = useState<Record<string, any[]>>({})
+  const [loadingUploadsForRequest, setLoadingUploadsForRequest] = useState<Record<string, boolean>>({})
+
+  const permitRequestGuidance: Record<string, { heading: string; items: string[] }> = {
+    'business permit': {
+      heading: 'For a Business Permit',
+      items: [
+        'Business Name',
+        'Business Address',
+        "Owner's Name",
+        'Home Address',
+        'Contact Number',
+        'Type of Business',
+        'Nature of Business',
+        'Capitalization Amount',
+        'Tax Identification Number (TIN) (if available)',
+      ],
+    },
+    'building permit': {
+      heading: 'For a Building Permit',
+      items: [
+        "Owner's Name",
+        'Project Location/Address',
+        'Type of Project (New Construction, Renovation, Repair, etc.)',
+        'Lot Area',
+        'Floor Area',
+        'Estimated Cost of Construction',
+        'Engineer/Architect Information',
+        'Contact Details',
+      ],
+    },
+  }
+
+  const getPermitRequestGuidance = (documentTypeName?: string | null) => {
+    if (!documentTypeName) return null
+    const normalizedName = documentTypeName.toLowerCase()
+    return permitRequestGuidance[normalizedName] || null
+  }
+
+  const businessPermitFieldDefinitions = [
+    { key: 'businessName', label: 'Business Name', placeholder: 'e.g. Santiago General Store' },
+    { key: 'businessAddress', label: 'Business Address', placeholder: 'e.g. Purok 2, Barangay Santiago' },
+    { key: 'ownerName', label: "Owner's Name", placeholder: 'e.g. Juan Dela Cruz' },
+    { key: 'homeAddress', label: 'Home Address', placeholder: 'e.g. Purok 1, Barangay Santiago' },
+    { key: 'contactNumber', label: 'Contact Number', placeholder: 'e.g. 0917-123-4567' },
+    { key: 'typeOfBusiness', label: 'Type of Business', placeholder: 'e.g. Retail / Service / Food' },
+    { key: 'natureOfBusiness', label: 'Nature of Business', placeholder: 'e.g. Selling groceries and household items' },
+    { key: 'capitalizationAmount', label: 'Capitalization Amount', placeholder: 'e.g. 50000' },
+    { key: 'tin', label: 'TIN (if available)', placeholder: 'e.g. 123-456-789' },
+  ] as const
+
+  const isBusinessPermitRequest = Boolean(
+    selectedDocumentType?.name && selectedDocumentType.name.toLowerCase().includes('business') && selectedDocumentType.name.toLowerCase().includes('permit')
+  )
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,17 +122,13 @@ export default function DocumentsPage() {
   useEffect(() => {
     const fetchDocumentTypes = async () => {
       try {
-        const { data, error } = await supabase
-          .from('document_types')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-
-        if (error) {
-          throw error
+        const response = await fetch('/api/documents/types?active=true')
+        if (!response.ok) {
+          throw new Error('Failed to load document types')
         }
 
-        setAvailableDocumentTypes(data || [])
+        const data = await response.json()
+        setAvailableDocumentTypes(Array.isArray(data) ? data : data?.data || [])
       } catch (error) {
         console.error('Error loading document types:', error)
       }
@@ -103,6 +164,30 @@ export default function DocumentsPage() {
     return () => clearInterval(documentsInterval)
   }, [residentId])
 
+  useEffect(() => {
+    if (!residentId || documents.length === 0) return
+
+    documents.forEach((doc) => {
+      if (!doc?.id || requestUploads[doc.id] || loadingUploadsForRequest[doc.id]) return
+
+      const loadUploads = async () => {
+        setLoadingUploadsForRequest((current) => ({ ...current, [doc.id]: true }))
+        try {
+          const response = await fetch(`/api/documents/uploads?documentId=${doc.id}&residentId=${residentId}`)
+          if (!response.ok) throw new Error('Failed to load uploads')
+          const data = await response.json()
+          setRequestUploads((current) => ({ ...current, [doc.id]: data.uploads || [] }))
+        } catch (error) {
+          console.error('Error loading request uploads:', error)
+        } finally {
+          setLoadingUploadsForRequest((current) => ({ ...current, [doc.id]: false }))
+        }
+      }
+
+      void loadUploads()
+    })
+  }, [documents, residentId, requestUploads, loadingUploadsForRequest])
+
   const handleSelectDocumentType = (type: any) => {
     if (verificationStatus !== 'verified') {
       toast.error(
@@ -116,6 +201,17 @@ export default function DocumentsPage() {
     setSelectedDocumentType(type)
     setDocumentRequest(null)
     setRequestPurpose('')
+    setBusinessPermitDetails({
+      businessName: '',
+      businessAddress: '',
+      ownerName: '',
+      homeAddress: '',
+      contactNumber: '',
+      typeOfBusiness: '',
+      natureOfBusiness: '',
+      capitalizationAmount: '',
+      tin: '',
+    })
     setIsTypeDialogOpen(true)
   }
 
@@ -124,14 +220,29 @@ export default function DocumentsPage() {
       toast.error('Please choose a document type')
       return
     }
-    if (!requestPurpose.trim()) {
+    if (!requestPurpose.trim() && !isBusinessPermitRequest) {
       toast.error('Please enter the purpose of your request')
       return
+    }
+    if (isBusinessPermitRequest) {
+      const missingFields = businessPermitFieldDefinitions.filter(({ key }) => !businessPermitDetails[key].trim())
+      if (missingFields.length > 0) {
+        toast.error(`Please fill in all business permit details before submitting your request.`)
+        return
+      }
     }
     if (!residentId) {
       toast.error('Unable to identify resident profile')
       return
     }
+
+    const businessPermitSummary = isBusinessPermitRequest
+      ? businessPermitFieldDefinitions
+          .map(({ key, label }) => `${label}: ${businessPermitDetails[key].trim()}`)
+          .join('\n')
+      : ''
+
+    const submittedPurpose = [requestPurpose.trim(), businessPermitSummary].filter(Boolean).join('\n\n')
 
     setIsRequestSubmitting(true)
     try {
@@ -141,7 +252,8 @@ export default function DocumentsPage() {
         body: JSON.stringify({
           residentId,
           documentType: selectedDocumentType?.name || '',
-          purpose: requestPurpose.trim(),
+          purpose: submittedPurpose,
+          businessPermitDetails: isBusinessPermitRequest ? businessPermitDetails : null,
         }),
       })
       const data = await response.json()
@@ -156,6 +268,17 @@ export default function DocumentsPage() {
       setDocumentRequest(created)
       setIsTypeDialogOpen(true)
       setRequestPurpose('')
+      setBusinessPermitDetails({
+        businessName: '',
+        businessAddress: '',
+        ownerName: '',
+        homeAddress: '',
+        contactNumber: '',
+        typeOfBusiness: '',
+        natureOfBusiness: '',
+        capitalizationAmount: '',
+        tin: '',
+      })
       toast.success('Document request submitted successfully')
     } catch (error) {
       console.error('Error submitting document request:', error)
@@ -219,8 +342,17 @@ export default function DocumentsPage() {
     document.body.removeChild(link)
   }
 
+  const formatDisplayDate = (value?: string | null) => {
+    if (!value) return '—'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return '—'
+    return date.toLocaleString()
+  }
+
+  const permitGuidance = getPermitRequestGuidance(selectedDocumentType?.name)
+
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 resident-page-shell">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Document Requests</h1>
         <p className="text-muted-foreground mt-2">Track and manage your document requests</p>
@@ -270,7 +402,7 @@ export default function DocumentsPage() {
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="resident-page-grid xl:grid-cols-3">
             {availableDocumentTypes.map((type) => (
               <Card key={type.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
@@ -333,23 +465,66 @@ export default function DocumentsPage() {
 
                 {!documentRequest ? (
                   <div className="space-y-4">
+                    {permitGuidance && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <p className="font-semibold text-sm">{permitGuidance.heading}</p>
+                        <p className="text-sm text-slate-600 mt-1">Please complete the details below so your request can be processed accurately.</p>
+                      </div>
+                    )}
+
+                    {isBusinessPermitRequest && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {businessPermitFieldDefinitions.map(({ key, label, placeholder }) => (
+                          <div key={key} className="space-y-2">
+                            <Label htmlFor={key}>{label}</Label>
+                            {key === 'natureOfBusiness' ? (
+                              <Textarea
+                                id={key}
+                                value={businessPermitDetails[key]}
+                                onChange={(event) =>
+                                  setBusinessPermitDetails((current) => ({ ...current, [key]: event.target.value }))
+                                }
+                                placeholder={placeholder}
+                                className="min-h-[90px]"
+                              />
+                            ) : (
+                              <Input
+                                id={key}
+                                value={businessPermitDetails[key]}
+                                onChange={(event) =>
+                                  setBusinessPermitDetails((current) => ({ ...current, [key]: event.target.value }))
+                                }
+                                placeholder={placeholder}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="space-y-2">
-                      <Label htmlFor="request-purpose">Purpose</Label>
+                      <Label htmlFor="request-purpose">Additional Purpose / Notes</Label>
                       <Textarea
                         id="request-purpose"
                         value={requestPurpose}
                         onChange={(event) => setRequestPurpose(event.target.value)}
-                        placeholder="Describe why you need this document"
+                        placeholder={
+                          permitGuidance
+                            ? `Provide any additional notes for ${selectedDocumentType?.name}`
+                            : 'Describe why you need this document'
+                        }
                         className="min-h-[120px]"
                       />
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Alert className="border-emerald-200 bg-emerald-50">
+                    <Alert className={documentRequest?.status === 'declined' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}>
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      <AlertDescription className="ml-2 text-emerald-800">
-                        Your request has been created. Upload the required files below to complete the submission.
+                      <AlertDescription className={documentRequest?.status === 'declined' ? 'ml-2 text-amber-800' : 'ml-2 text-emerald-800'}>
+                        {documentRequest?.status === 'declined'
+                          ? 'This request was declined. You can review the previous uploads below and upload the corrected files again.'
+                          : 'Your request has been created. Upload the required files below to complete the submission.'}
                       </AlertDescription>
                     </Alert>
                     <DocumentUpload
@@ -396,45 +571,65 @@ export default function DocumentsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {documents.map((doc) => (
-            <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{doc.document_type || doc.type || 'Document'}</CardTitle>
-                    <CardDescription>ID: {doc.id || doc.control_number}</CardDescription>
-                  </div>
-                  <Badge
-                    variant={doc.status === 'approved' ? 'default' : doc.status === 'pending' ? 'secondary' : 'destructive'}
-                  >
-                    {doc.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <p>
-                    Status: <span className="font-medium">{doc.status}</span>
-                  </p>
-                  <p>Created: {new Date(doc.created_at).toLocaleDateString()}</p>
-                  {doc.purpose && <p>Purpose: {doc.purpose}</p>}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(doc.status === 'approved' || doc.status === 'released' || doc.status === 'pending') && (
-                    <Button
-                      variant="outline"
-                      onClick={() => generateDocumentQRCode(doc)}
-                      disabled={Boolean(qrGeneratingId && qrGeneratingId === doc.id)}
-                    >
-                      {qrGeneratingId === doc.id ? 'Generating QR…' : 'Generate Pickup QR'}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">My Document Requests</CardTitle>
+            <CardDescription className="text-xs">Track requests, pickup and release status.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="resident-page-table-wrap">
+              <table className="resident-page-table text-sm table-auto">
+                <thead>
+                  <tr className="text-left">
+                    <th className="px-2 py-2">Control #</th>
+                    <th className="px-2 py-2">Type</th>
+                    <th className="px-2 py-2">Purpose</th>
+                    <th className="px-2 py-2">Status</th>
+                    <th className="px-2 py-2">Uploads</th>
+                    <th className="px-2 py-2">Pickup</th>
+                    <th className="px-2 py-2">Released</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="border-t">
+                      <td className="px-2 py-3">{doc.control_number || doc.id}</td>
+                      <td className="px-2 py-3">{doc.document_type || doc.type || 'Document'}</td>
+                      <td className="px-2 py-3">{doc.purpose || '—'}</td>
+                      <td className="px-2 py-3">
+                        <Badge
+                          variant={doc.status === 'approved' ? 'default' : doc.status === 'pending' ? 'secondary' : 'destructive'}
+                        >
+                          {doc.status ? doc.status.charAt(0).toUpperCase() + doc.status.slice(1) : 'Pending'}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-3">
+                        {loadingUploadsForRequest[doc.id] ? (
+                          <span className="text-xs text-muted-foreground">Loading…</span>
+                        ) : requestUploads[doc.id]?.length ? (
+                          <div className="space-y-1">
+                            {requestUploads[doc.id].slice(0, 3).map((upload: any) => (
+                              <div key={upload.id} className="text-xs text-slate-700">
+                                • {upload.file_name || upload.requirement_name || 'Uploaded file'}
+                              </div>
+                            ))}
+                            {requestUploads[doc.id].length > 3 && (
+                              <div className="text-xs text-muted-foreground">+{requestUploads[doc.id].length - 3} more</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No files</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-3">{formatDisplayDate(doc.pickup_time || doc.pickupTime)}</td>
+                      <td className="px-2 py-3">{formatDisplayDate(doc.release_date || doc.releaseDate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>

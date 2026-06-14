@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServer } from '@/lib/supabase-server'
+import { persistProfileImageUpload } from '@/lib/profile-upload'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const contentType = request.headers.get('content-type') || ''
+    let body: Record<string, any> = {}
+    let profileImageFile: File | null = null
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      profileImageFile = formData.get('profileImage') as File | null
+      body = Object.fromEntries(formData.entries())
+    } else {
+      body = await request.json()
+    }
+
     const {
       userId,
       email,
@@ -63,6 +75,17 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       console.error('[v0] Profile creation error:', profileError)
       return NextResponse.json({ error: `Failed to create profile: ${profileError.message}` }, { status: 500 })
+    }
+
+    if (profileImageFile && profileImageFile.size > 0) {
+      try {
+        await persistProfileImageUpload({
+          userId,
+          file: profileImageFile,
+        })
+      } catch (photoError) {
+        console.error('[v0] Profile photo upload error:', photoError)
+      }
     }
 
     console.log('[v0] Resident profile created successfully:', userId)

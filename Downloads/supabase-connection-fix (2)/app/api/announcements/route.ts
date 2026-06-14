@@ -1,9 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { Announcement } from '@/lib/database'
 import { supabaseServer } from '@/lib/supabase-server'
+import { isMissingAnnouncementImageColumnError } from '@/lib/announcement-errors'
+
+async function getBearerToken(request: NextRequest) {
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization')
+  return authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader
+}
+
+async function getCurrentUser(request: NextRequest) {
+  const token = await getBearerToken(request)
+  if (!token) return null
+
+  const { data: userData, error } = await supabaseServer.auth.getUser(token)
+  if (error || !userData?.user) return null
+
+  return userData.user
+}
+
+async function isOfficial(userId: string): Promise<boolean> {
+  const { data: profile } = await supabaseServer
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+
+  return profile?.role === 'official'
+}
+
+async function getAuthenticatedSupabaseClient(request: NextRequest) {
+  const token = await getBearerToken(request)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!token || !supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user.id)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can create announcements' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const {
       title,
@@ -16,6 +81,8 @@ export async function POST(request: NextRequest) {
       expiryDate,
       createdBy,
       author,
+      imageUrl,
+      image_url,
     } = body
 
     if (!title || !content) {
@@ -25,26 +92,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: announcement, error } = await supabaseServer
+    const dbClient = (await getAuthenticatedSupabaseClient(request)) || supabaseServer
+
+    const insertPayload: Record<string, any> = {
+      title,
+      content,
+      priority: priority || 'normal',
+      status: status || 'draft',
+      category: category || null,
+      target_audience: targetAudience || 'all',
+      publish_date: publishDate ? new Date(publishDate) : null,
+      expiry_date: expiryDate ? new Date(expiryDate) : null,
+      author: author || createdBy || 'Official',
+      created_by: createdBy || null,
+    }
+
+    const resolvedImageUrl = imageUrl || image_url || ''
+    if (resolvedImageUrl) {
+      insertPayload.image_url = resolvedImageUrl
+    }
+
+    const { data: announcement, error } = await dbClient
       .from('announcements')
-      .insert([
-        {
-          title,
-          content,
-          priority: priority || 'normal',
-          status: status || 'draft',
-          category: category || null,
-          target_audience: targetAudience || 'all',
-          publish_date: publishDate ? new Date(publishDate) : null,
-          expiry_date: expiryDate ? new Date(expiryDate) : null,
-          author: author || createdBy || 'Official',
-          created_by: createdBy || null,
-        },
-      ])
+      .insert([insertPayload])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (isMissingAnnouncementImageColumnError(error)) {
+        const { image_url: _ignoredImageUrl, ...fallbackPayload } = insertPayload
+        const { data: fallbackAnnouncement, error: fallbackError } = await dbClient
+          .from('announcements')
+          .insert([fallbackPayload])
+          .select()
+          .single()
+
+        if (fallbackError) throw fallbackError
+        return NextResponse.json({ success: true, announcement: fallbackAnnouncement })
+      }
+
+      throw error
+    }
 
     return NextResponse.json({
       success: true,
@@ -85,7 +173,18 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      return NextResponse.json(announcement)
+      const normalizedAnnouncement = {
+        ...announcement,
+        title: String(announcement?.title ?? ''),
+        content: String(announcement?.content ?? ''),
+        priority: announcement?.priority ?? 'normal',
+        status: announcement?.status ?? 'draft',
+        category: announcement?.category ?? null,
+        author: announcement?.author ?? 'Official',
+        views: Number(announcement?.views ?? 0),
+      }
+
+      return NextResponse.json(normalizedAnnouncement)
     }
 
     let query = supabaseServer
@@ -102,7 +201,18 @@ export async function GET(request: NextRequest) {
     const { data: announcements, error } = await query
     if (error) throw error
 
-    return NextResponse.json(announcements)
+    const normalizedAnnouncements = (announcements || []).map((announcement: any) => ({
+      ...announcement,
+      title: String(announcement?.title ?? ''),
+      content: String(announcement?.content ?? ''),
+      priority: announcement?.priority ?? 'normal',
+      status: announcement?.status ?? 'draft',
+      category: announcement?.category ?? null,
+      author: announcement?.author ?? 'Official',
+      views: Number(announcement?.views ?? 0),
+    }))
+
+    return NextResponse.json(normalizedAnnouncements)
   } catch (error) {
     let errorMessage = 'Unknown error'
     if (error instanceof Error) {
@@ -120,6 +230,22 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user.id)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can update announcements' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const {
       id,
@@ -134,6 +260,8 @@ export async function PUT(request: NextRequest) {
       isActive,
       createdBy,
       author,
+      imageUrl,
+      image_url,
     } = body
 
     if (!id) {
@@ -158,8 +286,14 @@ export async function PUT(request: NextRequest) {
     if (isActive !== undefined) updateBody.is_active = isActive
     if (createdBy !== undefined) updateBody.created_by = createdBy
     if (author !== undefined) updateBody.author = author
+    if (imageUrl !== undefined || image_url !== undefined) {
+      const resolvedImageUrl = imageUrl ?? image_url ?? ''
+      updateBody.image_url = resolvedImageUrl || null
+    }
 
-    const { data: announcement, error } = await supabaseServer
+    const dbClient = (await getAuthenticatedSupabaseClient(request)) || supabaseServer
+
+    const { data: announcement, error } = await dbClient
       .from('announcements')
       .update(updateBody)
       .eq('id', id)
@@ -167,6 +301,25 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
+      if (isMissingAnnouncementImageColumnError(error) && 'image_url' in updateBody) {
+        const { image_url: _ignoredImageUrl, ...fallbackBody } = updateBody
+        const { data: fallbackAnnouncement, error: fallbackError } = await dbClient
+          .from('announcements')
+          .update(fallbackBody)
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (fallbackError) {
+          return NextResponse.json(
+            { error: fallbackError.message || 'Announcement not found' },
+            { status: 404 }
+          )
+        }
+
+        return NextResponse.json({ success: true, announcement: fallbackAnnouncement })
+      }
+
       return NextResponse.json(
         { error: error.message || 'Announcement not found' },
         { status: 404 }
@@ -194,6 +347,22 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user.id)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can delete announcements' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const announcementId = searchParams.get('id')
 
@@ -204,7 +373,9 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error } = await supabaseServer
+    const dbClient = (await getAuthenticatedSupabaseClient(request)) || supabaseServer
+
+    const { error } = await dbClient
       .from('announcements')
       .delete()
       .eq('id', announcementId)

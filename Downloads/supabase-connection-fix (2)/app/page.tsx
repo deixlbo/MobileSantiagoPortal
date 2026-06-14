@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
@@ -28,7 +28,6 @@ import {
   BookOpen,
   Briefcase
 } from "lucide-react"
-import FeedbackSection from "@/components/feedback-section"
 import OfficialsDirectory from "@/components/officials-directory"
 
 interface Official {
@@ -48,7 +47,34 @@ interface AnnouncementCard {
   title: string
   date: string
   content: string
+  publish_date?: string | null
+  created_at?: string | null
 }
+
+interface ProjectItem {
+  id: string
+  title: string
+  type?: string
+  location?: string
+  status?: string
+  progress?: number
+  budget?: string | number | null
+}
+
+interface ServiceItem {
+  id: string
+  title: string
+  description: string
+  icon?: string
+}
+
+const serviceList: ServiceItem[] = [
+  { id: "service-1", title: "Request Barangay Clearance", description: "Apply online for your clearance document through the resident portal.", icon: "filetext" },
+  { id: "service-2", title: "Certificate of Residency", description: "Submit a residency certificate request for school, work, or government requirements.", icon: "users" },
+  { id: "service-3", title: "File a Blotter Report", description: "Report peace and order concerns directly to barangay staff.", icon: "shield" },
+  { id: "service-4", title: "Business Permit Inquiries", description: "Check permit requirements and file business-related requests.", icon: "building2" },
+  { id: "service-5", title: "Certificate of Indigency", description: "Request financial assistance documentation for eligible residents.", icon: "briefcase" },
+]
 
 const officials: Official[] = [
   {
@@ -98,67 +124,82 @@ const officials: Official[] = [
   }
 ]
 
-const announcements: AnnouncementCard[] = [
-  {
-    id: "a1",
-    title: "Barangay Hall Open on Saturdays",
-    date: "June 1, 2026",
-    content: "Office hours are extended to serve residents with urgent concerns and document requests."
-  },
-  {
-    id: "a2",
-    title: "Community Clean-Up Drive",
-    date: "May 28, 2026",
-    content: "Join the barangay-led clean-up initiative at the public plaza this weekend."
-  },
-  {
-    id: "a3",
-    title: "Health Consultation Camp",
-    date: "May 18, 2026",
-    content: "Free check-ups and medical advice are available for all residents."
-  }
-]
+const iconMap: Record<string, typeof FileText> = {
+  filetext: FileText,
+  users: Users,
+  shield: Shield,
+  building2: Building2,
+  briefcase: Briefcase,
+  megaphone: Megaphone,
+}
 
-const projects = [
-  {
-    id: "1",
-    title: "Road Improvement Project",
-    type: "Infrastructure",
-    location: "Purok 3",
-    status: "Ongoing",
-    progress: 65,
-    budget: "150,000"
-  },
-  {
-    id: "2",
-    title: "Health Center Renovation",
-    type: "Health",
-    location: "Barangay Center",
-    status: "Completed",
-    progress: 100,
-    budget: "200,000"
-  },
-  {
-    id: "3",
-    title: "Solar Street Lights",
-    type: "Infrastructure",
-    location: "Main Road",
-    status: "Planned",
-    progress: 0,
-    budget: "100,000"
-  }
-]
+const formatDate = (value?: string | null) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
+}
 
-const services = [
-  { icon: FileText, title: "Barangay Clearance", description: "Request clearance for employment, travel, or other purposes" },
-  { icon: Users, title: "Certificate of Residency", description: "Proof of residence in Barangay Santiago" },
-  { icon: Shield, title: "Blotter Report", description: "File incident reports for peace and order concerns" },
-  { icon: Building2, title: "Business Permit", description: "Apply for business clearance and permits" },
-  { icon: Briefcase, title: "Certificate of Indigency", description: "For financial assistance and medical aid" }
-]
+const formatCurrency = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === "") return "N/A"
+  const numberValue = typeof value === "string" ? Number(value) : value
+  if (Number.isNaN(numberValue)) return String(value)
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    maximumFractionDigits: 0,
+  }).format(numberValue)
+}
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [announcements, setAnnouncements] = useState<AnnouncementCard[]>([])
+  const [projects, setProjects] = useState<ProjectItem[]>([])
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [announcementsResponse, projectsResponse] = await Promise.all([
+          fetch('/api/announcements'),
+          fetch('/api/projects'),
+        ])
+
+        if (announcementsResponse.ok) {
+          const data = await announcementsResponse.json()
+          setAnnouncements(Array.isArray(data)
+            ? data.map((item: any) => ({
+                ...item,
+                date: formatDate(item.publish_date || item.created_at),
+              }))
+            : [])
+        } else {
+          setAnnouncements([])
+        }
+
+        if (projectsResponse.ok) {
+          const data = await projectsResponse.json()
+          setProjects(Array.isArray(data) ? data : [])
+        } else {
+          setProjects([])
+        }
+      } catch (error) {
+        console.error('Landing page data load failed:', error)
+        setAnnouncements([])
+        setProjects([])
+      }
+    }
+
+    loadData()
+  }, [])
+
+  const getServiceIcon = (iconName?: string) => {
+    if (!iconName) return FileText
+    return iconMap[iconName.toLowerCase()] || FileText
+  }
 
   return (
     <div className="main-card-container relative min-h-screen bg-white text-slate-950">
@@ -254,7 +295,6 @@ export default function LandingPage() {
               <div className="grid gap-4">
                 {[
                   { label: "Fast Requests", value: "3 min", description: "Complete applications in one place." },
-                  { label: "Secure Documents", value: "Verified", description: "QR-secure official copies." },
                   { label: "Community Support", value: "24/7", description: "Help for residents and officials." },
                 ].map((item) => (
                   <div key={item.label} className="rounded-3xl border border-slate-200/70 bg-slate-50 p-5 shadow-sm">
@@ -284,33 +324,36 @@ export default function LandingPage() {
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">Request important documents and access barangay services online.</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 12 }}
-                whileHover={{ y: -4 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: index * 0.08 }}
-              >
-                <Link href="/resident/login">
-                  <Card className="h-full overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <CardHeader className="p-0">
-                      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-                        <service.icon className="h-7 w-7 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">{service.title}</CardTitle>
-                      <CardDescription className="text-base text-muted-foreground">{service.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0 pt-5">
-                      <Button variant="ghost" className="p-0 h-auto font-semibold text-primary hover:text-primary/80">
-                        Request Now →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+            {serviceList.map((service, index) => {
+              const ServiceIcon = getServiceIcon(service.icon)
+              return (
+                <motion.div
+                  key={service.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileHover={{ y: -4 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.4, delay: index * 0.08 }}
+                >
+                  <Link href="/resident/login">
+                    <Card className="h-full overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                      <CardHeader className="p-0">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+                          <ServiceIcon className="h-7 w-7 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl">{service.title}</CardTitle>
+                        <CardDescription className="text-base text-muted-foreground">{service.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-0 pt-5">
+                        <Button variant="ghost" className="p-0 h-auto font-semibold text-primary hover:text-primary/80">
+                          Request Now →
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </motion.section>
@@ -416,7 +459,7 @@ export default function LandingPage() {
                           <MapPin className="h-4 w-4 flex-shrink-0" /> {project.location}
                         </span>
                         <span className="flex items-center gap-2">
-                          <span className="h-4 w-4 flex-shrink-0">₱</span> {project.budget}
+                          <span className="h-4 w-4 flex-shrink-0">₱</span> {formatCurrency(project.budget)}
                         </span>
                       </div>
                     </div>
@@ -427,11 +470,6 @@ export default function LandingPage() {
           </div>
         </div>
       </motion.section>
-
-      {/* Feedback Section */}
-      <section id="feedback" className="py-12 md:py-16 max-w-7xl mx-auto w-full px-4 sm:px-6">
-        <FeedbackSection />
-      </section>
 
       {/* Officials Section - Now uses dynamic OfficialsDirectory */}
       <section id="officials" className="py-12 md:py-16 bg-muted/10">

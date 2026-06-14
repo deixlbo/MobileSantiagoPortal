@@ -257,6 +257,26 @@
     @apply mx-auto w-full px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10;
   }
 
+  .resident-page-shell {
+    @apply mx-auto w-full max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8;
+  }
+
+  .resident-page-grid {
+    @apply grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2;
+  }
+
+  .resident-page-card {
+    @apply w-full overflow-hidden;
+  }
+
+  .resident-page-table-wrap {
+    @apply w-full overflow-x-auto;
+  }
+
+  .resident-page-table {
+    @apply min-w-[640px] w-full;
+  }
+
   /* Responsive Grid System */
   .grid-responsive-2 {
     @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-8;

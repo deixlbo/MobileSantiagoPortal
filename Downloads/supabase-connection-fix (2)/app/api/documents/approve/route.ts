@@ -1,10 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
+async function getBearerToken(request: NextRequest) {
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization')
+  return authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader
+}
+
+async function getCurrentUser(request: NextRequest) {
+  const token = await getBearerToken(request)
+  if (!token) return null
+
+  const { data: userData, error } = await supabaseServer.auth.getUser(token)
+  if (error || !userData?.user) return null
+
+  return userData.user
+}
+
+async function isOfficial(userId: string): Promise<boolean> {
+  const { data: profile } = await supabaseServer
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+
+  return profile?.role === 'official'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { documentRequestId, action, reason, approvedBy } = body
+
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user.id)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can approve or decline document requests' },
+        { status: 403 }
+      )
+    }
 
     if (!documentRequestId || !action) {
       return NextResponse.json(

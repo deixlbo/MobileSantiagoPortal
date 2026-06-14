@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -10,36 +9,82 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { printElementById } from "@/lib/utils"
-import { deleteBlotter, markUnderInvestigation, resolveBlotter, updateBlotter } from "@/lib/blotter-utils"
-import { exportBlotterToExcel, exportSingleBlotterToExcel } from "@/lib/export-utils"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
-  Search, 
+import {
+  Search,
   Eye,
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Printer,
   FileText,
   RefreshCw,
-  Download
+  Plus,
+  Trash2,
+  Edit2,
+  Loader2,
 } from "lucide-react"
 
-const LocationMap = dynamic(() => import("@/components/location-map"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[240px] w-full flex items-center justify-center bg-gray-100 rounded-lg">
-      <p className="text-xs text-muted-foreground">Loading map...</p>
-    </div>
-  )
-})
+// Types
+interface Blotter {
+  id: string
+  type: string
+  description: string
+  location: string
+  complainant: string
+  complainantAddress?: string
+  respondent?: string
+  respondentAddress?: string
+  residentId?: string
+  status: string
+  filedDate?: string
+  investigationDate?: string
+  mediationScheduledDate?: string
+  hearingDate?: string
+  actionTaken?: string
+  resolution?: string
+  resolutionDate?: string
+  createdBy?: string
+  createdByProfile?: {
+    id: string
+    first_name: string
+    last_name: string
+    position: string
+    role: string
+  }
+}
 
+interface BlotterType {
+  id: string
+  name: string
+  description?: string
+  is_active: boolean
+}
+
+function getBlotterPrintData(blotter: Blotter | null) {
+  if (!blotter) return null
+
+  const raw = blotter as Blotter & Record<string, any>
+
+  return {
+    id: raw.id || '',
+    type: raw.type || raw.incidentType || raw.incident_type || 'Other',
+    description: raw.description || raw.incidentDescription || raw.incident_description || raw.details || '',
+    location: raw.location || raw.incidentLocation || raw.incident_location || raw.locationDetails || '',
+    complainant: raw.complainant || raw.complainantName || raw.complainant_name || raw.reportedBy || raw.reported_by || '',
+    respondent: raw.respondent || raw.respondentName || raw.respondent_name || raw.accused || '',
+    filedDate: raw.filedDate || raw.filed_date || raw.reportedDate || raw.reported_date || raw.incidentDate || raw.incident_date || '',
+    status: raw.status || 'pending-review',
+    actionTaken: raw.actionTaken || raw.action_taken || '',
+    resolution: raw.resolution || raw.resolutionRemarks || raw.resolution_remark || '',
+  }
+}
+
+// Status badge helper
 function getStatusBadge(status: string) {
   switch (status) {
     case "pending-review":
@@ -103,65 +148,185 @@ function getStatusBadge(status: string) {
   }
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-}
-
-// Document Header Component with Logos - Only visible when printing
-function DocumentHeader({ printOnly = false }: { printOnly?: boolean }) {
+// Print header component
+function PrintHeader() {
   return (
-    <div className={`w-full flex items-center justify-between mb-4 p-6 border-b bg-white ${printOnly ? 'hidden print:flex' : ''}`}>
-      {/* Left Logo (saz-logo) */}
+    <div className="hidden print:flex w-full items-center justify-between mb-4 p-6 border-b bg-white">
       <Image src="/logos/saz-logo.png" alt="Municipality Seal" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
-      
-      {/* Center Text */}
       <div className="text-center flex-1 px-4">
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Republic of the Philippines</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Province of Zambales</p>
-        <p className="text-[10px] md:text-xs text-muted-foreground print:text-black">Municipality of San Antonio</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">Barangay Santiago</p>
-        <p className="text-xs md:text-sm font-semibold print:text-black">Office of the Barangay Captain</p>
+        <p className="text-xs text-black">Republic of the Philippines</p>
+        <p className="text-xs text-black">Province of Zambales</p>
+        <p className="text-xs text-black">Municipality of San Antonio</p>
+        <p className="text-sm font-semibold text-black">Barangay Santiago</p>
+        <p className="text-sm font-semibold text-black">Office of the Barangay Captain</p>
       </div>
-      
-      {/* Right Logo (santiago-logo) */}
       <Image src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0" />
     </div>
   )
 }
 
+// Table Component
+function BlottersTable({ 
+  blotters, 
+  loading,
+  onView,
+  onUpdate,
+}: { 
+  blotters: Blotter[]
+  loading: boolean
+  onView: (b: Blotter) => void
+  onUpdate: (b: Blotter) => void
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (blotters.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p className="text-sm">No blotter records found</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {/* Mobile Cards */}
+      <div className="space-y-3 sm:hidden">
+        {blotters.map((blotter) => (
+          <div key={blotter.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">{blotter.id}</p>
+                <p className="text-xs text-slate-600 truncate">{blotter.type}</p>
+                <p className="text-xs text-slate-400 mt-1">{blotter.complainant}</p>
+              </div>
+              <div className="shrink-0">{getStatusBadge(blotter.status)}</div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => onView(blotter)}>
+                <Eye className="h-3 w-3 mr-1" />
+                View
+              </Button>
+              <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => onUpdate(blotter)}>
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Process
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden sm:block rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs md:text-sm">Reference</TableHead>
+              <TableHead className="text-xs md:text-sm hidden sm:table-cell">Type</TableHead>
+              <TableHead className="text-xs md:text-sm hidden md:table-cell">Complainant</TableHead>
+              <TableHead className="text-xs md:text-sm">Status</TableHead>
+              <TableHead className="text-xs md:text-sm">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {blotters.map((blotter) => (
+              <TableRow key={blotter.id}>
+                <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
+                <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>
+                <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden md:table-cell">{blotter.complainant}</TableCell>
+                <TableCell className="py-2 md:py-4">{getStatusBadge(blotter.status)}</TableCell>
+                <TableCell className="py-2 md:py-4">
+                  <div className="flex gap-1">
+                    <Button variant="outline" size="sm" className="h-7 md:h-8 px-2 text-xs" onClick={() => onView(blotter)}>
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" className="h-7 md:h-8 px-2 text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => onUpdate(blotter)}>
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
+  )
+}
+
 export default function OfficialBlottersPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [blotters, setBlotters] = useState<any[]>([])
-  const [selectedBlotter, setSelectedBlotter] = useState<any | null>(null)
-  const [selectedPrintBlotter, setSelectedPrintBlotter] = useState<any | null>(null)
+  const [blotters, setBlotters] = useState<Blotter[]>([])
+  const [selectedBlotter, setSelectedBlotter] = useState<Blotter | null>(null)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
+  const [showTypeDialog, setShowTypeDialog] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState<string>("under-investigation")
   const [actionTaken, setActionTaken] = useState("")
   const [resolution, setResolution] = useState("")
-  const [partiesInvited, setPartiesInvited] = useState(true)
+  const [blotterTypes, setBlotterTypes] = useState<BlotterType[]>([])
+  const [activeTab, setActiveTab] = useState("all")
+  const [typeName, setTypeName] = useState("")
+  const [typeDescription, setTypeDescription] = useState("")
+  const [typeIsActive, setTypeIsActive] = useState(true)
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
 
   const fetchBlotters = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/blotters')
       const data = await response.json()
+      
       if (!response.ok) {
         console.error('Failed to fetch blotters:', data)
         return
       }
+      
       setBlotters(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching blotters:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchBlotterTypes = async () => {
+    try {
+      const response = await fetch('/api/blotters/types')
+      const data = await response.json()
+      if (!response.ok) {
+        console.error('Failed to fetch blotter types:', data)
+        return
+      }
+
+      const normalizedTypes = Array.isArray(data)
+        ? data.map((type: any) => ({
+            id: type.id || type.name,
+            name: type.name || 'Other',
+            description: type.description ?? null,
+            is_active: type.is_active ?? true,
+          }))
+        : []
+
+      setBlotterTypes(normalizedTypes)
+    } catch (error) {
+      console.error('Error fetching blotter types:', error)
     }
   }
 
   useEffect(() => {
-    fetchBlotters()
+    const loadData = async () => {
+      await fetchBlotterTypes()
+      await fetchBlotters()
+    }
+
+    loadData()
   }, [])
 
   useEffect(() => {
@@ -176,22 +341,33 @@ export default function OfficialBlottersPage() {
     b.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.complainant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.respondent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (b.respondent?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     b.location.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const pendingCount = blotters.filter(b => b.status === "pending-review").length
   const processingCount = blotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).length
   const resolvedCount = blotters.filter(b => ["resolved", "dismissed", "escalated"].includes(b.status)).length
+  const visibleTypeTabs = blotterTypes.filter((type) => {
+    if (!type.is_active) return false
+    return filteredBlotters.some((item) => item.type.toLowerCase() === type.name.toLowerCase())
+  })
 
-  const handlePrintBlotter = (blotter: any) => {
-    setSelectedPrintBlotter(blotter)
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        printElementById("print-content")
-        setSelectedPrintBlotter(null)
-      })
-    })
+  const getBlottersForTab = (tab: string) => {
+    if (tab === "all") {
+      return filteredBlotters
+    }
+
+    if (tab === "other") {
+      return filteredBlotters.filter((item) => !blotterTypes.some((type) => type.name.toLowerCase() === item.type.toLowerCase()))
+    }
+
+    const selectedType = blotterTypes.find((type) => `type-${type.id}` === tab)
+    if (!selectedType) {
+      return []
+    }
+
+    return filteredBlotters.filter((item) => item.type.toLowerCase() === selectedType.name.toLowerCase())
   }
 
   const handleSaveUpdate = async () => {
@@ -207,58 +383,29 @@ export default function OfficialBlottersPage() {
     }
 
     try {
-      if (finalStatus === "resolved") {
-        await resolveBlotter(selectedBlotter.id, trimmedResolution, trimmedAction || selectedBlotter.actionTaken || 'Resolution recorded by official.')
-      } else if (finalStatus === "under-investigation") {
-        if (!trimmedAction && !selectedBlotter.actionTaken) {
-          alert('Please describe the action taken to start the investigation.')
-          return
-        }
-        await markUnderInvestigation(selectedBlotter.id)
-      } else {
-        await updateBlotter(selectedBlotter.id, {
-          status: finalStatus as any,
+      const response = await fetch('/api/blotters', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedBlotter.id,
+          status: finalStatus,
           actionTaken: trimmedAction || selectedBlotter.actionTaken,
           resolution: finalStatus === 'resolved' ? trimmedResolution || selectedBlotter.resolution : selectedBlotter.resolution,
-          resolutionDate: finalStatus === 'resolved'
-            ? new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : selectedBlotter.resolutionDate,
-          mediationScheduledDate: finalStatus === 'scheduled-mediation'
-            ? selectedBlotter.mediationScheduledDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : selectedBlotter.mediationScheduledDate,
-          hearingDate: finalStatus === 'ongoing-hearing'
-            ? selectedBlotter.hearingDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : selectedBlotter.hearingDate,
-        })
-      }
-
-      const updatedResolutionDate = finalStatus === "resolved"
-        ? new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-        : selectedBlotter.resolutionDate
-
-      const updatedBlotters = blotters.map((blotter) => {
-        if (blotter.id !== selectedBlotter.id) return blotter
-
-        return {
-          ...blotter,
-          status: finalStatus as any,
-          actionTaken: trimmedAction || blotter.actionTaken,
-          resolution: finalStatus === 'resolved' ? trimmedResolution || blotter.resolution : blotter.resolution,
-          resolutionDate: updatedResolutionDate,
-          mediationScheduledDate: finalStatus === 'scheduled-mediation'
-            ? blotter.mediationScheduledDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : blotter.mediationScheduledDate,
-          hearingDate: finalStatus === 'ongoing-hearing'
-            ? blotter.hearingDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : blotter.hearingDate,
-          resolutionDocument: finalStatus === 'resolved'
-            ? blotter.resolutionDocument ?? `/documents/resolution-${blotter.id}.pdf`
-            : blotter.resolutionDocument,
-        }
+          resolutionDate: finalStatus === 'resolved' ? new Date().toISOString() : selectedBlotter.resolutionDate,
+          mediationScheduledDate: finalStatus === 'scheduled-mediation' ? new Date().toISOString() : selectedBlotter.mediationScheduledDate,
+          hearingDate: finalStatus === 'ongoing-hearing' ? new Date().toISOString() : selectedBlotter.hearingDate,
+        }),
       })
 
-      setBlotters(updatedBlotters)
-      setSelectedBlotter(updatedBlotters.find((b) => b.id === selectedBlotter.id) ?? null)
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to update blotter')
+        return
+      }
+
+      await fetchBlotters()
+      setSelectedBlotter(null)
       setActionTaken("")
       setResolution("")
       setShowUpdateDialog(false)
@@ -269,12 +416,22 @@ export default function OfficialBlottersPage() {
   }
 
   const handleDeleteBlotter = async (blotterId: string) => {
-    if (!confirm('Are you sure you want to delete this blotter? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this blotter?')) {
       return
     }
 
     try {
-      await deleteBlotter(blotterId)
+      const response = await fetch(`/api/blotters?id=${blotterId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to delete blotter')
+        return
+      }
+
       setBlotters(blotters.filter(b => b.id !== blotterId))
       setSelectedBlotter(null)
     } catch (error) {
@@ -283,80 +440,143 @@ export default function OfficialBlottersPage() {
     }
   }
 
-  // Export all blotters to Excel
-  const handleExportAllBlotters = () => {
-    const blotterData = blotters.map(b => ({
-      id: b.id,
-      type: b.type,
-      description: b.description,
-      location: b.location,
-      complainant: b.complainant,
-      complainantAddress: b.complainantAddress,
-      respondent: b.respondent,
-      respondentAddress: b.respondentAddress,
-      status: b.status,
-      filedDate: b.filedDate,
-      investigationDate: b.investigationDate,
-      mediationScheduledDate: b.mediationScheduledDate,
-      hearingDate: b.hearingDate,
-      actionTaken: b.actionTaken,
-      resolution: b.resolution,
-      resolutionDate: b.resolutionDate
-    }))
-    
-    const today = new Date().toISOString().split('T')[0]
-    exportBlotterToExcel(blotterData, `Blotter_Records_${today}.xlsx`)
+  const getAuthHeaders = (): HeadersInit => {
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    }
+
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`
+    }
+
+    return headers
   }
 
-  // Export single blotter to Excel
-  const handleExportSingleBlotter = (blotter: any) => {
-    exportSingleBlotterToExcel({
-      id: blotter.id,
-      type: blotter.type,
-      description: blotter.description,
-      location: blotter.location,
-      complainant: blotter.complainant,
-      complainantAddress: blotter.complainantAddress,
-      respondent: blotter.respondent,
-      respondentAddress: blotter.respondentAddress,
-      status: blotter.status,
-      filedDate: blotter.filedDate,
-      investigationDate: blotter.investigationDate,
-      mediationScheduledDate: blotter.mediationScheduledDate,
-      hearingDate: blotter.hearingDate,
-      actionTaken: blotter.actionTaken,
-      resolution: blotter.resolution,
-      resolutionDate: blotter.resolutionDate
-    })
+  const handleSaveType = async () => {
+    if (!typeName.trim()) {
+      alert('Please enter a blotter type name')
+      return
+    }
+
+    try {
+      if (editingTypeId) {
+        const response = await fetch('/api/blotters/types', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            id: editingTypeId,
+            name: typeName.trim(),
+            description: typeDescription.trim() || null,
+            is_active: typeIsActive
+          })
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          alert(`Failed to update type: ${error.error}`)
+          return
+        }
+      } else {
+        const response = await fetch('/api/blotters/types', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            name: typeName.trim(),
+            description: typeDescription.trim() || null
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          alert(`Failed to create type: ${error.error}`)
+          return
+        }
+      }
+
+      await fetchBlotterTypes()
+      setTypeName("")
+      setTypeDescription("")
+      setTypeIsActive(true)
+      setEditingTypeId(null)
+    } catch (error) {
+      console.error('Error saving type:', error)
+      alert('Failed to save blotter type')
+    }
+  }
+
+  const handleEditType = (type: BlotterType) => {
+    setTypeName(type.name)
+    setTypeDescription(type.description || "")
+    setTypeIsActive(type.is_active)
+    setEditingTypeId(type.id)
+  }
+
+  const handleDeleteType = async (typeId: string) => {
+    if (!confirm('Are you sure you want to delete this blotter type?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/blotters/types?id=${typeId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Failed to delete type: ${error.error}`)
+        return
+      }
+
+      setBlotterTypes(blotterTypes.filter(t => t.id !== typeId))
+    } catch (error) {
+      console.error('Error deleting type:', error)
+      alert('Failed to delete blotter type')
+    }
+  }
+
+  const openTypeDialog = async () => {
+    setTypeName("")
+    setTypeDescription("")
+    setTypeIsActive(true)
+    setEditingTypeId(null)
+    await fetchBlotterTypes()
+    setShowTypeDialog(true)
   }
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-4 md:space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-4 md:space-y-6 p-4 md:p-6"
     >
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Print Header */}
+      <PrintHeader />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">Blotter Records</h1>
           <p className="text-xs md:text-sm text-muted-foreground">Manage and process incident reports</p>
         </div>
-        <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm" onClick={handleExportAllBlotters}>
-          <Download className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-          <span className="hidden md:inline">Export</span>
-        </Button>
-      </motion.div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="w-fit h-8 md:h-9 text-xs md:text-sm" onClick={openTypeDialog}>
+            <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+            <span className="hidden md:inline">Types</span>
+          </Button>
+        </div>
+      </div>
 
-      {/* Stats */}
-      <motion.div variants={itemVariants} className="grid grid-cols-4 gap-2 md:gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
         <Card>
           <CardContent className="p-2 md:p-4">
-            <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="rounded-lg bg-blue-100 p-1.5 md:p-2">
                 <FileText className="h-4 w-4 md:h-5 md:w-5 text-blue-700" />
               </div>
-              <div className="text-center md:text-left">
+              <div>
                 <p className="text-lg md:text-2xl font-bold">{pendingCount}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Pending</p>
               </div>
@@ -365,11 +585,11 @@ export default function OfficialBlottersPage() {
         </Card>
         <Card>
           <CardContent className="p-2 md:p-4">
-            <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="rounded-lg bg-amber-100 p-1.5 md:p-2">
                 <Clock className="h-4 w-4 md:h-5 md:w-5 text-amber-700" />
               </div>
-              <div className="text-center md:text-left">
+              <div>
                 <p className="text-lg md:text-2xl font-bold">{processingCount}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Processing</p>
               </div>
@@ -378,11 +598,11 @@ export default function OfficialBlottersPage() {
         </Card>
         <Card>
           <CardContent className="p-2 md:p-4">
-            <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="rounded-lg bg-emerald-100 p-1.5 md:p-2">
                 <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-emerald-700" />
               </div>
-              <div className="text-center md:text-left">
+              <div>
                 <p className="text-lg md:text-2xl font-bold">{resolvedCount}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Resolved</p>
               </div>
@@ -391,21 +611,21 @@ export default function OfficialBlottersPage() {
         </Card>
         <Card>
           <CardContent className="p-2 md:p-4">
-            <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="rounded-lg bg-primary/10 p-1.5 md:p-2">
                 <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
-              <div className="text-center md:text-left">
+              <div>
                 <p className="text-lg md:text-2xl font-bold">{blotters.length}</p>
                 <p className="text-[10px] md:text-sm text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Search */}
-      <motion.div variants={itemVariants} className="relative">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input 
           placeholder="Search blotter records..." 
@@ -413,243 +633,63 @@ export default function OfficialBlottersPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </motion.div>
+      </div>
 
       {/* Blotters Table */}
-      <motion.div variants={itemVariants}>
-        <Card>
-          <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
-            <CardTitle className="text-base md:text-lg">Blotter Records</CardTitle>
-            <CardDescription className="text-xs md:text-sm">Process and resolve incident reports</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6 pt-0">
-            <Tabs defaultValue="pending">
-              <TabsList className="h-8 md:h-9 w-full justify-start overflow-x-auto">
-                <TabsTrigger value="pending" className="text-xs md:text-sm px-2 md:px-3">Pending ({pendingCount})</TabsTrigger>
-                <TabsTrigger value="processing" className="text-xs md:text-sm px-2 md:px-3">Processing ({processingCount})</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs md:text-sm px-2 md:px-3">All Records</TabsTrigger>
-              </TabsList>
-              <TabsContent value="pending" className="mt-3 md:mt-4">
-                {/* Mobile stacked cards for pending blotters */}
-                <div className="space-y-3 sm:hidden">
-                  {filteredBlotters.filter(b => b.status === "pending-review").map((blotter) => (
-                    <div key={blotter.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{blotter.id} — {blotter.type}</p>
-                          <p className="text-xs text-slate-600 truncate">{blotter.complainant} vs {blotter.respondent}</p>
-                          <p className="text-xs text-slate-400 mt-1">{blotter.location}</p>
-                        </div>
-                        <div className="shrink-0">{getStatusBadge(blotter.status)}</div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedBlotter(blotter)}>
-                          View
-                        </Button>
-                        <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setSelectedBlotter(blotter); setShowUpdateDialog(true); }}>
-                          Process
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      <Card>
+        <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
+          <CardTitle className="text-base md:text-lg">Blotter Records</CardTitle>
+          <CardDescription className="text-xs md:text-sm">Process and resolve incident reports</CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 md:p-6 pt-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="h-8 md:h-9 w-full justify-start overflow-x-auto">
+              <TabsTrigger value="all" className="text-xs md:text-sm px-2 md:px-3">All Blotters ({filteredBlotters.length})</TabsTrigger>
+              {visibleTypeTabs.map((type) => (
+                <TabsTrigger key={`type-${type.id}`} value={`type-${type.id}`} className="text-xs md:text-sm px-2 md:px-3">
+                  {type.name} ({getBlottersForTab(`type-${type.id}`).length})
+                </TabsTrigger>
+              ))}
+              {getBlottersForTab("other").length > 0 && (
+                <TabsTrigger value="other" className="text-xs md:text-sm px-2 md:px-3">Other ({getBlottersForTab("other").length})</TabsTrigger>
+              )}
+            </TabsList>
 
-                <div className="hidden sm:block rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs md:text-sm">Reference</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden md:table-cell">Complainant</TableHead>
-                        <TableHead className="text-xs md:text-sm">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredBlotters.filter(b => b.status === "pending-review").map((blotter) => (
-                        <TableRow key={blotter.id}>
-                          <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
-                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>
-                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden md:table-cell">{blotter.complainant}</TableCell>
-                          <TableCell className="py-2 md:py-4">
-                            <div className="flex gap-1 md:gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 md:px-3 text-xs"
-                                onClick={() => setSelectedBlotter(blotter)}
-                              >
-                                <Eye className="h-3 w-3 md:mr-1" />
-                                <span className="hidden md:inline">View</span>
-                              </Button>
-                              <Button 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 md:px-3 text-xs bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => {
-                                  setSelectedBlotter(blotter)
-                                  setShowUpdateDialog(true)
-                                }}
-                              >
-                                <RefreshCw className="h-3 w-3 md:mr-1" />
-                                <span className="hidden md:inline">Process</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+            <TabsContent value="all" className="mt-3 md:mt-4">
+              <BlottersTable
+                blotters={getBlottersForTab("all")}
+                loading={loading}
+                onView={setSelectedBlotter}
+                onUpdate={(b) => { setSelectedBlotter(b); setShowUpdateDialog(true); }}
+              />
+            </TabsContent>
+
+            {visibleTypeTabs.map((type) => (
+              <TabsContent key={`type-content-${type.id}`} value={`type-${type.id}`} className="mt-3 md:mt-4">
+                <BlottersTable
+                  blotters={getBlottersForTab(`type-${type.id}`)}
+                  loading={loading}
+                  onView={setSelectedBlotter}
+                  onUpdate={(b) => { setSelectedBlotter(b); setShowUpdateDialog(true); }}
+                />
               </TabsContent>
-              <TabsContent value="processing" className="mt-3 md:mt-4">
-                {/* Mobile stacked cards for processing blotters */}
-                <div className="space-y-3 sm:hidden">
-                  {filteredBlotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
-                    <div key={blotter.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{blotter.id} — {blotter.type}</p>
-                          <p className="text-xs text-slate-600 truncate">{blotter.complainant} vs {blotter.respondent}</p>
-                          <p className="text-xs text-slate-400 mt-1">{blotter.location}</p>
-                        </div>
-                        <div className="shrink-0">{getStatusBadge(blotter.status)}</div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedBlotter(blotter)}>View</Button>
-                        <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setSelectedBlotter(blotter); setShowUpdateDialog(true); }}>Process</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            ))}
 
-                <div className="hidden sm:block rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs md:text-sm">Reference</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden md:table-cell">Parties</TableHead>
-                        <TableHead className="text-xs md:text-sm">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredBlotters.filter(b => ["under-investigation", "scheduled-mediation", "ongoing-hearing"].includes(b.status)).map((blotter) => (
-                        <TableRow key={blotter.id}>
-                          <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
-                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>
-                          <TableCell className="py-2 md:py-4 hidden md:table-cell">
-                            <div className="text-xs md:text-sm">
-                              <p>{blotter.complainant} vs</p>
-                              <p className="text-muted-foreground">{blotter.respondent}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2 md:py-4">
-                            <div className="flex gap-1 md:gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 md:px-3 text-xs"
-                                onClick={() => setSelectedBlotter(blotter)}
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 md:px-3 text-xs bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => {
-                                  setSelectedBlotter(blotter)
-                                  setShowUpdateDialog(true)
-                                }}
-                              >
-                                <RefreshCw className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+            {getBlottersForTab("other").length > 0 && (
+              <TabsContent value="other" className="mt-3 md:mt-4">
+                <BlottersTable
+                  blotters={getBlottersForTab("other")}
+                  loading={loading}
+                  onView={setSelectedBlotter}
+                  onUpdate={(b) => { setSelectedBlotter(b); setShowUpdateDialog(true); }}
+                />
               </TabsContent>
-              <TabsContent value="all" className="mt-3 md:mt-4">
-                {/* Mobile stacked cards for all blotters */}
-                <div className="space-y-3 sm:hidden">
-                  {filteredBlotters.map((blotter) => (
-                    <div key={blotter.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{blotter.id} — {blotter.type}</p>
-                          <p className="text-xs text-slate-600 truncate">{blotter.complainant} vs {blotter.respondent}</p>
-                          <p className="text-xs text-slate-400 mt-1">{blotter.location}</p>
-                        </div>
-                        <div className="shrink-0">{getStatusBadge(blotter.status)}</div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedBlotter(blotter)}>View</Button>
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleExportSingleBlotter(blotter)}>Export</Button>
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handlePrintBlotter(blotter)}>Print</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            )}
+          </Tabs>
+        </CardContent>
+      </Card>
 
-                <div className="hidden sm:block rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs md:text-sm">Reference</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="text-xs md:text-sm hidden md:table-cell">Complainant</TableHead>
-                        <TableHead className="text-xs md:text-sm">Status</TableHead>
-                        <TableHead className="text-xs md:text-sm">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredBlotters.map((blotter) => (
-                        <TableRow key={blotter.id}>
-                          <TableCell className="font-medium text-xs md:text-sm py-2 md:py-4">{blotter.id}</TableCell>
-                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden sm:table-cell">{blotter.type}</TableCell>
-                          <TableCell className="text-xs md:text-sm py-2 md:py-4 hidden md:table-cell">{blotter.complainant}</TableCell>
-                          <TableCell className="py-2 md:py-4">{getStatusBadge(blotter.status)}</TableCell>
-                          <TableCell className="py-2 md:py-4">
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 text-xs"
-                                onClick={() => setSelectedBlotter(blotter)}
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 text-xs"
-                                onClick={() => handleExportSingleBlotter(blotter)}
-                              >
-                                <Download className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-7 md:h-8 px-2 text-xs"
-                                onClick={() => handlePrintBlotter(blotter)}
-                              >
-                                <Printer className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Blotter Details Modal */}
+      {/* View Dialog */}
       <Dialog open={!!selectedBlotter && !showUpdateDialog} onOpenChange={() => setSelectedBlotter(null)}>
         <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-lg bg-white">
           <DialogHeader>
@@ -672,7 +712,7 @@ export default function OfficialBlottersPage() {
                   </div>
                   <div>
                     <p className="text-[10px] md:text-sm text-muted-foreground">Date Reported</p>
-                    <p className="font-medium text-sm">{selectedBlotter.filedDate || selectedBlotter.date}</p>
+                    <p className="font-medium text-sm">{selectedBlotter.filedDate}</p>
                   </div>
                   <div>
                     <p className="text-[10px] md:text-sm text-muted-foreground">Complainant</p>
@@ -680,7 +720,7 @@ export default function OfficialBlottersPage() {
                   </div>
                   <div>
                     <p className="text-[10px] md:text-sm text-muted-foreground">Respondent</p>
-                    <p className="font-medium text-sm">{selectedBlotter.respondent}</p>
+                    <p className="font-medium text-sm">{selectedBlotter.respondent || 'N/A'}</p>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-[10px] md:text-sm text-muted-foreground">Location</p>
@@ -691,26 +731,12 @@ export default function OfficialBlottersPage() {
                     <p className="font-medium text-sm">{selectedBlotter.description}</p>
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {selectedBlotter.investigationDate && (
-                    <div>
-                      <p className="text-[10px] md:text-sm text-muted-foreground">Investigation Date</p>
-                      <p className="font-medium text-sm">{selectedBlotter.investigationDate}</p>
-                    </div>
-                  )}
-                  {selectedBlotter.mediationScheduledDate && (
-                    <div>
-                      <p className="text-[10px] md:text-sm text-muted-foreground">Mediation Scheduled</p>
-                      <p className="font-medium text-sm">{selectedBlotter.mediationScheduledDate}</p>
-                    </div>
-                  )}
-                  {selectedBlotter.hearingDate && (
-                    <div>
-                      <p className="text-[10px] md:text-sm text-muted-foreground">Hearing Date</p>
-                      <p className="font-medium text-sm">{selectedBlotter.hearingDate}</p>
-                    </div>
-                  )}
-                </div>
+                {selectedBlotter.investigationDate && (
+                  <div>
+                    <p className="text-[10px] md:text-sm text-muted-foreground">Investigation Date</p>
+                    <p className="font-medium text-sm">{selectedBlotter.investigationDate}</p>
+                  </div>
+                )}
                 {selectedBlotter.actionTaken && (
                   <div className="border-t pt-3">
                     <p className="text-[10px] md:text-sm text-muted-foreground">Action Taken</p>
@@ -732,20 +758,12 @@ export default function OfficialBlottersPage() {
                 Update
               </Button>
             )}
-            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => selectedBlotter && handleExportSingleBlotter(selectedBlotter)}>
-              <Download className="mr-1 h-3 w-3" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => selectedBlotter && handlePrintBlotter(selectedBlotter)}>
-              <Printer className="mr-1 h-3 w-3" />
-              Print
-            </Button>
             <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setSelectedBlotter(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Update Status Dialog */}
+      {/* Update Dialog */}
       <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
         <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-lg bg-white">
           <DialogHeader>
@@ -786,22 +804,11 @@ export default function OfficialBlottersPage() {
             <div className="space-y-1">
               <Label className="text-xs md:text-sm">Resolution (if resolved)</Label>
               <Textarea 
-                placeholder="Enter resolution details if the case is resolved..."
+                placeholder="Enter resolution details..."
                 className="text-sm min-h-[60px]"
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
               />
-            </div>
-            <div className="flex items-start gap-2 pt-2">
-              <Checkbox
-                id="invite-parties"
-                checked={partiesInvited}
-                onCheckedChange={(checked) => setPartiesInvited(!!checked)}
-              />
-              <div className="text-xs">
-                <Label htmlFor="invite-parties" className="font-medium">Invite both parties</Label>
-                <p className="text-muted-foreground">Confirm the complainant and respondent are notified for mediation and resolution.</p>
-              </div>
             </div>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
@@ -816,115 +823,123 @@ export default function OfficialBlottersPage() {
             <div className="flex gap-2 flex-1 sm:flex-initial">
               <Button variant="outline" size="sm" className="flex-1 sm:flex-initial" onClick={() => setShowUpdateDialog(false)}>Cancel</Button>
               <Button size="sm" className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700" onClick={handleSaveUpdate}>
-                Save & Notify
+                Save
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {selectedPrintBlotter && (
-      <div id="print-content" className="print-only hidden">
-        <div className="rounded-3xl border-4 border-black bg-white p-8 text-black shadow-2xl">
-          {/* Header with Logos */}
-          <div className="flex items-center justify-between mb-4">
-            <img src="/logos/saz-logo.png" alt="Municipality Seal" className="w-16 h-16 object-cover" />
-            <div className="text-center flex-1 px-4">
-              <p className="text-xs">Republic of the Philippines</p>
-              <p className="text-xs">Province of Zambales</p>
-              <p className="text-xs">Municipality of San Antonio</p>
-              <p className="text-sm font-bold mt-1">BARANGAY SANTIAGO</p>
-            </div>
-            <img src="/logos/santiago-logo.png" alt="Barangay Santiago Logo" className="w-16 h-16 object-cover" />
-          </div>
-          <div className="border-b-2 border-black mb-4"></div>
-          <h2 className="text-lg font-bold text-center mb-6">BARANGAY BLOTTER REPORT</h2>
-
-            {/* Blotter Number & Status */}
-            <div className="mb-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Blotter Number</p>
-                  <p className="font-bold">{selectedPrintBlotter.id}</p>
+      {/* Type Management Dialog */}
+      <Dialog open={showTypeDialog} onOpenChange={setShowTypeDialog}>
+        <DialogContent className="w-[95vw] sm:w-auto max-h-[95vh] overflow-auto max-w-2xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base md:text-lg">Manage Blotter Types</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              Create, edit, or delete blotter incident types
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm">Type Name</Label>
+                  <Input
+                    placeholder="e.g., Theft, Dispute, Accident..."
+                    value={typeName}
+                    onChange={(e) => setTypeName(e.target.value)}
+                    className="text-sm"
+                  />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Status</p>
-                  <p className="font-bold">{selectedPrintBlotter.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm">Description</Label>
+                  <Textarea                    placeholder="Describe this incident type..."
+                    value={typeDescription}
+                    onChange={(e) => setTypeDescription(e.target.value)}
+                    className="text-sm min-h-[60px]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="type-active"
+                    checked={typeIsActive}
+                    onCheckedChange={(checked) => setTypeIsActive(!!checked)}
+                  />
+                  <Label htmlFor="type-active" className="text-xs md:text-sm font-medium cursor-pointer">
+                    Active
+                  </Label>
                 </div>
               </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setTypeName("")
+                    setTypeDescription("")
+                    setTypeIsActive(true)
+                    setEditingTypeId(null)
+                  }}
+                  disabled={!editingTypeId}
+                >
+                  Clear
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 flex-1"
+                  onClick={handleSaveType}
+                >
+                  {editingTypeId ? 'Update Type' : 'Add Type'}
+                </Button>
+              </div>
             </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Incident Details Table */}
-            <div className="mb-6">
-              <h3 className="font-bold text-sm mb-3 border-b border-gray-300 pb-1">INCIDENT DETAILS</h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold w-1/3">Incident Type</td>
-                    <td className="py-2">{selectedPrintBlotter.type}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Date Reported</td>
-                    <td className="py-2">{selectedPrintBlotter.filedDate}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Complainant</td>
-                    <td className="py-2">{selectedPrintBlotter.complainant}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Respondent</td>
-                    <td className="py-2">{selectedPrintBlotter.respondent}</td>
-                  </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2 font-semibold">Location</td>
-                    <td className="py-2">{selectedPrintBlotter.location}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Incident Description */}
-            <div className="mb-6">
-              <h3 className="font-bold text-sm mb-2">INCIDENT DESCRIPTION</h3>
-              <p className="text-sm leading-relaxed">{selectedPrintBlotter.description}</p>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Initial Action Taken */}
-            <div className="mb-6">
-              <h3 className="font-bold text-sm mb-2">INITIAL ACTION TAKEN</h3>
-              <p className="text-sm">{selectedPrintBlotter.actionTaken || "Pending initial assessment and action."}</p>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Resolution / Remarks */}
-            <div className="mb-8">
-              <h3 className="font-bold text-sm mb-2">RESOLUTION / REMARKS</h3>
-              <p className="text-sm">{selectedPrintBlotter.resolution || "Pending review and settlement conference between the complainant and respondent."}</p>
-            </div>
-
-            <div className="border-b border-gray-400 my-4"></div>
-
-            {/* Signatures */}
-            <div className="mt-10">
-              <p className="text-xs mb-4">Prepared by:</p>
-              <div className="border-b border-black w-48 mb-1 h-6"></div>
-              <p className="font-bold text-sm">Barangay Secretary</p>
-              
-              <p className="text-xs mb-4 mt-8">Noted by:</p>
-              <div className="border-b border-black w-48 mb-1 h-6"></div>
-              <p className="font-bold text-sm">Punong Barangay</p>
-              <p className="text-xs text-gray-600">Barangay Santiago</p>
+            <div className="space-y-2">
+              <Label className="text-xs md:text-sm font-medium">Existing Types ({blotterTypes.length})</Label>
+              <div className="border rounded-lg bg-white max-h-[300px] overflow-y-auto">
+                {blotterTypes.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No blotter types yet
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {blotterTypes.map((type) => (
+                      <div key={type.id} className="flex items-start justify-between gap-3 p-3 border-b last:border-b-0 hover:bg-gray-50">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">{type.name}</p>
+                          {type.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">{type.description}</p>
+                          )}
+                          <div className="flex gap-2 mt-1">
+                            {type.is_active ? (
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">Active</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">Inactive</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditType(type)}>
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteType(type.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowTypeDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </motion.div>
   )
 }

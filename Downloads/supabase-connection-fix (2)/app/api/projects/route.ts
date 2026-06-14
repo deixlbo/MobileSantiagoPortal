@@ -1,8 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
+async function getBearerToken(request: NextRequest) {
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization')
+  return authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader
+}
+
+async function getCurrentUser(request: NextRequest) {
+  const token = await getBearerToken(request)
+  if (!token) return null
+
+  const { data: userData, error } = await supabaseServer.auth.getUser(token)
+  if (error || !userData?.user) return null
+
+  return userData.user
+}
+
+async function getUserRole(user: { id: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null): Promise<string | null> {
+  if (!user) return null
+
+  const metadataRole = user.user_metadata?.role ?? user.app_metadata?.role
+  if (typeof metadataRole === 'string' && metadataRole.trim()) {
+    return metadataRole.trim().toLowerCase()
+  }
+
+  const { data: profile, error } = await supabaseServer
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (error || !profile?.role) return null
+  return String(profile.role).toLowerCase()
+}
+
+async function isOfficial(user: { id: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null): Promise<boolean> {
+  const role = await getUserRole(user)
+  return role === 'official'
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can create projects' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const {
       title,
@@ -93,7 +147,7 @@ export async function POST(request: NextRequest) {
           remarks: remarks || '',
           created_at: new Date(),
           updated_at: new Date(),
-          created_by: createdBy || null,
+          created_by: user.id,
         },
       ])
       .select()
@@ -156,47 +210,106 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { id, progress, status, spent, startDate, targetCompletion, ...updates } = body
-
-    const { data: project, error } = await supabaseServer
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single()
-    if (error) {
+    const user = await getCurrentUser(request)
+    if (!user) {
       return NextResponse.json(
-        { error: error.message || 'Project not found' },
-        { status: 404 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
-    if (progress !== undefined) {
-      project.progress = Math.min(100, Math.max(0, progress))
-    }
-    if (status) {
-      project.status = status
-    }
-    if (spent !== undefined) {
-      project.spent = spent
+    const isOfficialUser = await isOfficial(user)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can update projects' },
+        { status: 403 }
+      )
     }
 
-    Object.assign(project, updates)
-    project.updatedAt = new Date()
-
-    const updatePayload: any = {
-      ...updates,
-      progress: progress !== undefined ? Math.min(100, Math.max(0, progress)) : undefined,
+    const body = await request.json()
+    const {
+      id,
+      progress,
       status,
       spent,
+      budget,
+      startDate,
+      targetCompletion,
+      endDate,
+      ...updates
+    } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Project id is required' },
+        { status: 400 }
+      )
+    }
+
+    const parsedBudget = budget !== undefined && budget !== null && budget !== ''
+      ? Number(String(budget).replace(/,/g, ''))
+      : undefined
+    const parsedSpent = spent !== undefined && spent !== null && spent !== ''
+      ? Number(String(spent).replace(/,/g, ''))
+      : undefined
+
+    const updatePayload: Record<string, unknown> = {
       updated_at: new Date(),
     }
 
+    if (progress !== undefined) {
+      updatePayload.progress = Math.min(100, Math.max(0, Number(progress)))
+    }
+    if (status !== undefined) {
+      updatePayload.status = status
+    }
+    if (parsedBudget !== undefined && !Number.isNaN(parsedBudget)) {
+      updatePayload.budget = parsedBudget
+    }
+    if (parsedSpent !== undefined && !Number.isNaN(parsedSpent)) {
+      updatePayload.spent = parsedSpent
+    }
+
+    const fieldMap: Record<string, string> = {
+      projectHead: 'project_head',
+      projectHeadPosition: 'project_head_position',
+      targetCompletion: 'target_completion',
+      endDate: 'target_completion',
+      startDate: 'start_date',
+    }
+
+    const allowedColumns = new Set([
+      'title',
+      'description',
+      'type',
+      'location',
+      'status',
+      'progress',
+      'budget',
+      'spent',
+      'source',
+      'project_head',
+      'project_head_position',
+      'beneficiaries',
+      'remarks',
+      'start_date',
+      'target_completion',
+    ])
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || ['imageUrl', 'image_url'].includes(key)) return
+      const mappedKey = fieldMap[key] || key
+      if (!allowedColumns.has(mappedKey)) return
+      updatePayload[mappedKey] = value
+    })
+
     if (startDate !== undefined) {
-      updatePayload.start_date = startDate ? new Date(startDate) : null
+      updatePayload.start_date = startDate ? new Date(String(startDate)) : null
     }
     if (targetCompletion !== undefined) {
-      updatePayload.target_completion = targetCompletion ? new Date(targetCompletion) : null
+      updatePayload.target_completion = targetCompletion ? new Date(String(targetCompletion)) : null
+    } else if (endDate !== undefined) {
+      updatePayload.target_completion = endDate ? new Date(String(endDate)) : null
     }
 
     const { data: updatedProject, error: updateError } = await supabaseServer
@@ -214,7 +327,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating project:', error)
     return NextResponse.json(
-      { error: 'Failed to update project' },
+      { error: error instanceof Error ? error.message : 'Failed to update project' },
       { status: 500 }
     )
   }
@@ -222,6 +335,22 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const isOfficialUser = await isOfficial(user)
+    if (!isOfficialUser) {
+      return NextResponse.json(
+        { error: 'Only officials can delete projects' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('id')
 

@@ -56,6 +56,7 @@ export default function AdminResidentManagementPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResidents()
@@ -159,13 +160,14 @@ export default function AdminResidentManagementPage() {
         return
       }
 
-      const newResident = result.profile
+      const profile = result?.data?.profile
+      const newResident = profile
         ? {
-            id: result.profile.id,
-            first_name: result.profile.first_name,
-            last_name: result.profile.last_name,
-            purok: result.profile.purok,
-            verification_status: result.profile.verification_status || 'pending',
+            id: profile.id,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            purok: profile.purok,
+            verification_status: profile.verification_status || 'pending',
           }
         : {
             id: `new-${Date.now()}`,
@@ -194,6 +196,40 @@ export default function AdminResidentManagementPage() {
       toast.error('Failed to create resident account')
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const updateResidentVerificationStatus = async (id: string | undefined, nextStatus: string) => {
+    if (!id?.trim()) {
+      toast.error('Resident ID is required')
+      return
+    }
+
+    setUpdatingStatusId(id)
+
+    try {
+      const response = await fetch('/api/residents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, verificationStatus: nextStatus }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || result?.error) {
+        throw new Error(result?.error || 'Failed to update resident status')
+      }
+
+      setResidents((current) =>
+        current.map((resident) =>
+          resident.id === id ? { ...resident, verification_status: nextStatus } : resident
+        )
+      )
+      toast.success(`Resident marked as ${nextStatus}`)
+    } catch (error) {
+      console.error('Error updating resident status:', error)
+      toast.error(String(getErrorMessage(error, 'Failed to update resident status')))
+    } finally {
+      setUpdatingStatusId(null)
     }
   }
 
@@ -271,7 +307,7 @@ export default function AdminResidentManagementPage() {
           <p className="text-sm font-medium text-slate-500">Resident Management</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Manage resident database</h1>
           <p className="max-w-2xl text-sm text-slate-600 mt-2">
-            View residents, edit info, delete entries and export data.
+            View residents, update verification status, delete entries and export data.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -319,16 +355,33 @@ export default function AdminResidentManagementPage() {
                         {resident.verification_status || 'Pending'}
                       </Badge>
                     </div>
-                    <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center">
-                      <Button 
-                        size="sm" 
-                        variant="destructive" 
-                        className="w-full" 
-                        onClick={() => deleteResident(resident.id)}
-                        disabled={!resident.id}
-                      >
-                        Delete
-                      </Button>
+                    <div className="mt-4 space-y-2">
+                      <div className="text-xs font-medium text-slate-500">Verification status</div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Select
+                          value={resident.verification_status || 'pending'}
+                          onValueChange={(value) => updateResidentVerificationStatus(resident.id, value)}
+                          disabled={!resident.id || updatingStatusId === resident.id}
+                        >
+                          <SelectTrigger className="h-9 w-full sm:w-[180px]">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="verified">Verified</SelectItem>
+                            <SelectItem value="declined">Declined</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-full sm:w-auto"
+                          onClick={() => deleteResident(resident.id)}
+                          disabled={!resident.id}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

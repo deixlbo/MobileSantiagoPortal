@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS document_requests (
     'certificate_of_indigency',
     'certificate_of_solo_parent',
     'barangay_business_clearance',
+    'business_permit',
     'certificate_of_business_closure',
     'certificate_to_file_action',
     'medical_assistance_certificate',
@@ -60,7 +61,16 @@ CREATE TABLE IF NOT EXISTS document_requests (
   downloaded_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  business_name TEXT,
+  business_address TEXT,
+  owner_name TEXT,
+  home_address TEXT,
+  contact_number TEXT,
+  type_of_business TEXT,
+  nature_of_business TEXT,
+  capitalization_amount NUMERIC,
+  tin TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_requests_resident ON document_requests(resident_id);
@@ -131,6 +141,7 @@ CREATE TABLE IF NOT EXISTS announcements (
   expiry_date DATE,
   author TEXT,
   views INTEGER DEFAULT 0,
+  image_url TEXT,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

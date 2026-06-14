@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -107,9 +108,46 @@ export default function AssetsPage() {
     fetchAssets()
   }, [])
 
+  const getAuthHeaders = async () => {
+    const headers: Record<string, string> = {}
+
+    if (typeof window === "undefined") {
+      return headers
+    }
+
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+    } catch {
+      // fall back to the legacy auth token storage
+    }
+
+    if (!headers.Authorization) {
+      const legacyToken = window.localStorage.getItem("auth_token")
+      if (legacyToken) {
+        headers.Authorization = `Bearer ${legacyToken}`
+      }
+    }
+
+    return headers
+  }
+
+  const normalizeDateValue = (value: unknown): string => {
+    if (value == null || value === "") return ""
+
+    const parsedDate = new Date(String(value))
+    if (Number.isNaN(parsedDate.getTime())) return ""
+
+    return parsedDate.toISOString().split("T")[0]
+  }
+
   const normalizeStatusFromBackend = (status: string): AssetStatus => {
     if (status === 'Under Maintenance') return 'maintenance'
     if (status === 'Disposed') return 'disposed'
+    if (status === 'Damaged') return 'damaged'
     if (status === 'Active' || status === 'In Use') return 'operational'
     return 'operational'
   }
@@ -121,41 +159,46 @@ export default function AssetsPage() {
       case 'disposed':
         return 'Disposed'
       case 'damaged':
-        return 'In Use'
+        return 'Damaged'
       default:
         return 'Active'
     }
   }
 
   const normalizeAsset = (asset: any): Asset => {
+    const acquisitionDate = normalizeDateValue(asset.acquisition_date)
+    const lastMaintenance = normalizeDateValue(asset.last_maintenance) || acquisitionDate
+
     return {
       id: asset.id,
       name: asset.name || "",
       category: (asset.category as AssetCategory) || 'equipment',
       description: asset.description || "",
-      acquisitionDate: asset.acquisition_date ? new Date(asset.acquisition_date).toISOString().split('T')[0] : "",
+      acquisitionDate,
       acquisitionCost: asset.acquisition_cost != null ? Number(asset.acquisition_cost) : 0,
       currentValue: asset.current_value != null ? Number(asset.current_value) : (asset.acquisition_cost != null ? Number(asset.acquisition_cost) : 0),
       location: asset.location || "",
-      status: normalizeStatusFromBackend(asset.status),
+      status: normalizeStatusFromBackend(String(asset.status ?? "")),
       serialNumber: asset.serial_number || "",
-      lastMaintenance: asset.last_maintenance ? new Date(asset.last_maintenance).toISOString().split('T')[0] : (asset.acquisition_date ? new Date(asset.acquisition_date).toISOString().split('T')[0] : ""),
+      lastMaintenance,
       assignedTo: asset.assigned_to || "",
-      image: asset.image_url || "",
-      image_url: asset.image_url || undefined,
+      image: asset.image_url || asset.image || "",
+      image_url: asset.image_url || asset.image || undefined,
     }
   }
 
   const fetchAssets = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/assets')
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/assets', { headers })
       if (!response.ok) {
         throw new Error('Failed to load assets')
       }
 
       const data = await response.json()
-      setAssets((data || []).map(normalizeAsset))
+      const rows = Array.isArray(data) ? data : (data?.assets || [])
+      setAssets((rows || []).map(normalizeAsset))
     } catch (error) {
       console.error('Error fetching assets:', error)
     } finally {
@@ -208,7 +251,10 @@ export default function AssetsPage() {
       formData.append('condition', 'Good')
       formData.append('quantity', '1')
       formData.append('acquisition_date', newAsset.acquisitionDate)
-      if (newAsset.acquisitionCost) formData.append('acquisition_cost', newAsset.acquisitionCost)
+      if (newAsset.acquisitionCost) {
+        formData.append('acquisition_cost', newAsset.acquisitionCost)
+        formData.append('current_value', newAsset.acquisitionCost)
+      }
       if (newAsset.serialNumber) formData.append('serial_number', newAsset.serialNumber)
       if (newAsset.assignedTo) formData.append('assigned_to', newAsset.assignedTo)
       if (newAsset.acquisitionDate) formData.append('last_maintenance', newAsset.acquisitionDate)
@@ -217,8 +263,10 @@ export default function AssetsPage() {
         formData.append('image', imageFile)
       }
 
+      const headers = await getAuthHeaders()
       const response = await fetch('/api/assets', {
         method: 'POST',
+        headers,
         body: formData,
       })
 
@@ -249,7 +297,10 @@ export default function AssetsPage() {
       formData.append('location', editingAsset.location)
       formData.append('status', statusToBackend(editingAsset.status))
       formData.append('acquisition_date', editingAsset.acquisitionDate)
-      if (editingAsset.acquisitionCost) formData.append('acquisition_cost', editingAsset.acquisitionCost.toString())
+      if (editingAsset.acquisitionCost) {
+        formData.append('acquisition_cost', editingAsset.acquisitionCost.toString())
+        formData.append('current_value', editingAsset.acquisitionCost.toString())
+      }
       if (editingAsset.serialNumber) formData.append('serial_number', editingAsset.serialNumber)
       if (editingAsset.assignedTo) formData.append('assigned_to', editingAsset.assignedTo)
       if (editingAsset.lastMaintenance) formData.append('last_maintenance', editingAsset.lastMaintenance)
@@ -257,8 +308,10 @@ export default function AssetsPage() {
         formData.append('image', imageFile)
       }
 
+      const headers = await getAuthHeaders()
       const response = await fetch(`/api/assets?id=${encodeURIComponent(editingAsset.id)}`, {
         method: 'PUT',
+        headers,
         body: formData,
       })
 
@@ -283,8 +336,10 @@ export default function AssetsPage() {
     setIsSaving(true)
 
     try {
+      const headers = await getAuthHeaders()
       const response = await fetch(`/api/assets?id=${encodeURIComponent(confirmDeleteId)}`, {
         method: 'DELETE',
+        headers,
       })
 
       if (!response.ok) {

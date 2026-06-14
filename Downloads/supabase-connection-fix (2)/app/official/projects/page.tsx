@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,23 @@ import { createProject, updateProject, deleteProject, updateProjectStatus, updat
 
 
 const projectTypes = ["Infrastructure", "Health", "Education", "Environment", "Peace and Order", "Social Welfare"]
+
+type ProjectFormData = {
+  title: string
+  type: string
+  description: string
+  location: string
+  startDate: string
+  targetCompletion: string
+  status: "Planned" | "Ongoing" | "Completed" | "Suspended"
+  budget: string
+  source: string
+  projectHead: string
+  projectHeadPosition: string
+  beneficiaries: string
+  remarks: string
+  imageUrl: string
+}
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -53,12 +70,15 @@ export default function OfficialProjectsPage() {
   const [newProgress, setNewProgress] = useState(0)
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState("")
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isProgressSaving, setIsProgressSaving] = useState(false)
   const [officials, setOfficials] = useState<any[]>([])
   const [showOfficialsList, setShowOfficialsList] = useState(false)
   const [loadingOfficials, setLoadingOfficials] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProjectFormData>({
     title: "",
     type: "",
     description: "",
@@ -72,6 +92,7 @@ export default function OfficialProjectsPage() {
     projectHeadPosition: "",
     beneficiaries: "",
     remarks: "",
+    imageUrl: "",
   })
 
   useEffect(() => {
@@ -156,6 +177,42 @@ export default function OfficialProjectsPage() {
     }
   }
 
+  const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const uploadProjectImage = async (file: File) => {
+    setIsUploadingImage(true)
+    try {
+      const safeName = file.name.replace(/\s+/g, "-")
+      const storagePath = `projects/${Date.now()}-${safeName}`
+      const response = await fetch('/api/projects/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, storagePath, contentType: file.type || 'image/jpeg' }),
+      })
+
+      const payload = await response.json().catch(() => null)
+      const uploadData = payload?.data ?? payload
+      const uploadUrl = uploadData?.url || payload?.url
+
+      if (!response.ok || !uploadUrl) {
+        throw new Error(payload?.error || payload?.message || 'Failed to prepare upload')
+      }
+
+      return uploadUrl
+    } catch (error) {
+      console.warn('Project image upload unavailable, continuing without image:', error)
+      return ""
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   const handleCreateProject = async () => {
     if (!formData.title || !formData.type || !formData.location) {
       alert('Please fill in all required fields')
@@ -170,6 +227,8 @@ export default function OfficialProjectsPage() {
 
     setIsSaving(true)
     try {
+      const imageUrl = imageFile ? await uploadProjectImage(imageFile) : formData.imageUrl
+
       const created = await createProject({
         title: formData.title,
         description: formData.description,
@@ -186,10 +245,11 @@ export default function OfficialProjectsPage() {
         projectHeadPosition: formData.projectHeadPosition,
         beneficiaries: formData.beneficiaries,
         remarks: formData.remarks,
+        imageUrl,
         createdBy: 'system',
       })
 
-      const newProject = created?.project ?? created
+      const newProject = (created as any)?.project ?? created
       setProjects([newProject, ...projects])
       setShowCreateDialog(false)
       setFormData({
@@ -231,6 +291,7 @@ export default function OfficialProjectsPage() {
       projectHeadPosition: project.projectHeadPosition || "",
       beneficiaries: project.beneficiaries || "",
       remarks: project.remarks || "",
+      imageUrl: project.imageUrl || project.image_url || "",
     })
     setShowEditDialog(true)
   }
@@ -244,14 +305,20 @@ export default function OfficialProjectsPage() {
         title: formData.title,
         description: formData.description,
         startDate: formData.startDate,
+        targetCompletion: formData.targetCompletion,
         endDate: formData.targetCompletion,
         status: formData.status,
         budget: formData.budget,
         source: formData.source,
         location: formData.location,
+        projectHead: formData.projectHead,
+        projectHeadPosition: formData.projectHeadPosition,
+        beneficiaries: formData.beneficiaries,
+        remarks: formData.remarks,
+        imageUrl: formData.imageUrl,
       })
 
-      const updatedProject = updatedResponse?.project ?? updatedResponse
+      const updatedProject = (updatedResponse as any)?.project ?? updatedResponse
       setProjects(projects.map(p => p.id === editingProject.id ? updatedProject : p))
       setShowEditDialog(false)
       setEditingProject(null)
@@ -284,7 +351,7 @@ export default function OfficialProjectsPage() {
     setIsProgressSaving(true)
     try {
       const updatedResponse = await updateProjectProgress(selectedProject.id, newProgress)
-      const updatedProject = updatedResponse?.project ?? updatedResponse
+      const updatedProject = (updatedResponse as any)?.project ?? updatedResponse
       setProjects(projects.map(p => p.id === selectedProject.id ? updatedProject : p))
       setSelectedProject(updatedProject)
       setShowProgressDialog(false)
@@ -446,7 +513,7 @@ export default function OfficialProjectsPage() {
                       placeholder="Position (auto-filled)"
                       value={formData.projectHeadPosition}
                       onChange={(e) => setFormData({...formData, projectHeadPosition: e.target.value})}
-                      disabled={formData.projectHead && filteredOfficials.length > 0}
+                      disabled={Boolean(formData.projectHead && filteredOfficials.length > 0)}
                     />
                   </div>
                 </div>
@@ -457,6 +524,13 @@ export default function OfficialProjectsPage() {
                     value={formData.beneficiaries}
                     onChange={(e) => setFormData({...formData, beneficiaries: e.target.value})}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Project Image (Optional)</Label>
+                  <Input type="file" accept="image/*" onChange={handleImageSelection} />
+                  {(imagePreview || formData.imageUrl) && (
+                    <img src={imagePreview || formData.imageUrl} alt="Project preview" className="h-24 w-full rounded-md object-cover border" />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Remarks (Optional)</Label>
@@ -486,7 +560,10 @@ export default function OfficialProjectsPage() {
                   projectHeadPosition: "",
                   beneficiaries: "",
                   remarks: "",
+                  imageUrl: "",
                 })
+                setImageFile(null)
+                setImagePreview("")
               }}>Cancel</Button>
               <Button onClick={handleCreateProject}>Create Project</Button>
             </DialogFooter>
@@ -812,6 +889,13 @@ export default function OfficialProjectsPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Project Image (Optional)</Label>
+                <Input type="file" accept="image/*" onChange={handleImageSelection} />
+                {(imagePreview || formData.imageUrl) && (
+                  <img src={imagePreview || formData.imageUrl} alt="Project preview" className="h-24 w-full rounded-md object-cover border" />
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label>Remarks</Label>
                 <Textarea 
                   rows={2}
@@ -825,6 +909,8 @@ export default function OfficialProjectsPage() {
             <Button variant="outline" onClick={() => {
               setShowEditDialog(false)
               setEditingProject(null)
+              setImageFile(null)
+              setImagePreview("")
             }}>Cancel</Button>
             <Button onClick={handleUpdateProject}>Update</Button>
           </DialogFooter>
